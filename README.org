@@ -1,0 +1,247 @@
+#+title: org-convect
+#+options: toc:2
+
+The Horizons of Focus above the project, in Org.
+
+* Why
+
+Org holds projects and next actions well.  Everything above them — the areas
+being maintained, the goals they serve, the vision behind those, the purpose
+behind that — has nowhere to live, and so tends not to exist.
+
+Convection stops when there is no difference.  What this package works on is
+the difference between what was declared to matter and where the hours
+actually went, and it reads in both directions:
+
+- *upward* — the clock says which areas were paid for, and which of them
+  nobody ever claimed
+- *downward* — the ladder says which goals nothing serves, and which rungs are
+  past the review GTD asks for
+
+Heat rises, and what rises then governs what is below.  Those are GTD's own
+two directions, and they are not the same direction:
+
+#+begin_quote
+Priorities are determined from the top down — i.e. your purpose and values
+will drive your vision, which will create goals and objectives, which will
+frame areas of focus and accountability.
+
+— /Horizons of Focus/, David Allen Company
+#+end_quote
+
+and yet the ladder is written from the bottom up, because it is very hard to
+reflect on purpose while drowning in the day.  Both are true.  The package
+follows the first when it reads and the second when it asks.
+
+* The altitudes
+
+Names, descriptions and frequencies are taken from /Horizons of Focus/
+(05OCT2016-v1), not paraphrased.
+
+| Horizon | Name                              | Reviewed                             |
+|---------+-----------------------------------+--------------------------------------|
+|       5 | Purpose and Principles            | whenever clarity is needed           |
+|       4 | Vision                            | whenever clarity is needed           |
+|       3 | Goals and Objectives              | annually; quarterly recalibrations   |
+|       2 | Areas of Focus and Accountability | monthly personal check-in's          |
+|       1 | Projects                          | weekly review                        |
+|  Ground | Calendar/Actions                  | multiple times daily                 |
+
+H1 and Ground belong to [[https://github.com/yoshzucker/org-foresight][org-foresight]], which answers them with the clock.
+This package holds H2 upward.
+
+Note the top two rows.  *GTD gives them no calendar at all.*  A yearly deadline
+for purpose would be this package inventing a rule and attributing it to GTD,
+so ~org-convect-review-cadence~ covers only areas and goals.  What calls the
+upper two is a signal; see [[*The ACT overlay][the overlay]].
+
+* The data structure
+
+** The ladder is declared, not located
+
+An entry belongs to a horizon because it says so:
+
+#+begin_src org
+,** engineering
+   :PROPERTIES:
+   :CONVECT_HORIZON: area
+   :CONVECT_SERVES:  A team that runs itself
+   :END:
+#+end_src
+
+| Property           | Means                | Values                                  |
+|--------------------+----------------------+-----------------------------------------|
+| ~CONVECT_HORIZON~  | what this is         | ~area~ / ~goal~ / ~vision~ / ~purpose~  |
+| ~CONVECT_SERVES~   | what it is in service of | names of higher rungs, ~;~-separated |
+
+Nothing depends on the file or the section an entry sits in.  Sections are
+scaffolding for the eye; split the ladder across files, move an entry out of
+its section, and it still reads.
+
+Three things follow, and each answers a problem that nesting could not:
+
+- *two parents are ordinary.*  One goal frames several areas and one area
+  serves several goals.  That is a graph, and Allen himself describes the
+  horizons as altitudes to think from rather than a filing hierarchy.
+- *the ladder can be written bottom-up.*  Nesting areas under values would
+  require the top before the bottom, which is the opposite of the advice.
+- *files are free.*  Work and personal ladders can live apart.
+
+** Nothing points downward
+
+A task carries a ~CATEGORY~ and nothing else.  ~CATEGORY~ is inherited, so a
+project marked once collects all its descendants, and a five-minute job costs
+no thought about purpose to open.  Only the review climbs, and only the code
+doing the climbing pays for it.
+
+That is also where the upward evidence comes from free: org-foresight's clock
+scan already totals time per category, so
+~org-convect-unclaimed-categories~ can ask which paid-for categories no area
+ever claimed.  The dependency is soft both ways — the ladder reads without a
+clock, and the clock reads without a ladder.
+
+** Goals carry no TODO state
+
+~org-agenda-files~ is usually derived from which files hold open tasks.  Give a
+goal a TODO keyword and the ladder file joins the daily agenda, which is
+exactly wrong for something GTD reviews quarterly.  Achieved and abandoned are
+recorded as notes; tidying up is ~org-archive-subtree~.
+
+** Reviews are notes, rungs are headlines
+
+The test is one question: /will this be looked up, moved, or given a state on
+its own later?/
+
+| Thing                            | Answer   |
+|----------------------------------+----------|
+| a rung                           | headline |
+| a choice point (its properties are a row in a column view) | headline |
+| what happened to a rung this month | note   |
+
+So *reviewing a rung is pressing =C-c C-z= on it and writing what you
+concluded.*  Nothing new to learn.  The newest inactive timestamp in the
+entry's own text is what ~org-convect-overdue-p~ reads — children excluded,
+because recording a choice point under a principle is not the same act as
+reviewing the principle.
+
+** Which rung gets asked for next
+
+~org-convect-next-rung~ returns the *lowest empty* one, and only that one.
+While areas are unwritten it asks for areas, never for purpose.
+
+An empty rung is the prescribed path, not a defect.  What would be a defect is
+never being asked to climb off it.
+
+* The ACT overlay
+
+GTD says /when/ to revisit the upper horizons and never says /what to ask/
+there.  The weekly review has a procedure; nothing above projects has an
+equivalent.  Worse, the top two rungs are visited "whenever additional
+clarity, direction, alignment, and motivation are needed" — a trigger that
+never fires on its own.
+
+ACT has the missing questions, and one of them makes that trigger observable:
+
+#+begin_quote
+A principle whose last few choice points all read =away= is a principle that
+alignment has quietly left.
+#+end_quote
+
+GTD's own words for Horizon 5 are "What are the critical behaviors?", so a
+record of behaviour against it is not a foreign idea grafted on.
+
+A choice point is written as a *child of the rung it is about* — no property
+names the value, because the parent says it:
+
+#+begin_src org
+,** Honesty
+   :PROPERTIES:
+   :CONVECT_HORIZON: purpose
+   :END:
+,*** Wanted to keep quiet about the estimate
+    :PROPERTIES:
+    :CREATED:      [2026-08-30 Sun 14:02]
+    :ACT_STRUGGLE: 7
+    :ACT_MOVE:     away
+    :END:
+    - what pulled  :: saying it would cost me their trust
+    - away         :: put the report off a week
+    - towards      :: show the working, now
+#+end_src
+
+Struggle is how hard the feeling was fought, not how strong it was: intensity
+is deliberately not recorded, because tracking it invites wanting it lower,
+and wanting it lower is the trap the practice is about.
+
+** It comes out
+
+Everything ACT contributes is prefixed ~ACT_~ in the file and lives in
+~org-convect-act.el~.  Delete that one feature and the ladder still reads,
+still resolves, still knows what is overdue — only the upper two rungs lose
+the signal that calls them.  The test suite proves it by running without the
+overlay loaded at all.
+
+* Findings
+
+~org-convect-findings~ reports:
+
+| Kind                | Means                                          |
+|---------------------+------------------------------------------------|
+| ~unknown-horizon~   | a typo in ~CONVECT_HORIZON~                    |
+| ~duplicate-name~    | two rungs share a name, so pointing is ambiguous |
+| ~unresolved-serves~ | a name pointing at nothing                     |
+| ~unserved-goal~     | a goal nothing serves                          |
+| ~overdue-review~    | past the cadence GTD gives that horizon        |
+
+Note what is *not* asked: whether a project or an area serves anything.  Most
+work is justified on its own — keeping the engines running is what an area is
+for, and the company's chores are a real accountability.  Asking every rung to
+name a purpose would turn an honest answer into a defect.
+
+* Install
+
+#+begin_src emacs-lisp
+(use-package org-convect
+  :straight (org-convect :host github :repo "yoshzucker/org-convect"
+                         :files ("*.el"))
+  :after org
+  :config
+  (setq org-convect-files (list (concat org-directory "horizons.org"))))
+#+end_src
+
+=M-x org-convect-open= writes the empty frame the first time.  What it creates
+is the frame, not a suggestion of what to put in it: GTD's advice for filling
+in areas is to copy them off the job description, the org chart and the
+household's division of labour, and a template guessing at them would get in
+the way of the inventory.
+
+To record choice points, register a capture template against the overlay's
+target — the wording is yours, the mechanism is the package's:
+
+#+begin_src emacs-lisp
+(add-to-list 'org-capture-templates
+             '("v" "choice point" entry (function org-convect-act-target)
+               "* %^{situation}\n:PROPERTIES:\n:CREATED: %U\n:ACT_STRUGGLE: %^{struggle|0|1|2|3|4|5|6|7|8|9|10}\n:ACT_MOVE: %^{moved|towards|partly|away}\n:END:\n- what pulled :: %?\n- away :: \n- towards :: \n"))
+#+end_src
+
+* Tests
+
+#+begin_src sh
+emacs --batch -Q -L . -l test/org-convect-core-test.el \
+      -l test/org-convect-act-test.el -f ert-run-tests-batch-and-exit
+
+# the ladder on its own, with no ACT in the image
+emacs --batch -Q -L . -l test/org-convect-core-test.el \
+      -f ert-run-tests-batch-and-exit
+#+end_src
+
+Every test was checked against a deliberately broken implementation before
+being kept.  A test that passes either way is not a test.
+
+* Status
+
+Early.  What exists is the data structure and the reading of it: scanning,
+resolving, cadence, findings, and the overlay's record.  Views — an aggregated
+page, a way into the review — are deliberately not here yet, on the principle
+that the structure should be settled by what it has to answer before anything
+is drawn on top of it.
