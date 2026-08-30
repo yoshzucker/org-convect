@@ -13,9 +13,10 @@
 ;; GTD says *when* to revisit the upper horizons and never says what to ask
 ;; there.  The weekly review has a procedure -- get clear, get current, get
 ;; creative -- and nothing above projects has an equivalent.  Worse, the two
-;; highest rungs have no calendar at all: GTD visits them "whenever additional
-;; clarity, direction, alignment, and motivation are needed", which is a
-;; trigger that never fires on its own.
+;; highest rungs have no calendar at all: GTD reads them when direction or
+;; motivation has gone, which is a condition rather than a date, and a
+;; condition nobody notices from inside it.  It is a trigger that never fires
+;; on its own.
 ;;
 ;; ACT -- Acceptance and Commitment Therapy -- has the questions GTD is
 ;; missing, and one of them turns that trigger into something observable:
@@ -29,8 +30,9 @@
 ;; "is this working" can be asked at every altitude.  And a principle whose
 ;; last few choice points all read `away' is a principle that alignment has
 ;; quietly left, which is precisely the condition GTD names and cannot detect.
-;; GTD's own words for HORIZON 5 are "What are the critical behaviors?", so a
-;; record of behaviour against it is not a foreign idea grafted on.
+;; And GTD already treats the top rung as being partly about conduct -- what
+;; standards you hold, not only what you are for -- so keeping a record of
+;; behaviour against it is not a foreign idea grafted on.
 ;;
 ;; The overlay adds nothing to the ladder's shape.  A value is not a separate
 ;; kind of thing living in a separate file -- it is a rung, usually a
@@ -77,6 +79,13 @@ Workability, and the only test ACT applies to an action.  Note what is absent:
 how strong the feeling was.  Intensity is deliberately not recorded, because
 tracking it invites wanting it lower, and wanting it lower is the trap the
 whole practice is about.")
+
+;; The overlay's own columns, appended rather than replacing the frame's: with
+;; them, `\\[org-columns]' over a value is the table of its choice points, so
+;; the property drawers pay for themselves and nothing is stored twice.  They
+;; leave with this feature.
+(dolist (column '("%ACT_STRUGGLE(Struggle)" "%ACT_MOVE(Moved)"))
+  (add-to-list 'org-convect-columns column t))
 
 ;;;; Reading choice points
 
@@ -163,6 +172,33 @@ job, which is usually news."
                                    (org-convect-entries entries 'area)))))
     (seq-remove (lambda (domain) (member domain claimed))
                 org-convect-act-domains)))
+
+(defun org-convect-act-domain-property (horizon)
+  "Ask which life domain an area belongs to, as an alist for `org-convect-add'.
+
+Registered on `org-convect-add-property-functions', which is the whole of the
+overlay's reach into writing a rung.  Only areas are asked -- a domain is a
+check on what is being maintained, and nothing above the areas maintains
+anything directly -- and nothing is asked at all when no domains are
+configured, because a question with no answers is a question that teaches
+people to skip questions."
+  (when (and (eq horizon 'area) org-convect-act-domains)
+    (let ((domain (completing-read
+                   "Life domain (optional): " org-convect-act-domains nil nil)))
+      (and (org-string-nw-p domain) (list (cons "ACT_DOMAIN" domain))))))
+
+(add-hook 'org-convect-add-property-functions #'org-convect-act-domain-property)
+
+(defun org-convect-act-in-use-p (entry)
+  "Non-nil when ENTRY has choice points recorded under it.
+
+Registered on `org-convect-in-use-functions'.  A principle with a month of
+choice points under it is the most-used thing in the file, and the ladder
+cannot see that: nothing was derived from it, because what it produces is
+conduct rather than a rung.  This is where the evidence actually is."
+  (and (org-convect-act-choice-points entry) t))
+
+(add-hook 'org-convect-in-use-functions #'org-convect-act-in-use-p)
 
 ;;;; Recording one
 

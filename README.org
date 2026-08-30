@@ -18,34 +18,158 @@ actually went, and it reads in both directions:
 - *downward* — the ladder says which goals nothing serves, and which rungs are
   past the review GTD asks for
 
-Heat rises, and what rises then governs what is below.  Those are GTD's own
-two directions, and they are not the same direction:
+Heat rises, and what rises then governs what is below.  Those are GTD's two
+directions, and they are not the same direction.
+
+What matters most is settled from the top: purpose shapes the vision, the
+vision shapes the goals, the goals frame the areas.  And yet the ladder gets
+written from the bottom, because it is very hard to reflect on purpose while
+drowning in the day.  Both are true.  The file is ordered for the first; the
+package asks for the second.
+
+* The model
+
+Two different things are being modelled here, and most confusion about this
+package comes from reading them as one.
+
+- the *ladder* holds what you have taken on — commitments, at four altitudes
+- *ACT* records how you actually behaved — conduct, which is not a commitment
+  and is not in the ladder at all
+
+** The four rungs
+
+Every rung is a heading.  Its body answers one question, and which question
+depends on the rung.
+
+| Rung | What it is | Its body answers | Finishes? | Dated? |
+|---+---+---+---+---|
+| Purpose and Principles | why any of it matters, and the conduct you hold to | what it rules out | never | no |
+| Vision | what it is like once it has worked | the picture itself | approached, not reached | no |
+| Goals and Objectives | what must become true in a year or two | how you would know | *yes* | ~CONVECT_BY~ |
+| Areas of Focus and Accountability | what you are answerable for | the standard | never | no |
+
+Below them are projects and next actions, which belong to
+[[https://github.com/yoshzucker/org-foresight][org-foresight]].
+
+** Two directions, and they are not the same one
+
+Derivation runs *down*: purpose drives the vision, the vision creates goals,
+goals frame areas.  That is GTD's own account of what the levels mean.
+
+Writing runs *up*: you start from the areas you already carry, because nobody
+buried in the day can answer honestly about purpose.
+
+The file is ordered for the first.  ~org-convect-next-rung~ asks for the
+second.  Collapsing them into one order loses half the model.
+
+** Every link points up
+
+| | Lives on | Value |
+|---+---+---|
+| ~CONVECT_SERVES~ | a rung, naming what it is in service of | names of higher rungs, several allowed, always optional |
+| ~CATEGORY~ | a task, naming its area | one area's name, inherited by everything beneath |
+
+*Nothing points down.*  A task carries a CATEGORY and asks nothing else of
+you, which is why opening a five-minute job costs no thought about purpose.
+The ladder is climbed during a review and at no other time.
+
+CATEGORY is also the one binding that has to be *made*.  Until a task carries
+an area's name, Org falls back to the file's name, and every hour clocked
+against it is booked to something that names no responsibility at all —
+=org-convect-unclaimed-categories= then has nothing to say about where the
+time went.
+
+Two commands make it:
+
+- =M-x org-convect-set-category= puts a declared area on the entry at point,
+  in an Org buffer or from an agenda line, which is where most of it gets
+  decided
+- =%(org-convect-read-area)= inside a capture template asks at capture time
+
+Only the areas that exist are offered, so work cannot be filed against a
+responsibility nobody has claimed.  Where to ask is a judgement: a capture
+that starts a clock knows the answer already, and an inbox capture must *not*
+ask — catching and deciding are different acts, and an inbox that costs a
+decision stops being used.
+
+** Where the ladder stops
+
+#+begin_example
+  purpose ──derives──> vision ──> goal ──> area ──> task
+     │
+     └──governs──> conduct, in the moment
+                        ▲
+                        └── ACT is here, outside the ladder
+#+end_example
+
+The ladder holds commitments.  What a principle produces is not a commitment
+lower down — it is behaviour, right now — and behaviour is not in the ladder.
+
+So "nothing in the ladder was derived from this principle" is *not* evidence
+that the principle is unused.  The evidence for that lives somewhere the
+ladder cannot see.
+
+** What ACT adds
+
+Three things, and all of them come out together with the feature.
+
+1. *Choice points.*  One moment, recorded: what pulled, what you did instead,
+   and whether it moved you =towards=, =partly= or =away=.  Written as a child
+   of the rung it is about, so no property has to name the value — the parent
+   says it.  Usually a principle; any rung is allowed, because the pull is
+   sometimes away from a responsibility rather than from a value.
+
+2. *Domains.*  A checklist of life spheres, deliberately independent of the
+   areas, asking whether every part of a life has something maintaining it.
+   Independence is the whole mechanism: derive the domains from the areas and
+   the question becomes true by construction and finds nothing, ever.
+
+3. *Two pieces of evidence the ladder cannot produce.*
+
+   | | What it says | Why the ladder cannot say it |
+   |---+---+---|
+   | ~org-convect-act-drift~ | a run of =away= against a principle means alignment has gone | GTD puts no calendar on the top two rungs; it visits them "when needed", which is a condition nobody notices from inside |
+   | ~org-convect-act-in-use-p~ | a rung with choice points under it is in use | a principle's output is conduct, and conduct is not a rung |
+
+** What each check can and cannot see
+
+The last column is the honest one.
+
+| Check | Sees | *Cannot see* |
+|---+---+---|
+| ~bare-rung~ | a heading with nothing under it | whether what is under it is any good |
+| ~unserved-rung~ | a rung above the areas that nothing was derived from | with ACT loaded, a principle that is governing conduct |
+| ~unclaimed-categories~ | hours booked to a category no area claims | hours nobody clocked at all |
+| ~domain-gaps~ | a life sphere no area claims | a sphere you never put on the list |
+| ~long-heading~ | width | whether it is a name or a sentence |
+| ~past-its-date~, ~overdue-review~ | dates | whether the review was worth anything |
+
+And one limit over all of them:
 
 #+begin_quote
-Priorities are determined from the top down — i.e. your purpose and values
-will drive your vision, which will create goals and objectives, which will
-frame areas of focus and accountability.
-
-— /Horizons of Focus/, David Allen Company
+The tool can only see what was written as structure.
 #+end_quote
 
-and yet the ladder is written from the bottom up, because it is very hard to
-reflect on purpose while drowning in the day.  Both are true.  The package
-follows the first when it reads and the second when it asks.
+A capability named in prose in the vision's body cannot be reported as
+unbuilt, however clearly the prose says the vision requires it.  Nothing can
+be inferred about something that was never made a rung.  Make it one and it
+becomes visible; leave it prose and it stays yours alone to notice.
 
 * The altitudes
 
-Names, descriptions and frequencies are taken from /Horizons of Focus/
-(05OCT2016-v1), not paraphrased.
+The names are GTD's and are kept exactly, so that anything written about the
+model can be read against this package.  Everything said *about* them — what
+each rung is, how to find yours, how often to look — is written here from
+scratch.
 
-| Horizon | Name                              | Reviewed                             |
-|---------+-----------------------------------+--------------------------------------|
-|       5 | Purpose and Principles            | whenever clarity is needed           |
-|       4 | Vision                            | whenever clarity is needed           |
-|       3 | Goals and Objectives              | annually; quarterly recalibrations   |
-|       2 | Areas of Focus and Accountability | monthly personal check-in's          |
-|       1 | Projects                          | weekly review                        |
-|  Ground | Calendar/Actions                  | multiple times daily                 |
+| Horizon | Name                              | Looked at                     |
+|---------+-----------------------------------+-------------------------------|
+|       5 | Purpose and Principles            | no schedule; when adrift      |
+|       4 | Vision                            | no schedule; when adrift      |
+|       3 | Goals and Objectives              | yearly, checked quarterly     |
+|       2 | Areas of Focus and Accountability | monthly, and when life shifts |
+|       1 | Projects                          | weekly                        |
+|  Ground | Calendar/Actions                  | daily                         |
 
 H1 and Ground belong to [[https://github.com/yoshzucker/org-foresight][org-foresight]], which answers them with the clock.
 This package holds H2 upward.
@@ -136,19 +260,83 @@ never being asked to climb off it.
 
 GTD says /when/ to revisit the upper horizons and never says /what to ask/
 there.  The weekly review has a procedure; nothing above projects has an
-equivalent.  Worse, the top two rungs are visited "whenever additional
-clarity, direction, alignment, and motivation are needed" — a trigger that
-never fires on its own.
+equivalent.  Worse, the top two rungs are read when direction or motivation
+has gone — a condition rather than a date, and one nobody notices from inside
+it.  It is a trigger that never fires on its own.
 
 ACT has the missing questions, and one of them makes that trigger observable:
 
-#+begin_quote
-A principle whose last few choice points all read =away= is a principle that
-alignment has quietly left.
-#+end_quote
+**A principle whose last few choice points all read =away= is a principle that
+alignment has quietly left.**
 
-GTD's own words for Horizon 5 are "What are the critical behaviors?", so a
-record of behaviour against it is not a foreign idea grafted on.
+And GTD already treats the top rung as being partly about conduct — the
+standards you hold, not only what you are for — so keeping a record of
+behaviour against it is not a foreign idea grafted on.
+
+** Domains are not areas
+
+The overlay's =org-convect-act-domains= is a list of life domains, and it is
+easy to mistake it for a second copy of the areas.  It is the opposite of that,
+and the difference is what makes it work.
+
+| | Domain | Area |
+|---+---+---|
+| What it aims at | *covering a life* | *being answerable* |
+| Complete? | tries to cover everything | no — you are not answerable for all of your life |
+| Overlapping? | yes (family and friendship, health and leisure) | preferably not, but nothing enforces it |
+| Where it lives | a setting.  Not in the file | a heading in the file |
+
+The check is three lines long: collect the =ACT_DOMAIN= of every area, compare
+against the configured list, report the domains nobody claimed.
+
+It only finds anything because the two lists are *independent*.  Derive the
+domains from the areas and the question becomes "is there an area for every
+area", which is true by construction and finds nothing, ever.
+
+That matters more than it sounds, because areas have a systematic blind spot.
+The advice for writing them is to copy them off documents that already exist —
+a job description, an org chart, the household's division of labour — and
+**nothing writes down your friendships or your rest**.  So the area list will
+reliably miss exactly the parts of a life nobody documents, which are often the
+first to go.  An independent list of domains is how those get seen.
+
+One area names one domain.  Letting an area claim two would make coverage
+easier to satisfy without anything actually being maintained: an area claiming
+both family and friendship silences the friendship question while friendship
+still has nobody keeping it.
+
+*** How finely to cut them
+
+ACT has no single canonical list.  The most widely used exercise is the
+*Bull's Eye*, devised by the Swedish ACT therapist Tobias Lundgren and
+rewritten by Russ Harris: a dartboard divided into four life domains, on which
+you list your values for each domain and then mark how close your actual living
+is to them — a hit in the centre meaning you are living fully by that value, the
+outer ring meaning you are nowhere near.  It is an alignment exercise, and the
+four domains are its scaffolding rather than a claim about how a life divides.
+
+The four are work/education, leisure, relationships, and personal growth/health.
+Splitting them is usually right *here*, because this check's power is exactly
+its granularity:
+
+| Bull's Eye | split for coverage |
+|---+---|
+| work/education | work, learning |
+| relationships | family, friendship |
+| leisure | leisure |
+| personal growth/health | health |
+
+Lumping family and friendship together as "relationships" lets one area for
+family answer for both, and a gap in friendship never appears.  Take a
+published list as a starting point and split it wherever you suspect you are
+not looking.
+
+Note what the canonical four do not contain: money.  In ACT's instruments money
+is generally treated as a means to the domains rather than one of them.  You
+can still be answerable for the household finances — that is an area — and it
+can name whichever domain it actually serves.
+
+** Recording choice points
 
 A choice point is written as a *child of the rung it is about* — no property
 names the value, because the parent says it:
@@ -181,6 +369,24 @@ still resolves, still knows what is overdue — only the upper two rungs lose
 the signal that calls them.  The test suite proves it by running without the
 overlay loaded at all.
 
+* Seeing what is missing
+
+=M-x org-convect-doctor= counts the ladder and lists its blanks.  It writes
+nothing.
+
+It exists because a heading with an empty body looks exactly like a heading:
+the guidance says what goes underneath each rung, and the file has no way to
+show that it is not there.  Properties would have made the blanks visible —
+that is the usual reason to reach for them — but the thing that goes under a
+rung is several lines of prose and nothing computes with it, which is the
+opposite of what a property is for.  So the body stays prose and the counting
+is a command.
+
+It is a report and not a scold.  Several of the things it lists are fine to
+leave: a rung can stay bare on purpose while you go up and fetch the goal that
+says what it is for, and most areas serve nothing at all.  What it is for is
+that you should be *choosing* to leave them, rather than not noticing.
+
 * Findings
 
 ~org-convect-findings~ reports:
@@ -209,11 +415,65 @@ name a purpose would turn an honest answer into a defect.
   (setq org-convect-files (list (concat org-directory "horizons.org"))))
 #+end_src
 
-=M-x org-convect-open= writes the empty frame the first time.  What it creates
-is the frame, not a suggestion of what to put in it: GTD's advice for filling
-in areas is to copy them off the job description, the org chart and the
-household's division of labour, and a template guessing at them would get in
-the way of the inventory.
+* Getting started
+
+=M-x org-convect-open= writes the frame the first time.  It is ordered highest
+first, which is the direction the ladder is read.
+
+Each section carries a folded =:GUIDE:= drawer — one line until you press TAB.
+It says, in order: what that rung is, where to look for yours, *what to write
+underneath it once the heading exists*, how often to come back, and last the
+keystrokes that do it.
+
+The middle one is the one that gets forgotten.  A rung is a heading so that it
+can go on accumulating; a file of bare headings is a file where the monthly
+look has nothing to be a look *at*.  For an area what goes underneath is the
+standard — what "kept up" means, the thing you would notice slipping.
+
+Nothing reads those drawers back, so delete them once they are in the way.
+=M-x org-convect-refresh-guides= puts the current wording back under every
+section and touches nothing else — guidance written once at file creation is
+guidance that cannot learn anything afterwards, and this one has already
+learned twice.
+
+There are two ways in, and which one fits depends on whether you are inventing
+a rung or copying one.
+
+=M-x org-convect-add= writes a single entry, guided.  It picks the horizon from
+a list that says what each one is, defaulting to the lowest rung you have not
+filled; it prompts for the name with a hint about where to find yours; and it
+offers to point upward *only when there is something above to point at*.  That
+last part is deliberate — being asked to name a goal before any goal exists
+would make the bottom-up order feel like a mistake, and it is the prescribed
+path.
+
+=M-x org-convect-declare= marks headings you have already written.  Write or
+paste them under a section, mark the region, run it: each one takes the horizon
+of the section it sits under, so a paste spanning two sections comes out right
+rather than uniformly wrong, and nothing is asked at all.  Headings that are
+already rungs are left exactly as they are, and the section headings themselves
+are passed over.
+
+Name areas for the role or the function, never for the thing they concern.
+"Children" is not an area — there is no way to keep children to a standard.
+"Parent" is: there is a way you mean to do it, and you can tell when you are
+not.  At work the org chart has usually named the functions already, so they
+come out as functions (=procurement=, =engineering=); at home nobody has named
+anything, so you have to say what you are answerable for, and they come out as
+roles.
+
+Start with the areas, and use the second way for them.  The single most useful
+thing GTD says about areas is that you should not invent them: most of yours
+are already written down in a job description, an org chart, or the household's
+division of labour.  Reading them off is faster and more honest than thinking
+them up — and reading a list off a document is a paste, not thirty answers to a
+prompt, which is the whole reason =declare= exists.
+
+The rest of an entry is typed underneath it, because a rung is a headline
+precisely so it can go on accumulating — what the standard is, and what
+reviewing it concluded.
+
+** Registering the capture
 
 To record choice points, register a capture template against the overlay's
 target — the wording is yours, the mechanism is the package's:
@@ -237,6 +497,18 @@ emacs --batch -Q -L . -l test/org-convect-core-test.el \
 
 Every test was checked against a deliberately broken implementation before
 being kept.  A test that passes either way is not a test.
+
+* Attribution
+
+Getting Things Done® and GTD® are registered trademarks of the David Allen
+Company.  This package is an independent implementation and is not affiliated
+with, authorised by or endorsed by them.
+
+The horizon names are used to identify the model this package implements.
+Every description of them — in the code, in this file, and in the guidance
+written into your own horizons file — is the author's own words rather than
+the David Allen Company's text.  A test enforces that rather than trusting it
+to memory.
 
 * Status
 
