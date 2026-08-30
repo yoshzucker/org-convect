@@ -26,9 +26,12 @@
 ;;             past the review GTD asks for
 ;;
 ;; Heat rises and what rises then governs what is below: GTD's own two
-;; directions.  Priorities are determined from the top down, and the ladder is
-;; nonetheless written from the bottom up, because nobody buried in the day can
-;; answer honestly about purpose.  Both are true and neither is the other.
+;; directions.  What matters most is settled from the top -- purpose shapes the
+;; vision, the vision shapes the goals, the goals frame the areas -- and yet
+;; the ladder gets written from the bottom, because nobody buried in the day
+;; can answer honestly about purpose.  Both are true and neither is the other.
+;; The file is ordered for the first; `org-convect-next-rung' asks for the
+;; second.
 ;;
 ;; Layout:
 ;;
@@ -37,6 +40,12 @@
 ;;
 ;; Requiring `org-convect' gets both.  Requiring only `org-convect-core' gets
 ;; a ladder with no overlay, which is a supported way to run it.
+;;
+;; Getting Things Done and GTD are registered trademarks of the David Allen
+;; Company.  This package is an independent implementation and is not
+;; affiliated with, authorised by or endorsed by them.  The horizon names are
+;; used to identify the model; every description of them here is the author's
+;; own words.
 
 ;;; Code:
 
