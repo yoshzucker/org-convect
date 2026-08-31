@@ -390,6 +390,153 @@ still resolves, still knows what is overdue — only the upper two rungs lose
 the signal that calls them.  The test suite proves it by running without the
 overlay loaded at all.
 
+* The review
+
+=M-x org-convect-review= shows the ladder, with what wants looking at marked.
+Its rows are live: =z= writes your conclusion onto the rung, =RET= goes to it.
+
+#+begin_example
+  Horizons Review                                    2026-10-05
+    3 due, 1 called
+
+  Purpose and Principles
+    Honesty                        called -- 3 away in a row
+        I do not let a number stand that I know is wrong
+        12 choice points, 7 away
+
+  Goals and Objectives
+    a team that runs itself        due 2030-12-31
+        the rota has someone else on it
+        3 below point at it
+
+  Areas of Focus and Accountability
+    engineering                    due
+        reviews come back the same day
+        12:30 clocked, serves a team that runs itself
+
+    z  write the conclusion here      RET  go to it
+#+end_example
+
+** Why the whole ladder
+
+Because reviewing is not something a date gives permission for.  A cadence
+says how often to come back, not that looking is forbidden until then — and
+the relationships are worth seeing on any day, which is otherwise only
+possible by reading the file and rebuilding them in your head.
+
+So what is due is *marked* rather than filtered for.
+=C-u M-x org-convect-review= leaves the rest out, which is the shape of a
+monthly sitting rather than a look.
+
+** Two ways a rung asks
+
+They stay apart in the marking rather than in the layout, which puts the
+difference on every row instead of in a heading.
+
+Areas and goals have a cadence, so they say =due= or the date they come due.
+The rungs above have none — GTD reads them when direction or motivation has
+gone, which is a condition and not a date — so they say =no calendar= until
+something notices the condition, and =called= when something does.
+
+The count at the top says when nothing is watching at all, because "0 called"
+and "nobody is looking" mean opposite things.
+
+** What is shown beside a rung
+
+Altitude decides which rungs come due.  What you see while reviewing one is
+its *neighbourhood*: what it was raised for, what answers to it, what the
+clock says, and — from the overlay — what actually happened underneath it.  A
+standard read alone is a sentence; read beside the goal it serves and the
+hours that went to it, it is a judgement you can make.
+
+* Three views, three questions
+
+The board answers "what wants looking at".  Two more answer the questions it
+cannot.
+
+| Command | Question | Why the file cannot answer it |
+|---+---+---|
+| =org-convect-review= | what wants looking at | state, not text: due dates, clocked hours |
+| =org-convect-lineage-show= | what is this finally for | links point *up* only, so what serves a rung is never written near it |
+| =org-convect-history-show= | what has happened to this | scattered through the subtree in three shapes |
+
+All three draw rows that are live, and each can be called on the row under
+point in either of the others.
+
+** The thread
+
+#+begin_example
+  Thread through work.dev
+
+  Goals and Objectives
+    a team that runs itself   -- serves nothing above
+
+  Areas of Focus and Accountability
+    org.work
+    work.people
+    work.dev   <- from here
+#+end_example
+
+Everything linked to one rung, followed in both directions.  The board shows
+the ladder whole, which is roughly what the file already looks like; this
+shows one thread of it, which is not — reading the file tells you what a rung
+serves and never what serves it, so a thread has to be reassembled by hand
+from both ends.
+
+=serves nothing above= is the useful part.  A purpose is allowed to serve
+nothing, since there is nothing above it.  Anything lower that serves nothing
+is a thread that stops, and seeing where it stops is how you find out that a
+whole quarter of work connects to a goal and to nothing beyond it.
+
+** The history
+
+#+begin_example
+  Honesty
+
+    2026-09-29  reworded   Reworded from "こうたに愛情を伝える".  伝えること
+                           より読むことが先だった
+    2026-09-15  choice     away · 見積りの誤りを黙っていたくなった
+    2026-09-02  reviewed   まだ効いている。ただし部下相手だと崩れる
+#+end_example
+
+Three things you might want to look back over — what was concluded about a
+rung, when its wording changed, how the moments went — turn out to be one
+thing recorded three ways in the same place.  So they are read as one stream
+with the kind as a column, rather than as three views that would have to be
+read side by side to recover the order.
+
+A reword is told from a conclusion by the first line of its note, which this
+package writes.  That is text matching and a person writing the same words by
+hand would be mislabelled; the alternative is giving notes a property, which
+would make them addressable when the whole point of a note is that it is not.
+
+* Rewording a rung
+
+=M-x org-convect-reword= is how a rung changes its name.  Not
+=org-edit-headline=, and the reason is mechanical before it is anything else:
+rungs are pointed at *by name*, so renaming one breaks every =CONVECT_SERVES=
+that named it — silently, because a link that resolves to nothing shows up
+only in a report nobody has run yet.
+
+So it is one act with three parts: rewrite the heading, repoint everything
+that referred to it across every file, and write down what it used to say.
+
+#+begin_example
+  ** こうたの状態を読む
+  - Note taken on [2026-09-29 Tue 21:40] \\
+    Reworded from "こうたに愛情を伝える".  伝えることより読むことが先だった
+#+end_example
+
+That last part is why this is a command rather than advice.  A ladder that
+changes is not a ladder going wrong — understanding deepens, circumstances
+move, and a principle nobody has ever reworded is usually one nobody has
+looked at.  What is worth keeping is *that* it changed and why, and keeping it
+on the rung means the next review reads it without going through a version
+history to find it.
+
+Version control is still worth having and is not in competition with this.  It
+keeps fidelity; this keeps legibility, in the place the question gets asked.
+
 * Seeing what is missing
 
 =M-x org-convect-doctor= counts the ladder and lists its blanks.  It writes

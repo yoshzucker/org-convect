@@ -200,6 +200,50 @@ conduct rather than a rung.  This is where the evidence actually is."
 
 (add-hook 'org-convect-in-use-functions #'org-convect-act-in-use-p)
 
+(defun org-convect-act-review-evidence (entry)
+  "Lines about ENTRY's choice points, for the review board.
+
+What the ladder can show about a rung is what was declared: the standard, the
+links, the date it was last looked at.  What actually happened is somewhere
+else, and this is the half that carries it -- how often the moment came, and
+which way it went."
+  (let ((points (org-convect-act-choice-points entry)))
+    (when points
+      (let ((away (seq-count (lambda (p) (equal (plist-get p :move) "away"))
+                             points)))
+        (list (format "%d choice point%s, %d away"
+                      (length points) (if (= 1 (length points)) "" "s") away))))))
+
+(defun org-convect-act-signal (entry)
+  "Say why ENTRY is being called for, or nil.
+
+The rungs above the goals have no cadence, so without something like this they
+are never called for at all.  A run of moves away from a principle is the
+condition GTD describes and cannot detect: alignment has gone, and it went
+without anybody deciding to let it."
+  (let ((run (assq entry (org-convect-act-drift (list entry)))))
+    (and run
+         (format "%d away in a row -- alignment has gone" (length (cdr run))))))
+
+(defun org-convect-act-history (entry)
+  "ENTRY's choice points as history rows, (TIME choice TEXT).
+
+The half of a rung's past the ladder cannot see.  Its notes hold what was
+concluded about it; these hold what actually happened while it was in force."
+  (delq nil
+        (mapcar (lambda (point)
+                  (let ((time (org-convect-act--created point)))
+                    (and time
+                         (list time 'choice
+                               (format "%s · %s"
+                                       (or (plist-get point :move) "?")
+                                       (plist-get point :name))))))
+                (org-convect-act-choice-points entry))))
+
+(add-hook 'org-convect-history-functions #'org-convect-act-history)
+(add-hook 'org-convect-review-evidence-functions #'org-convect-act-review-evidence)
+(add-hook 'org-convect-signal-functions #'org-convect-act-signal)
+
 ;;;; Recording one
 
 (defcustom org-convect-act-target-horizons nil

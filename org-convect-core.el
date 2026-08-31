@@ -50,6 +50,7 @@
 ;;; Code:
 
 (require 'org)
+(require 'org-agenda)
 (require 'seq)
 (require 'cl-lib)
 
@@ -323,6 +324,106 @@ area is being kept up *for*."
                 (seq-some (lambda (e) (plist-get e :bare))
                           (org-convect-entries entries horizon)))
               (mapcar #'car org-convect-horizons)))
+
+;;;; What is due, and what sits next to it
+
+(defun org-convect-due (entries &optional now)
+  "Those of ENTRIES whose review cadence has run out at NOW.
+
+Only the rungs GTD puts a calendar on can appear here.  Vision and purpose
+never do, and their absence is the point rather than an oversight: what calls
+them is a condition, not a date, and `org-convect-called' is where that is
+asked."
+  (seq-filter (lambda (e) (org-convect-overdue-p e now)) entries))
+
+(defun org-convect-due-on (entry)
+  "When ENTRY next wants looking at, or nil when it has no calendar.
+
+Counted from the last look, or from the day it was written when there has not
+been one."
+  (let ((days (org-convect-cadence-days (plist-get entry :horizon)))
+        (since (or (plist-get entry :reviewed) (plist-get entry :created))))
+    (and days since (time-add since (days-to-time days)))))
+
+(defvar org-convect-signal-functions nil
+  "Predicates asked whether a rung is being called for, entry plist in hand.
+
+Each returns a string saying why, or nil.  The rungs above the goals have no
+cadence -- GTD reads them when direction or motivation has gone, which is a
+condition and not a date -- so something has to notice the condition.  Nothing
+in the ladder can: what a principle produces is conduct, and conduct is not a
+rung.  `org-convect-act' registers the one signal there is evidence for.
+
+With nothing registered this is empty, and the review board says so rather
+than pretending the upper rungs are fine.")
+
+(defun org-convect-called (entries)
+  "Those of ENTRIES a signal is calling for, as (ENTRY . WHY)."
+  (delq nil
+        (mapcar (lambda (e)
+                  (let ((why (run-hook-with-args-until-success
+                              'org-convect-signal-functions e)))
+                    (and why (cons e why))))
+                entries)))
+
+(defun org-convect-neighbourhood (entries entry)
+  "What ENTRY serves and what serves it, as (ABOVE . BELOW).
+
+Altitude decides which rungs come due; this decides what you are looking at
+while you review one.  A standard read on its own is a sentence; read beside
+the goal it was raised for and the areas that answer to it, it is a judgement
+you can actually make."
+  (let ((name (plist-get entry :name)))
+    (cons (seq-filter (lambda (e) (member (plist-get e :name)
+                                          (plist-get entry :serves)))
+                      entries)
+          (seq-filter (lambda (e) (member name (plist-get e :serves)))
+                      entries))))
+
+(defun org-convect-lineage (entries entry)
+  "Every rung connected to ENTRY, following the links in both directions.
+
+The board shows the ladder whole, which is what the file already looks like.
+This shows one thread of it: what ENTRY was raised for, what that in turn
+serves, and everything that answers to any of them.
+
+It is the view the file cannot give.  Links only ever point up, so reading the
+file tells you what a rung serves and never what serves it, and a thread has
+to be reassembled by hand from both ends."
+  ;; Walked by name rather than by object.  A rung's identity here is its name
+  ;; -- that is what `CONVECT_SERVES' stores and what the ladder resolves --
+  ;; and the entry handed in is often built fresh at point rather than taken
+  ;; from ENTRIES, so comparing the plists themselves puts the rung you
+  ;; started from into the thread twice.
+  (let ((index (org-convect-name-index entries))
+        (seen (make-hash-table :test 'equal))
+        (queue (list (plist-get entry :name)))
+        thread)
+    (puthash (plist-get entry :name) t seen)
+    (while queue
+      (let* ((name (pop queue))
+             (here (car (gethash name index))))
+        (when here
+          (push here thread)
+          (dolist (up (plist-get here :serves))
+            (unless (gethash up seen)
+              (puthash up t seen) (push up queue)))
+          (dolist (down entries)
+            (when (and (member name (plist-get down :serves))
+                       (not (gethash (plist-get down :name) seen)))
+              (puthash (plist-get down :name) t seen)
+              (push (plist-get down :name) queue))))))
+    thread))
+
+(defun org-convect-thread-ends-at-p (entry)
+  "Non-nil when nothing above ENTRY is named, though something could be.
+
+A purpose is allowed to serve nothing -- there is nothing above it.  Anything
+lower that serves nothing is a thread that stops, which is worth seeing when
+the question is what a piece of work is finally for."
+  (and (null (plist-get entry :serves))
+       (org-convect-above (plist-get entry :horizon))
+       t))
 
 ;;;; Findings
 
@@ -1300,6 +1401,136 @@ marking, and the rest is worth answering per rung rather than in bulk."
                ""))
     declared))
 
+;;;; What has happened to a rung
+
+(defvar org-convect-history-functions nil
+  "Functions contributing entries to a rung's history.
+
+Each is called with an entry plist and returns a list of (TIME KIND TEXT),
+KIND a symbol naming what sort of thing happened.  `org-convect-act' adds the
+choice points, which are the half of a rung's history the ladder never sees:
+what was written about it is in its notes, what actually happened is not.")
+
+(defun org-convect--notes ()
+  "Notes on the entry at point, as (TIME KIND TEXT), newest first.
+
+A note this package wrote when a rung was reworded says so in its first line,
+which is how the two kinds are told apart.  That is text matching and it can
+be fooled by someone writing the same words by hand -- but the words are
+machine-written, the failure is a mislabelled row, and the alternative is
+giving notes a property, which would make them addressable when the whole
+point of a note is that it is not."
+  (save-excursion
+    (org-back-to-heading t)
+    (let ((bound (save-excursion (outline-next-heading) (point)))
+          notes)
+      (org-end-of-meta-data)
+      (when (looking-at org-property-drawer-re)
+        (goto-char (match-end 0)))
+      (while (re-search-forward
+              (concat "^[ \t]*- .*?" org-ts-regexp-inactive) bound t)
+        (let* ((time (org-time-string-to-time (match-string 1)))
+               (start (progn (forward-line 1) (point)))
+               (end (save-excursion
+                      (if (re-search-forward "^[ \t]*- \\|\\'" bound t)
+                          (match-beginning 0)
+                        bound)))
+               (text (string-trim (buffer-substring-no-properties
+                                   start (min end bound)))))
+          (push (list time
+                      (if (string-match-p "\\`Reworded from" text) 'reworded 'reviewed)
+                      text)
+                notes)))
+      notes)))
+
+(defun org-convect-history (entry)
+  "Everything that has happened to ENTRY, newest first, as (TIME KIND TEXT).
+
+Three things you might want to look back over -- what was concluded about a
+rung, when its wording changed, and how the moments went -- turn out to be one
+thing recorded three ways in the same place.  So they are read as one stream
+and the kind is a column, rather than as three views that would have to be
+read side by side to see an order."
+  (sort (append (org-with-point-at (plist-get entry :marker) (org-convect--notes))
+                (apply #'append
+                       (mapcar (lambda (f) (funcall f entry))
+                               org-convect-history-functions)))
+        (lambda (a b) (time-less-p (car b) (car a)))))
+
+;;;; Changing a rung
+
+(defun org-convect--note (text)
+  "Write TEXT as a dated note on the entry at point.
+
+Written straight rather than through `org-add-log-setup': that machinery sends
+the note wherever `org-log-into-drawer' happens to point, and its value belongs
+to whatever was logged last.  A note this package writes should land somewhere
+it can predict.  The shape is Org's own, so it reads as any other note and
+`org-convect--last-reviewed' finds its timestamp either way."
+  (org-back-to-heading t)
+  (org-end-of-meta-data)
+  (when (looking-at org-property-drawer-re)
+    (goto-char (match-end 0)))
+  (unless (bolp) (insert "\n"))
+  (insert (format "- Note taken on %s \\\\\n  %s\n"
+                  (format-time-string (org-time-stamp-format t t))
+                  text)))
+
+(defun org-convect--rename-references (old new)
+  "Point every `CONVECT_SERVES\\=' naming OLD at NEW instead, in every file.
+Returns how many rungs were changed."
+  (let ((changed 0))
+    (dolist (entry (org-convect-scan))
+      (let ((serves (plist-get entry :serves)))
+        (when (member old serves)
+          (org-with-point-at (plist-get entry :marker)
+            (org-entry-put nil "CONVECT_SERVES"
+                           (string-join
+                            (mapcar (lambda (n) (if (equal n old) new n)) serves)
+                            (concat org-convect-serves-separator " ")))
+            (save-buffer))
+          (cl-incf changed))))
+    changed))
+
+;;;###autoload
+(defun org-convect-reword (&optional new reason)
+  "Rename the rung at point to NEW, saying REASON, and follow the references.
+
+Rewording is not a text edit.  Rungs are pointed at by name, so changing one
+breaks every `CONVECT_SERVES\\=' that named it -- silently, because a link that
+resolves to nothing is only visible in a report nobody has run yet.  This does
+the three things that make up the one act: rewrites the heading, repoints
+everything that referred to it, and writes down what it used to say.
+
+The last is the reason this is a command and not \\[org-edit-headline].  A
+ladder that changes is not a ladder going wrong -- understanding deepens and
+circumstances move, and a principle that never once got reworded is usually one
+nobody has looked at.  What is worth keeping is *that* it changed and why, and
+keeping it here means the next review reads it without going through a version
+history to find it."
+  (interactive)
+  (let* ((rung (or (org-convect--rung-at-point) (user-error "Not on a rung")))
+         (old (plist-get rung :name))
+         (new (or new (read-string "Reword to: " old)))
+         (reason (or reason (read-string (format "Why, from \"%s\": " old)))))
+    (when (or (string-empty-p (string-trim new)) (equal new old))
+      (user-error "Unchanged"))
+    (let ((new (string-trim new)))
+      (org-with-point-at (plist-get rung :marker)
+        (org-back-to-heading t)
+        (org-edit-headline new)
+        (org-convect--note
+         (if (org-string-nw-p reason)
+             (format "Reworded from \"%s\".  %s" old reason)
+           (format "Reworded from \"%s\"." old)))
+        (save-buffer))
+      (let ((followed (org-convect--rename-references old new)))
+        (message "Reworded%s"
+                 (if (zerop followed) ""
+                   (format ", and repointed %d rung%s at it"
+                           followed (if (= 1 followed) "" "s"))))
+        followed))))
+
 ;;;; What the ladder is missing
 
 (defconst org-convect-doctor-buffer "*Horizons*"
@@ -1377,6 +1608,228 @@ that you should be choosing to leave them, rather than not noticing."
         (unless findings (insert "\nNothing missing.\n"))
         (goto-char (point-min))
         (special-mode)))
+    (pop-to-buffer buffer)))
+
+;;;; The review
+
+(defconst org-convect-review-buffer "*Horizons Review*"
+  "Where `org-convect-review' draws.")
+
+(defvar org-convect-review-evidence-functions nil
+  "Functions asked what to show under a rung on the review board.
+
+Each is called with an entry plist and returns a list of strings, or nil.  The
+board shows what the ladder can see by itself -- when it was last looked at,
+what is written under it, what it serves; a layer above adds what it can see
+and the ladder cannot.  `org-convect-act' adds the choice points.
+
+Remove that feature and the lines go with it.  The board still stands.")
+
+(defun org-convect--review-line (text &optional marker)
+  "TEXT as a board row, acting on MARKER when there is one.
+
+The marker is what makes the row a row rather than a picture of one: with it,
+Org's agenda keys work here, so `\\[org-agenda-add-note]' writes the
+conclusion onto the actual rung and `\\[org-agenda-switch-to]' goes to it.
+Without it the board looks identical and does nothing, which is the failure
+worth guarding against."
+  (if (not (markerp marker))
+      text
+    (propertize text
+                'org-marker marker
+                'org-hd-marker marker
+                'org-agenda-type 'agenda
+                'help-echo "z add note · RET go to it")))
+
+(defun org-convect--review-evidence (entry entries scan)
+  "Lines of evidence to show under ENTRY on the board."
+  (let* ((body (org-with-point-at (plist-get entry :marker)
+                 (org-convect--body)))
+         (first (car (split-string body "\n" t)))
+         (near (org-convect-neighbourhood entries entry))
+         (hours (cdr (assoc (plist-get entry :name)
+                            (plist-get scan :rows)))))
+    (append
+     (and first (list (truncate-string-to-width (string-trim first) 68 nil nil t)))
+     (and hours (list (format "%s clocked" (org-duration-from-minutes hours))))
+     (and (car near)
+          (list (concat "serves "
+                        (mapconcat (lambda (e) (plist-get e :name))
+                                   (car near) ", "))))
+     (and (cdr near)
+          (list (format "%d below point at it" (length (cdr near)))))
+     (apply #'append
+            (mapcar (lambda (f) (funcall f entry))
+                    org-convect-review-evidence-functions)))))
+
+(defun org-convect--review-status (entry now called)
+  "How ENTRY stands at NOW, as a short phrase for its row.
+
+CALLED is the alist `org-convect-called' returned, so a rung with no calendar
+can still say something -- which is the only way the top of the ladder ever
+speaks up."
+  (let ((why (cdr (assq entry called)))
+        (due-on (org-convect-due-on entry)))
+    (cond (why (concat "called -- " why))
+          ((org-convect-overdue-p entry now) "due")
+          (due-on (concat "due " (format-time-string "%Y-%m-%d" due-on)))
+          ((org-convect-cadence-days (plist-get entry :horizon)) "due -- never looked at")
+          (t "no calendar"))))
+
+;;;###autoload
+(defun org-convect-review (&optional only-wanting now)
+  "Show the ladder, with what wants looking at marked.
+
+The whole thing, highest first, the way the file reads.  Reviewing is not
+something a date gives permission for -- a cadence says how often to come back,
+not that looking is forbidden until then -- and the relationships are worth
+seeing on any day, which is otherwise only possible by reading the file and
+reconstructing them in your head.
+
+So what is due is marked rather than filtered for.  With ONLY-WANTING
+\\(\\[universal-argument]) the rest is left out, which is the shape of a
+monthly sitting rather than a look.
+
+The two ways a rung asks for attention stay visible in the marking.  Areas and
+goals have a cadence and come due on a date.  The rungs above have none -- GTD
+reads them when direction or motivation has gone, which is a condition -- so
+they say \"no calendar\" until something notices the condition, and \"called\"
+when something does.
+
+Rows are live: \\[org-agenda-add-note] writes your conclusion onto the rung,
+\\[org-agenda-switch-to] goes to it when the conclusion is that the rung
+itself should change."
+  (interactive "P")
+  (let* ((now (or now (current-time)))
+         (entries (org-convect-scan))
+         (called (org-convect-called entries))
+         (due (org-convect-due entries now))
+         (scan (org-convect-clock-rows))
+         ;; Wide enough for the widest name there is.  A fixed column would
+         ;; cut a principle in half, and a principle read in half is a
+         ;; different principle.
+         (column (apply #'max 24 (mapcar (lambda (e)
+                                           (string-width (plist-get e :name)))
+                                         entries)))
+         (buffer (get-buffer-create org-convect-review-buffer)))
+    (with-current-buffer buffer
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (unless (derived-mode-p 'org-agenda-mode) (org-agenda-mode))
+        (setq-local org-agenda-type 'agenda)
+        (insert (format "Horizons Review%s%s\n"
+                        (make-string 38 ?\s) (format-time-string "%Y-%m-%d" now)))
+        (insert (format "  %d due, %d called%s\n\n"
+                        (length due) (length called)
+                        (if org-convect-signal-functions ""
+                          " (nothing is watching the rungs with no calendar)")))
+        (dolist (horizon (reverse (mapcar #'car org-convect-horizons)))
+          (let ((at (seq-filter
+                     (lambda (e)
+                       (or (not only-wanting)
+                           (memq e due) (assq e called)))
+                     (org-convect-entries entries horizon))))
+            (when (or at (not only-wanting))
+              (insert (org-convect-horizon-name horizon) "\n")
+              (if (null at)
+                  (insert "  nothing\n")
+                (dolist (entry at)
+                  (insert (org-convect--review-line
+                           (format "  %s%s  %s\n"
+                                   (plist-get entry :name)
+                                   (make-string
+                                    (max 0 (- column
+                                              (string-width (plist-get entry :name))))
+                                    ?\s)
+                                   (org-convect--review-status entry now called))
+                           (plist-get entry :marker)))
+                  (dolist (line (org-convect--review-evidence entry entries scan))
+                    (insert (format "      %s\n" line)))))
+              (insert "\n"))))
+        (insert "  z  write the conclusion here      RET  go to it\n")
+        (when (not only-wanting)
+          (insert "  C-u M-x org-convect-review  shows only what wants looking at\n"))
+        (goto-char (point-min))))
+    (pop-to-buffer buffer)))
+
+;;;; One thread, and one rung's past
+
+(defun org-convect--pick (entries prompt)
+  "The rung at point when there is one, otherwise one read with PROMPT."
+  (or (let ((marker (and (derived-mode-p 'org-agenda-mode)
+                         (org-get-at-bol 'org-hd-marker))))
+        (and marker
+             (seq-find (lambda (e) (equal (marker-position (plist-get e :marker))
+                                          (marker-position marker)))
+                       entries)))
+      (let ((here (org-convect--rung-at-point)))
+        (and here (seq-find (lambda (e) (equal (plist-get e :name)
+                                               (plist-get here :name)))
+                            entries)))
+      (org-convect-read-entry prompt entries)))
+
+;;;###autoload
+(defun org-convect-lineage-show ()
+  "Show one thread of the ladder: the rung at point and everything linked to it.
+
+Reached from the review board, from the file, or by name.  The board answers
+\"what wants looking at\"; this answers \"what is this finally for\", which is
+a different question and the one the file cannot be read for -- links point up
+only, so what serves a rung is never written near it."
+  (interactive)
+  (let* ((entries (org-convect-scan))
+         (entry (org-convect--pick entries "Thread through: "))
+         (thread (org-convect-lineage entries entry))
+         (buffer (get-buffer-create "*Horizons Thread*")))
+    (with-current-buffer buffer
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (unless (derived-mode-p 'org-agenda-mode) (org-agenda-mode))
+        (setq-local org-agenda-type 'agenda)
+        (insert (format "Thread through %s\n\n" (plist-get entry :name)))
+        (dolist (horizon (reverse (mapcar #'car org-convect-horizons)))
+          (let ((at (seq-filter (lambda (e) (eq (plist-get e :horizon) horizon))
+                                thread)))
+            (when at
+              (insert (org-convect-horizon-name horizon) "\n")
+              (dolist (e at)
+                (insert (org-convect--review-line
+                         (format "  %s%s%s\n" (plist-get e :name)
+                                 (if (equal (plist-get e :name)
+                                            (plist-get entry :name))
+                                     "   <- from here" "")
+                                 (if (org-convect-thread-ends-at-p e)
+                                     "   -- serves nothing above" ""))
+                         (plist-get e :marker))))
+              (insert "\n"))))
+        (goto-char (point-min))))
+    (pop-to-buffer buffer)))
+
+;;;###autoload
+(defun org-convect-history-show ()
+  "Show what has happened to the rung at point, newest first."
+  (interactive)
+  (let* ((entries (org-convect-scan))
+         (entry (org-convect--pick entries "History of: "))
+         (history (org-convect-history entry))
+         (buffer (get-buffer-create "*Horizons History*")))
+    (with-current-buffer buffer
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (unless (derived-mode-p 'org-agenda-mode) (org-agenda-mode))
+        (setq-local org-agenda-type 'agenda)
+        (insert (org-convect--review-line
+                 (format "%s\n\n" (plist-get entry :name))
+                 (plist-get entry :marker)))
+        (if (null history)
+            (insert "  nothing yet\n")
+          (pcase-dolist (`(,time ,kind ,text) history)
+            (insert (format "  %s  %-9s %s\n"
+                            (format-time-string "%Y-%m-%d" time) kind
+                            (car (split-string (string-trim text) "\n" t))))
+            (dolist (line (cdr (split-string (string-trim text) "\n" t)))
+              (insert (format "  %22s%s\n" "" (string-trim line))))))
+        (goto-char (point-min))))
     (pop-to-buffer buffer)))
 
 (provide 'org-convect-core)

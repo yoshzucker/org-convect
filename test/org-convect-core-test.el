@@ -1163,6 +1163,19 @@ heading, so the file cannot show its own gaps."
         (should (string-match-p "work.dev" report))
         (should-not (string-match-p "family.father$" report))))))
 
+(ert-deftest org-convect-test-doctor-counts-highest-first ()
+  "The report reads down the way the file does.  Counting up would put the
+areas first, which is the order they get *written* in and not the order
+anything is read in."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (save-window-excursion (org-convect-doctor))
+    (with-current-buffer org-convect-doctor-buffer
+      (let ((text (buffer-string)))
+        (should (< (string-match "Purpose and Principles" text)
+                   (string-match "Goals and Objectives" text)))
+        (should (< (string-match "Goals and Objectives" text)
+                   (string-match "Areas of Focus" text)))))))
+
 (ert-deftest org-convect-test-doctor-writes-nothing ()
   "It is a report.  Running it must not change the ladder it is reporting on."
   (org-convect-test--with-ladder (org-convect--build-skeleton)
@@ -1289,6 +1302,342 @@ what it rules out
                                           findings)
                                 :detail)))))))
 
+;;;; The review
+
+(defconst org-convect-test--ready "\
+* Areas of Focus and Accountability
+:PROPERTIES:
+:CONVECT_SECTION: area
+:END:
+** engineering
+:PROPERTIES:
+:CONVECT_HORIZON: area
+:CONVECT_SERVES: a team that runs itself
+:CREATED: [2026-01-05 Mon]
+:END:
+reviews come back the same day
+** admin
+:PROPERTIES:
+:CONVECT_HORIZON: area
+:CREATED: [2026-08-30 Sun]
+:END:
+the expenses are filed by the tenth
+- Note taken on [2026-08-30 Sun 10:00] \\\\
+  still mine
+* Goals and Objectives
+** a team that runs itself
+:PROPERTIES:
+:CONVECT_HORIZON: goal
+:CONVECT_BY: [2030-12-31]
+:CREATED: [2026-08-30 Sun]
+:END:
+the rota has someone else on it
+* Purpose and Principles
+** Honesty
+:PROPERTIES:
+:CONVECT_HORIZON: purpose
+:CREATED: [2020-01-01 Wed]
+:END:
+I do not let a number stand that I know is wrong
+"
+  "A ladder with one rung long overdue and the rest recently seen.")
+
+(ert-deftest org-convect-test-only-the-overdue-are-due ()
+  "The board is a list of what wants looking at, so a rung looked at last week
+has no business on it."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (let* ((entries (org-convect-scan))
+           (due (org-convect-due entries (org-convect-test--day 2026 9 5))))
+      (should (equal (org-convect-test--names due) '("engineering"))))))
+
+(ert-deftest org-convect-test-the-upper-rungs-never-come-due ()
+  "Honesty has been there since 2020 and is not overdue, because GTD puts no
+calendar on it.  If it ever appears on the board it will be because something
+noticed a condition, which is a different section."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (let ((due (org-convect-due (org-convect-scan)
+                                (org-convect-test--day 2030 1 1))))
+      (should-not (member "Honesty" (org-convect-test--names due))))))
+
+(ert-deftest org-convect-test-a-signal-can-call-a-rung-with-no-calendar ()
+  "The only way the top of the ladder is ever reached."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (let* ((entries (org-convect-scan))
+           (org-convect-signal-functions
+            (list (lambda (e) (and (equal (plist-get e :name) "Honesty")
+                                   "3 away in a row")))))
+      (should (equal (mapcar (lambda (c) (plist-get (car c) :name))
+                             (org-convect-called entries))
+                     '("Honesty")))
+      (should (equal (cdr (car (org-convect-called entries))) "3 away in a row")))))
+
+(ert-deftest org-convect-test-nothing-is-called-without-a-signal ()
+  (org-convect-test--with-ladder org-convect-test--ready
+    (let ((org-convect-signal-functions nil))
+      (should-not (org-convect-called (org-convect-scan))))))
+
+(ert-deftest org-convect-test-the-neighbourhood-runs-both-ways ()
+  "What you are looking at while reviewing one rung: what it was raised for,
+and what answers to it."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (let* ((entries (org-convect-scan))
+           (area (org-convect-test--entry entries "engineering"))
+           (goal (org-convect-test--entry entries "a team that runs itself")))
+      (should (equal (org-convect-test--names
+                      (car (org-convect-neighbourhood entries area)))
+                     '("a team that runs itself")))
+      (should-not (cdr (org-convect-neighbourhood entries area)))
+      (should (equal (org-convect-test--names
+                      (cdr (org-convect-neighbourhood entries goal)))
+                     '("engineering")))
+      (should-not (car (org-convect-neighbourhood entries goal))))))
+
+(ert-deftest org-convect-test-board-rows-are-live ()
+  "The marker is what makes a row a row rather than a picture of one.  Without
+it the board looks identical and every agenda key on it does nothing, which is
+the failure worth guarding against."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (save-window-excursion
+      (org-convect-review nil (org-convect-test--day 2026 9 5)))
+    (with-current-buffer org-convect-review-buffer
+      (goto-char (point-min))
+      (should (re-search-forward "engineering" nil t))
+      (should (markerp (get-text-property (match-beginning 0) 'org-hd-marker)))
+      (should (derived-mode-p 'org-agenda-mode)))))
+
+(ert-deftest org-convect-test-board-shows-the-whole-ladder ()
+  "Reviewing is not something a date gives permission for, and the
+relationships are worth seeing on any day -- which is otherwise only possible
+by reading the file and rebuilding them in your head.  So the board shows
+everything and marks what wants attention."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (save-window-excursion
+      (org-convect-review nil (org-convect-test--day 2026 9 5)))
+    (with-current-buffer org-convect-review-buffer
+      (let ((text (buffer-string)))
+        ;; the overdue one and the recently-seen one are both here
+        (should (string-match-p "engineering" text))
+        (should (string-match-p "admin" text))
+        ;; and so is everything with no calendar at all
+        (should (string-match-p "Honesty" text))
+        ;; highest first, the way the file reads
+        (should (< (string-match "Purpose and Principles" text)
+                   (string-match "Areas of Focus" text)))))))
+
+(ert-deftest org-convect-test-board-does-not-cut-a-name ()
+  "A principle read in half is a different principle, so the name column is as
+wide as the widest name there is rather than a number picked in advance."
+  (org-convect-test--with-ladder "\
+* a principle stated at a length nobody would have guessed in advance
+:PROPERTIES:
+:CONVECT_HORIZON: purpose
+:END:
+I do not let a number stand that I know is wrong
+"
+    (save-window-excursion
+      (org-convect-review nil (org-convect-test--day 2026 9 5)))
+    (with-current-buffer org-convect-review-buffer
+      (should (string-match-p
+               "a principle stated at a length nobody would have guessed in advance"
+               (buffer-string))))))
+
+(ert-deftest org-convect-test-board-marks-rather-than-filters ()
+  "What is due is a word on the row.  The two ways a rung asks for attention
+stay apart in the marking: a cadence gives a date, and the rungs above have
+none, so they say so until something notices a condition."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (let ((org-convect-signal-functions
+           (list (lambda (e) (and (equal (plist-get e :name) "Honesty")
+                                  "3 away in a row")))))
+      (save-window-excursion
+        (org-convect-review nil (org-convect-test--day 2026 9 5)))
+      (with-current-buffer org-convect-review-buffer
+        (goto-char (point-min))
+        (should (re-search-forward "^  engineering +due$" nil t))
+        (goto-char (point-min))
+        (should (re-search-forward "^  admin +due 2026-09-29$" nil t))
+        (goto-char (point-min))
+        (should (re-search-forward "^  Honesty +called -- 3 away in a row$" nil t))
+        (goto-char (point-min))
+        (should (re-search-forward "1 due, 1 called" nil t))))))
+
+(ert-deftest org-convect-test-board-can-be-narrowed-to-what-wants-attention ()
+  "The shape of a monthly sitting rather than a look."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (save-window-excursion
+      (org-convect-review t (org-convect-test--day 2026 9 5)))
+    (with-current-buffer org-convect-review-buffer
+      (let ((text (buffer-string)))
+        (should (string-match-p "engineering" text))
+        (should-not (string-match-p "admin" text))
+        (should-not (string-match-p "Honesty" text))))))
+
+(ert-deftest org-convect-test-board-says-when-nothing-is-watching ()
+  "With no signal registered the upper rungs are never called for at all, and
+saying \"nothing\" would read as \"they are fine\"."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (let ((org-convect-signal-functions nil))
+      (save-window-excursion
+        (org-convect-review nil (org-convect-test--day 2026 9 5)))
+      (with-current-buffer org-convect-review-buffer
+        (should (string-match-p "nothing is watching" (buffer-string)))))))
+
+(ert-deftest org-convect-test-board-shows-evidence-a-layer-above-supplies ()
+  "The ladder shows what was declared; a layer above adds what happened."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (let ((org-convect-review-evidence-functions
+           (list (lambda (_e) (list "12 choice points, 5 away")))))
+      (save-window-excursion
+        (org-convect-review nil (org-convect-test--day 2026 9 5)))
+      (with-current-buffer org-convect-review-buffer
+        (should (string-match-p "12 choice points, 5 away" (buffer-string)))))))
+
+;;;; One thread of the ladder
+
+(ert-deftest org-convect-test-a-thread-runs-both-ways ()
+  "The view the file cannot give: links point up only, so reading the file
+tells you what a rung serves and never what serves it."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (let* ((entries (org-convect-scan))
+           (goal (org-convect-test--entry entries "a team that runs itself"))
+           (thread (org-convect-lineage entries goal)))
+      (should (equal (org-convect-test--names thread)
+                     '("a team that runs itself" "engineering"))))))
+
+(ert-deftest org-convect-test-a-thread-is-walked-by-name ()
+  "A rung handed in from somewhere else is the same rung.  Walking by object
+puts the one you started from into the thread twice, which is what happens
+when the entry was built fresh at point rather than taken from the scan."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (let* ((entries (org-convect-scan))
+           ;; a copy, as `org-convect--rung-at-point' would produce
+           (fresh (copy-sequence
+                   (org-convect-test--entry entries "engineering")))
+           (thread (org-convect-lineage entries fresh)))
+      (should (= 2 (length thread)))
+      (should (equal (org-convect-test--names thread)
+                     '("a team that runs itself" "engineering"))))))
+
+(ert-deftest org-convect-test-a-thread-that-stops-says-so ()
+  "What a piece of work is finally for, and where the answer runs out.  A
+purpose is allowed to serve nothing; anything lower that does is a thread that
+stops."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (let* ((entries (org-convect-scan))
+           (goal (org-convect-test--entry entries "a team that runs itself"))
+           (area (org-convect-test--entry entries "engineering"))
+           (honesty (org-convect-test--entry entries "Honesty")))
+      (should (org-convect-thread-ends-at-p goal))
+      (should-not (org-convect-thread-ends-at-p area))
+      (should-not (org-convect-thread-ends-at-p honesty)))))
+
+;;;; What has happened to a rung
+
+(ert-deftest org-convect-test-history-is-one-stream ()
+  "Three things you might look back over turn out to be one thing recorded
+three ways in the same place, so they are read as one stream with the kind as
+a column."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (with-current-buffer (find-file-noselect (car org-convect-files))
+      (goto-char (point-min))
+      (re-search-forward "^\\*\\* Honesty")
+      (org-convect-reword "Saying the number" "too broad to act on"))
+    (let* ((entry (org-convect-test--entry (org-convect-scan) "Saying the number"))
+           (org-convect-history-functions
+            (list (lambda (_e) (list (list (org-convect-test--day 2020 6 1)
+                                           'choice "away · kept quiet")))))
+           (history (org-convect-history entry)))
+      (should (equal (mapcar #'cadr history) '(reworded choice)))
+      (should (string-match-p "Reworded from \"Honesty\"" (nth 2 (car history)))))))
+
+(ert-deftest org-convect-test-history-tells-a-reword-from-a-conclusion ()
+  (org-convect-test--with-ladder org-convect-test--ready
+    (let ((entry (org-convect-test--entry (org-convect-scan) "admin")))
+      ;; the fixture's admin carries an ordinary note
+      (should (equal (mapcar #'cadr (org-convect-history entry)) '(reviewed))))))
+
+(ert-deftest org-convect-test-history-is-newest-first ()
+  (org-convect-test--with-ladder "\
+* Honesty
+:PROPERTIES:
+:CONVECT_HORIZON: purpose
+:END:
+I do not let a number stand that I know is wrong
+- Note taken on [2026-03-01 Sun 09:00] \\\\
+  the older one
+- Note taken on [2026-07-01 Wed 09:00] \\\\
+  the newer one
+"
+    (let ((history (org-convect-history
+                    (car (org-convect-scan)))))
+      (should (string-match-p "newer" (nth 2 (car history))))
+      (should (string-match-p "older" (nth 2 (cadr history)))))))
+
+;;;; Rewording a rung
+
+(ert-deftest org-convect-test-reword-follows-the-references ()
+  "Rungs are pointed at by name, so a reword breaks every link that named the
+old one -- silently, because a link resolving to nothing shows up only in a
+report nobody has run yet."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (with-current-buffer (find-file-noselect (car org-convect-files))
+      (goto-char (point-min))
+      (re-search-forward "^\\*\\* a team that runs itself")
+      (org-convect-reword "a team that carries itself" "carrying is the word"))
+    (let* ((entries (org-convect-scan))
+           (area (org-convect-test--entry entries "engineering")))
+      (should (org-convect-test--entry entries "a team that carries itself"))
+      (should-not (org-convect-test--entry entries "a team that runs itself"))
+      (should (equal (plist-get area :serves) '("a team that carries itself")))
+      (should-not (seq-find (lambda (f) (eq (plist-get f :kind) 'unresolved-serves))
+                            (org-convect-findings entries))))))
+
+(ert-deftest org-convect-test-reword-keeps-what-it-used-to-say ()
+  "A ladder that changes is not a ladder going wrong; what is worth keeping is
+that it changed and why, next to the rung where the next review will read it."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (with-current-buffer (find-file-noselect (car org-convect-files))
+      (goto-char (point-min))
+      (re-search-forward "^\\*\\* Honesty")
+      (org-convect-reword "Saying the number" "honesty was too broad to act on")
+      (let ((body (buffer-string)))
+        (should (string-match-p "Reworded from \"Honesty\"" body))
+        (should (string-match-p "honesty was too broad to act on" body))))
+    ;; and the note counts as having looked at it
+    (should (plist-get (org-convect-test--entry (org-convect-scan) "Saying the number")
+                       :reviewed))))
+
+(ert-deftest org-convect-test-reword-reaches-into-other-files ()
+  "The ladder may be spread over several files, and a reference in one of them
+is exactly as broken as a reference beside the rung."
+  (let* ((other (make-temp-file "org-convect-other" nil ".org" "\
+* engineering
+:PROPERTIES:
+:CONVECT_HORIZON: area
+:CONVECT_SERVES: a team that runs itself
+:END:
+reviews come back the same day
+")))
+    (unwind-protect
+        (org-convect-test--with-ladder "\
+* a team that runs itself
+:PROPERTIES:
+:CONVECT_HORIZON: goal
+:CONVECT_BY: [2030-12-31]
+:END:
+the rota has someone else on it
+"
+          (let ((org-convect-files (list (car org-convect-files) other)))
+            (with-current-buffer (find-file-noselect (car org-convect-files))
+              (goto-char (point-min))
+              (re-search-forward "^\\* a team that runs itself")
+              (org-convect-reword "a team that carries itself" "clearer"))
+            (should (equal (plist-get (org-convect-test--entry (org-convect-scan)
+                                                              "engineering")
+                                      :serves)
+                           '("a team that carries itself")))))
+      (ignore-errors (delete-file other)))))
+
 ;;;; Not quoting the source
 
 (defconst org-convect-test--not-ours
@@ -1323,14 +1672,24 @@ eroding one convenient sentence at a time.")
 
 ;;;; The seam
 
-(ert-deftest org-convect-test-core-names-no-act-property ()
-  "The core never reads an `ACT_' property.  This is what makes the overlay
-removable: the ladder cannot have grown a quiet dependency on it."
+(ert-deftest org-convect-test-core-does-not-reach-into-the-overlay ()
+  "What makes the overlay removable: the ladder cannot have grown a quiet
+dependency on it.
+
+Two ways it could.  It could read an `ACT_' property, which is the obvious
+one.  Or it could *call* the overlay -- which the property check misses
+entirely, because a function name is not a property string, and which is the
+easier mistake to make when the overlay already has the answer you want.
+
+Mentioning it in a docstring is fine and often useful, so what is banned is a
+call: an open paren in front of the name."
   (with-temp-buffer
     (insert-file-contents
      (expand-file-name "../org-convect-core.el" org-convect-test--dir))
     (goto-char (point-min))
-    (should-not (re-search-forward "\"ACT_" nil t))))
+    (should-not (re-search-forward "\"ACT_" nil t))
+    (goto-char (point-min))
+    (should-not (re-search-forward "(org-convect-act-" nil t))))
 
 (ert-deftest org-convect-test-ladder-stands-without-the-overlay ()
   "Loaded on its own, this file exercises a ladder with no ACT anywhere in
