@@ -1606,6 +1606,55 @@ stops."
       (should-not (org-convect-thread-ends-at-p area))
       (should-not (org-convect-thread-ends-at-p honesty)))))
 
+(ert-deftest org-convect-test-narrowing-shows-more-not-less ()
+  "Focusing on a handful of rungs and then saying less about each of them
+would be narrowing for nothing.  The board carries every rung and can afford a
+glimpse; the thread has the room for the whole standard."
+  (org-convect-test--with-ladder "\
+* engineering
+:PROPERTIES:
+:CONVECT_HORIZON: area
+:CONVECT_SERVES: a team that runs itself
+:CREATED: [2026-01-05 Mon]
+:END:
+reviews come back the same day
+no branch is older than a week
+the build is green when I leave
+* a team that runs itself
+:PROPERTIES:
+:CONVECT_HORIZON: goal
+:CONVECT_BY: [2030-12-31]
+:END:
+the rota has someone else on it
+"
+    (let* ((entries (org-convect-scan))
+           (area (org-convect-test--entry entries "engineering")))
+      (save-window-excursion
+        (org-convect-review nil (org-convect-test--day 2026 9 5)))
+      (with-current-buffer org-convect-review-buffer
+        ;; the board shows the first line only
+        (should (string-match-p "reviews come back the same day" (buffer-string)))
+        (should-not (string-match-p "the build is green" (buffer-string))))
+      (cl-letf (((symbol-function 'org-convect--pick) (lambda (&rest _) area)))
+        (save-window-excursion (org-convect-lineage-show)))
+      (with-current-buffer "*Horizons Thread*"
+        (let ((text (buffer-string)))
+          ;; the thread shows all of it, and the state the board showed
+          (should (string-match-p "reviews come back the same day" text))
+          (should (string-match-p "no branch is older than a week" text))
+          (should (string-match-p "the build is green" text))
+          (should (string-match-p "serves a team that runs itself" text))
+          (should (string-match-p "due" text)))))))
+
+(ert-deftest org-convect-test-history-says-what-it-says-now ()
+  "A history read without the present tense of the thing is a list of edits."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (let ((entry (org-convect-test--entry (org-convect-scan) "Honesty")))
+      (cl-letf (((symbol-function 'org-convect--pick) (lambda (&rest _) entry)))
+        (save-window-excursion (org-convect-history-show)))
+      (with-current-buffer "*Horizons History*"
+        (should (string-match-p "I do not let a number stand" (buffer-string)))))))
+
 ;;;; What has happened to a rung
 
 (ert-deftest org-convect-test-history-is-one-stream ()

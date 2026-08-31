@@ -463,6 +463,13 @@ cannot.
 All three draw rows that are live, and each can be called on the row under
 point in either of the others.
 
+They differ in how much they say per rung, and the direction is deliberate:
+*narrowing shows more, not less*.  The board carries every rung, so it can
+only afford a glimpse of each — the first line of the standard.  The thread
+has narrowed to a handful and shows the standard whole, along with everything
+the board was showing.  A view that focused and then said less about what it
+focused on would be narrowing for nothing.
+
 ** Following the cursor
 
 On the board, moving the cursor lights up every rung linked to the one you are
