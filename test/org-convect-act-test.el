@@ -132,6 +132,42 @@ under it is the most-used thing in the file, and the links cannot show it."
                         (org-convect-test--kinds
                          (org-convect-findings entries) "Honesty"))))))
 
+(ert-deftest org-convect-test-the-overlay-supplies-the-only-signal ()
+  "Without it the rungs above the goals are never called for at all: they have
+no cadence, and nothing in the ladder can see the condition that calls them."
+  (should (memq #'org-convect-act-signal org-convect-signal-functions))
+  (should (memq #'org-convect-act-review-evidence
+                org-convect-review-evidence-functions))
+  (org-convect-test--with-ladder org-convect-test--ladder
+    (let* ((entries (org-convect-scan))
+           (called (mapcar (lambda (c) (plist-get (car c) :name))
+                           (org-convect-called entries))))
+      ;; Honesty has three aways in a row in the fixture; Craft does not
+      (should (member "Honesty" called))
+      (should-not (member "Craft" called)))))
+
+(ert-deftest org-convect-test-the-overlay-counts-what-happened ()
+  "The ladder shows what was declared about a rung.  This is the half that
+says what actually happened under it."
+  (org-convect-test--with-ladder org-convect-test--ladder
+    (let* ((entries (org-convect-scan))
+           (honesty (org-convect-test--entry entries "Honesty")))
+      (should (equal (org-convect-act-review-evidence honesty)
+                     '("3 choice points, 3 away")))
+      (should-not (org-convect-act-review-evidence
+                   (org-convect-test--entry entries "admin"))))))
+
+(ert-deftest org-convect-test-the-overlay-fills-in-the-other-half ()
+  "A rung's notes hold what was concluded about it; the choice points hold
+what happened while it was in force, and the ladder cannot see those."
+  (should (memq #'org-convect-act-history org-convect-history-functions))
+  (org-convect-test--with-ladder org-convect-test--ladder
+    (let* ((entry (org-convect-test--entry (org-convect-scan) "Honesty"))
+           (history (org-convect-history entry)))
+      (should (= 3 (length history)))
+      (should (equal (mapcar #'cadr history) '(choice choice choice)))
+      (should (string-match-p "away" (nth 2 (car history)))))))
+
 (provide 'org-convect-act-test)
 
 ;;; org-convect-act-test.el ends here
