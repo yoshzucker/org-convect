@@ -105,6 +105,25 @@ one."
   :type 'string
   :group 'org-convect)
 
+(defface org-convect-lineage-face
+  '((t :inherit secondary-selection))
+  "Face for the rungs linked to the one under the cursor.
+
+Inherits from `secondary-selection\\=' rather than naming a colour: it means
+\"marked, but not the thing you are acting on\", which is exactly what these
+rows are, and a theme that has thought about that face has already thought
+about this one."
+  :group 'org-convect)
+
+(defcustom org-convect-highlight-lineage t
+  "Whether moving the cursor on a board lights up the linked rungs.
+
+The mesh is the part of the ladder a file cannot show, and this is the cheapest
+way to see it: no command, no second buffer, just what moves together when you
+move.  Set to nil if the movement is more distracting than the links are worth."
+  :type 'boolean
+  :group 'org-convect)
+
 (defcustom org-convect-area-width nil
   "Display columns an area's name may take, or nil to not ask.
 
@@ -1625,7 +1644,7 @@ and the ladder cannot.  `org-convect-act' adds the choice points.
 
 Remove that feature and the lines go with it.  The board still stands.")
 
-(defun org-convect--review-line (text &optional marker)
+(defun org-convect--review-line (text &optional marker name)
   "TEXT as a board row, acting on MARKER when there is one.
 
 The marker is what makes the row a row rather than a picture of one: with it,
@@ -1638,6 +1657,7 @@ worth guarding against."
     (propertize text
                 'org-marker marker
                 'org-hd-marker marker
+                'org-convect-rung name
                 'org-agenda-type 'agenda
                 'help-echo "z add note · RET go to it")))
 
@@ -1675,6 +1695,56 @@ speaks up."
           (due-on (concat "due " (format-time-string "%Y-%m-%d" due-on)))
           ((org-convect-cadence-days (plist-get entry :horizon)) "due -- never looked at")
           (t "no calendar"))))
+
+(defvar-local org-convect--lineages nil
+  "Hash of rung name -> the names linked to it, for the board being shown.
+
+Built once when the board is drawn.  Following the cursor means answering
+\"what is linked to this\" on every keystroke, and answering it by walking the
+files each time would make moving the cursor the most expensive thing in the
+buffer.")
+
+(defvar-local org-convect--lit nil
+  "Overlays currently lighting up a thread.")
+
+(defvar-local org-convect--lit-for nil
+  "The rung the overlays belong to, so an unchanged row costs nothing.")
+
+(defun org-convect--light-lineage ()
+  "Light up the rungs linked to the one under the cursor.
+
+On `post-command-hook\\=' in a board, which means it runs on every keystroke --
+so it does as little as possible: reads a text property, compares it with what
+is already lit, and returns.  The work only happens when the cursor has
+actually moved onto a different rung."
+  (when (and org-convect-highlight-lineage org-convect--lineages)
+    (let ((name (get-text-property (point) 'org-convect-rung)))
+      (unless (equal name org-convect--lit-for)
+        (setq org-convect--lit-for name)
+        (mapc #'delete-overlay org-convect--lit)
+        (setq org-convect--lit nil)
+        (when name
+          (let ((thread (gethash name org-convect--lineages)))
+            (save-excursion
+              (goto-char (point-min))
+              (while (not (eobp))
+                (let ((here (get-text-property (point) 'org-convect-rung)))
+                  (when (and here (member here thread))
+                    (let ((overlay (make-overlay (line-beginning-position)
+                                                 (1+ (line-end-position)))))
+                      (overlay-put overlay 'face 'org-convect-lineage-face)
+                      (overlay-put overlay 'priority -50)
+                      (push overlay org-convect--lit))))
+                (forward-line 1)))))))))
+
+(defun org-convect--remember-lineages (entries)
+  "Work out every thread once, for the board about to be drawn."
+  (let ((table (make-hash-table :test 'equal)))
+    (dolist (entry entries table)
+      (puthash (plist-get entry :name)
+               (mapcar (lambda (e) (plist-get e :name))
+                       (org-convect-lineage entries entry))
+               table))))
 
 ;;;###autoload
 (defun org-convect-review (&optional only-wanting now)
@@ -1742,13 +1812,18 @@ itself should change."
                                               (string-width (plist-get entry :name))))
                                     ?\s)
                                    (org-convect--review-status entry now called))
-                           (plist-get entry :marker)))
+                           (plist-get entry :marker)
+                           (plist-get entry :name)))
                   (dolist (line (org-convect--review-evidence entry entries scan))
                     (insert (format "      %s\n" line)))))
               (insert "\n"))))
         (insert "  z  write the conclusion here      RET  go to it\n")
         (when (not only-wanting)
           (insert "  C-u M-x org-convect-review  shows only what wants looking at\n"))
+        (setq org-convect--lineages (org-convect--remember-lineages entries)
+              org-convect--lit nil
+              org-convect--lit-for :none)
+        (add-hook 'post-command-hook #'org-convect--light-lineage nil t)
         (goto-char (point-min))))
     (pop-to-buffer buffer)))
 

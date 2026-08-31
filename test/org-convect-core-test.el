@@ -1492,6 +1492,81 @@ saying \"nothing\" would read as \"they are fine\"."
       (with-current-buffer org-convect-review-buffer
         (should (string-match-p "12 choice points, 5 away" (buffer-string)))))))
 
+;;;; The thread under the cursor
+
+(defun org-convect-test--lit (target)
+  "Names of the rows lit when the cursor is on TARGET's row."
+  (goto-char (point-min))
+  (re-search-forward (concat "^  " (regexp-quote target)))
+  (beginning-of-line)
+  (org-convect--light-lineage)
+  (sort (mapcar (lambda (o)
+                  (get-text-property (overlay-start o) 'org-convect-rung))
+                org-convect--lit)
+        #'string<))
+
+(ert-deftest org-convect-test-the-highlight-names-no-colour ()
+  "A package has no business knowing what colour anybody's theme is.  The face
+says what the rows *mean* -- marked, but not the thing you are acting on --
+and inherits from the standard face that already means that, which a theme has
+usually already thought about."
+  (should (eq 'secondary-selection
+              (face-attribute 'org-convect-lineage-face :inherit nil)))
+  (should (eq 'unspecified
+              (face-attribute 'org-convect-lineage-face :background nil))))
+
+(ert-deftest org-convect-test-the-cursor-lights-its-thread ()
+  "The mesh is the part of the ladder a file cannot show, and this is the
+cheapest way to see it: what moves together when you move."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (save-window-excursion (org-convect-review nil (org-convect-test--day 2026 9 5)))
+    (with-current-buffer org-convect-review-buffer
+      ;; the area lights the goal it serves as well as itself
+      (should (equal (org-convect-test--lit "engineering")
+                     '("a team that runs itself" "engineering")))
+      ;; and standing on the goal lights the same thread from the other end
+      (should (equal (org-convect-test--lit "a team that runs itself")
+                     '("a team that runs itself" "engineering"))))))
+
+(ert-deftest org-convect-test-an-unlinked-rung-lights-alone ()
+  "Which is worth seeing: it says the rung connects to nothing."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (save-window-excursion (org-convect-review nil (org-convect-test--day 2026 9 5)))
+    (with-current-buffer org-convect-review-buffer
+      (should (equal (org-convect-test--lit "admin") '("admin")))
+      (should (equal (org-convect-test--lit "Honesty") '("Honesty"))))))
+
+(ert-deftest org-convect-test-the-highlight-can-be-turned-off ()
+  (org-convect-test--with-ladder org-convect-test--ready
+    (save-window-excursion (org-convect-review nil (org-convect-test--day 2026 9 5)))
+    (with-current-buffer org-convect-review-buffer
+      (let ((org-convect-highlight-lineage nil))
+        (should-not (org-convect-test--lit "engineering"))))))
+
+(ert-deftest org-convect-test-a-line-that-is-no-rung-lights-nothing ()
+  "Section headings and the legend at the foot are not rungs, and leaving the
+last row should put its thread out rather than leave it behind."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (save-window-excursion (org-convect-review nil (org-convect-test--day 2026 9 5)))
+    (with-current-buffer org-convect-review-buffer
+      (org-convect-test--lit "engineering")
+      (should org-convect--lit)
+      (goto-char (point-min))
+      (org-convect--light-lineage)
+      (should-not org-convect--lit))))
+
+(ert-deftest org-convect-test-an-unchanged-row-costs-nothing ()
+  "It runs on every keystroke, so moving within a row must not rebuild the
+overlays -- which is also what stops them flickering."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (save-window-excursion (org-convect-review nil (org-convect-test--day 2026 9 5)))
+    (with-current-buffer org-convect-review-buffer
+      (org-convect-test--lit "engineering")
+      (let ((before org-convect--lit))
+        (forward-char 3)
+        (org-convect--light-lineage)
+        (should (eq before org-convect--lit))))))
+
 ;;;; One thread of the ladder
 
 (ert-deftest org-convect-test-a-thread-runs-both-ways ()
