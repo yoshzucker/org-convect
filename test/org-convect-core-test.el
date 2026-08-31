@@ -492,25 +492,61 @@ the question is asked with a month in it and answered with an example."
 
 ;;;; Where the time went
 
-(ert-deftest org-convect-test-unclaimed-categories ()
-  "Hours booked to a category no area claims are the finding; hours booked to
-a declared one are not."
+(ert-deftest org-convect-test-the-scan-is-asked-for-areas ()
+  "The binding that tells the clock scan to group by area has to be dynamic,
+and org-foresight is a soft dependency that may not be loaded when this file
+is compiled -- in which case `let' on a symbol never declared special produces
+a lexical binding, the scan keeps its own default, and this package quietly
+answers a different question with no error anywhere.
+
+The stub reads the variable the way the scan would, so it sees what the scan
+would have seen."
+  (let (seen)
+    (cl-letf (((symbol-function 'org-foresight-clock-scan)
+               (lambda (&rest _)
+                 (setq seen (and (boundp 'org-foresight-clock-property)
+                                 org-foresight-clock-property))
+                 (list :rows nil))))
+      (org-convect-clock-rows)
+      (should (equal seen "CONVECT_AREA")))))
+
+(ert-deftest org-convect-test-no-width-is-imposed-by-default ()
+  "The package used to put area names in the agenda's narrow category column
+and held them to its width.  It does not any more, so it has no business
+saying a name is too long unless you tell it where you display them."
+  (should-not org-convect-area-width)
+  (org-convect-test--with-ladder "\
+* a name far longer than any narrow column would ever have shown
+:PROPERTIES:
+:CONVECT_HORIZON: area
+:END:
+kept up means the tests pass
+"
+    (should-not (memq 'long-heading
+                      (org-convect-test--kinds
+                       (org-convect-findings (org-convect-scan)
+                                             (org-convect-test--day 2026 9 5))
+                       "a name far longer than any narrow column would ever have shown")))))
+
+(ert-deftest org-convect-test-unattributed-time-is-its-own-answer ()
+  "Two different things go wrong here and they want different fixes: time
+nothing claims to be answerable for, and time booked to a name that is not an
+area at all."
   (org-convect-test--with-ladder org-convect-test--ladder
     (let* ((scan (list :rows '(("engineering" . 600)
-                               ("meetings" . 480)
+                               ("?" . 480)
+                               ("enginering" . 90)
                                ("admin" . 120))))
-           (unclaimed (org-convect-unclaimed-categories (org-convect-scan) scan)))
-      (should (equal unclaimed '(("meetings" . 480)))))))
-
-(ert-deftest org-convect-test-unclaimed-categories-without-a-clock ()
+           (found (org-convect-unclaimed-time (org-convect-scan) scan)))
+      (should (equal (car found) '(("?" . 480))))
+      (should (equal (cdr found) '(("enginering" . 90)))))))
+(ert-deftest org-convect-test-unattributed-time-without-a-clock ()
   "No scan and no org-foresight is an empty answer, not an error: the ladder
 reads without a clock."
   (org-convect-test--with-ladder org-convect-test--ladder
-    (should-not (org-convect-unclaimed-categories (org-convect-scan)
-                                                  (list :rows nil)))))
-
-;;;; The frame, and writing into it
-
+    (let ((found (org-convect-unclaimed-time (org-convect-scan) (list :rows nil))))
+      (should-not (car found))
+      (should-not (cdr found)))))
 (ert-deftest org-convect-test-skeleton-is-highest-first ()
   "The file is ordered the way the ladder is read: purpose down to areas.
 `org-convect-horizons' stays the other way round because that is the order the
@@ -1043,7 +1079,7 @@ category at all -- better than a prompt with an empty list."
                (lambda (&rest _) (error "asked with nothing to offer"))))
       (should (equal "" (org-convect-read-area))))))
 
-(ert-deftest org-convect-test-set-category-writes-an-area ()
+(ert-deftest org-convect-test-set-area-writes-the-property ()
   "The binding is a CATEGORY, not a pointer: inherited, so marking a project
 marks everything under it, and the task itself carries nothing extra."
   (org-convect-test--with-ladder (org-convect--build-skeleton)
@@ -1054,25 +1090,24 @@ marks everything under it, and the task itself carries nothing extra."
             (goto-char (point-min))
             (cl-letf (((symbol-function 'completing-read)
                        (lambda (&rest _) "dev.work")))
-              (org-convect-set-category))
-            (should (equal "dev.work" (org-entry-get nil "CATEGORY")))
-            ;; and it is what the clock would report against
-            (should (equal "dev.work" (org-get-category))))
+              (org-convect-set-area))
+            (should (equal "dev.work" (org-entry-get nil "CONVECT_AREA")))
+            ;; and CATEGORY is left alone -- it is Org's, and other packages
+            ;; read it for their own purposes
+            (should-not (string-match-p ":CATEGORY:" (buffer-string))))
         (ignore-errors (delete-file task))))))
 
-(ert-deftest org-convect-test-set-category-clears-on-an-empty-answer ()
+(ert-deftest org-convect-test-set-area-clears-on-an-empty-answer ()
   (org-convect-test--with-ladder (org-convect--build-skeleton)
     (org-convect-add 'area "dev.work")
     (let ((task (make-temp-file "task" nil ".org"
-                                "* NEXT x\n:PROPERTIES:\n:CATEGORY: dev.work\n:END:\n")))
+                                "* NEXT x\n:PROPERTIES:\n:CONVECT_AREA: dev.work\n:END:\n")))
       (unwind-protect
           (with-current-buffer (find-file-noselect task)
             (goto-char (point-min))
             (cl-letf (((symbol-function 'completing-read) (lambda (&rest _) "")))
-              (org-convect-set-category))
-            ;; not `org-entry-get': with no property of its own, an entry's
-            ;; category is the file's name, so that never comes back nil
-            (should-not (string-match-p ":CATEGORY:" (buffer-string))))
+              (org-convect-set-area))
+            (should-not (org-entry-get nil "CONVECT_AREA" t)))
         (ignore-errors (delete-file task))))))
 
 ;;;; The report
@@ -1155,7 +1190,7 @@ heading, so the file cannot show its own gaps."
 (ert-deftest org-convect-test-a-long-name-is-reported-with-its-width ()
   "Whether a long heading is a name or a stray sentence cannot be decided from
 the text.  The finding reports the width and leaves the reading to a person."
-  (let ((org-convect-heading-width 20))
+  (let ((org-convect-heading-width 20) (org-convect-area-width nil))
     (org-convect-test--with-ladder "\
 * short
 :PROPERTIES:
@@ -1206,7 +1241,7 @@ which is the only kind of heading this check exists for on this ladder."
 (ert-deftest org-convect-test-an-area-is-measured-against-the-agenda ()
   "An area's name is the CATEGORY the agenda prints in a fixed column, so it
 is held to that width rather than to the one the rungs above it get."
-  (let ((org-convect-category-width 8)
+  (let ((org-convect-area-width 8)
         (org-convect-heading-width 40))
     (org-convect-test--with-ladder "\
 * family.father

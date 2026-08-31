@@ -67,24 +67,44 @@ second.  Collapsing them into one order loses half the model.
 | | Lives on | Value |
 |---+---+---|
 | ~CONVECT_SERVES~ | a rung, naming what it is in service of | names of higher rungs, several allowed, always optional |
-| ~CATEGORY~ | a task, naming its area | one area's name, inherited by everything beneath |
+| ~CONVECT_AREA~ | a task, naming its area | one area's name, inherited by everything beneath |
 
-*Nothing points down.*  A task carries a CATEGORY and asks nothing else of
+*Nothing points down.*  A task carries an area's name and asks nothing else of
 you, which is why opening a five-minute job costs no thought about purpose.
 The ladder is climbed during a review and at no other time.
 
-CATEGORY is also the one binding that has to be *made*.  Until a task carries
-an area's name, Org falls back to the file's name, and every hour clocked
-against it is booked to something that names no responsibility at all —
-=org-convect-unclaimed-categories= then has nothing to say about where the
-time went.
+=CONVECT_AREA= is the one binding that has to be *made*.  Until an entry
+carries it, its clocked hours are unattributed — which is the point, and what
+=org-convect-unclaimed-time= reports.
 
 Two commands make it:
 
-- =M-x org-convect-set-category= puts a declared area on the entry at point,
-  in an Org buffer or from an agenda line, which is where most of it gets
-  decided
+- =M-x org-convect-set-area= puts a declared area on the entry at point, in an
+  Org buffer or from an agenda line, which is where most of it gets decided
 - =%(org-convect-read-area)= inside a capture template asks at capture time
+
+*** Why not CATEGORY
+
+It is the obvious slot and this package used it at first, which was a mistake.
+
+CATEGORY is Org's own.  Every entry has one whether you set it or not, users
+already put their own meanings in it, and other packages read it — org-calsync
+writes what a thing *is* there, org-foresight asks which of *your* categories
+mean private.  Note the difference: those two *ask*.  Declaring that CATEGORY
+must name an area would have been this package *telling* you what your own
+categories are for, in a slot that was never its to take.
+
+There is a second reason, and it is the one that settles it.  Which area a
+task serves and what kind of thing it is are independent: a meeting can belong
+to engineering or to running the team, and neither answer can be derived from
+the other.  A calendar import knows the kind and cannot know the area.  Two
+independent questions need two slots, and no amount of splitting the areas
+produces the kinds — "meeting" is not something anybody is accountable for.
+
+Inheritance, the reason CATEGORY looked attractive, costs nothing to keep:
+=org-entry-get= takes an argument for it, so =CONVECT_AREA= is read the same
+way down a subtree without changing =org-use-property-inheritance= or anything
+else global.
 
 Only the areas that exist are offered, so work cannot be filed against a
 responsibility nobody has claimed.  Where to ask is a judgement: a capture
@@ -139,7 +159,7 @@ The last column is the honest one.
 |---+---+---|
 | ~bare-rung~ | a heading with nothing under it | whether what is under it is any good |
 | ~unserved-rung~ | a rung above the areas that nothing was derived from | with ACT loaded, a principle that is governing conduct |
-| ~unclaimed-categories~ | hours booked to a category no area claims | hours nobody clocked at all |
+| ~unclaimed-time~ | hours no area is answerable for | hours nobody clocked at all |
 | ~domain-gaps~ | a life sphere no area claims | a sphere you never put on the list |
 | ~long-heading~ | width | whether it is a name or a sentence |
 | ~past-its-date~, ~overdue-review~ | dates | whether the review was worth anything |
@@ -213,16 +233,17 @@ Three things follow, and each answers a problem that nesting could not:
 
 ** Nothing points downward
 
-A task carries a ~CATEGORY~ and nothing else.  ~CATEGORY~ is inherited, so a
-project marked once collects all its descendants, and a five-minute job costs
-no thought about purpose to open.  Only the review climbs, and only the code
+A task carries a ~CONVECT_AREA~ and nothing else.  It is read with
+inheritance, so a project marked once collects all its descendants, and a
+five-minute job costs no thought about purpose to open.  Only the review climbs, and only the code
 doing the climbing pays for it.
 
-That is also where the upward evidence comes from free: org-foresight's clock
-scan already totals time per category, so
-~org-convect-unclaimed-categories~ can ask which paid-for categories no area
-ever claimed.  The dependency is soft both ways — the ladder reads without a
-clock, and the clock reads without a ladder.
+That is also where the upward evidence comes from: org-foresight's clock scan
+walks the files once and totals per property, so asking it to group by
+=CONVECT_AREA= gives time per area without a second pass.  Entries carrying no
+area land under =?=, and that row is usually the interesting one.  The
+dependency is soft both ways — the ladder reads without a clock, and the clock
+reads without a ladder.
 
 ** Goals carry no TODO state
 

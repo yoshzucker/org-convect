@@ -104,15 +104,18 @@ one."
   :type 'string
   :group 'org-convect)
 
-(defcustom org-convect-category-width 12
-  "Display columns an area's name may take before it is worth a word.
+(defcustom org-convect-area-width nil
+  "Display columns an area's name may take, or nil to not ask.
 
-An area's heading is the CATEGORY its tasks carry, and the agenda prints that
-in a fixed column -- `%-12:c\\=' in Org's default `org-agenda-prefix-format\\=',
-narrower in many people's.  Past this width the name is not wrong, it is just
-never seen in full where it is seen most often.  Set it to whatever your own
-prefix format actually shows."
-  :type 'integer
+Nil by default because this package no longer puts area names anywhere with a
+fixed width.  It used to: areas were tasks' CATEGORY and the agenda prints
+that in a narrow column, which made a long name a real nuisance.  That is
+gone, and the constraint went with it.
+
+Set it if you display areas somewhere narrow of your own -- a column in the
+agenda through `%(...)\\=' in `org-agenda-prefix-format\\=', say -- and want to be
+told when a name will not fit."
+  :type '(choice (const :tag "No limit" nil) integer)
   :group 'org-convect)
 
 (defcustom org-convect-heading-width 40
@@ -400,9 +403,9 @@ answer into a defect, so the ladder is only ever read upward."
           ;; there was nowhere else to put it.
           (let* ((width (string-width name))
                  (limit (if (eq horizon 'area)
-                            org-convect-category-width
+                            org-convect-area-width
                           org-convect-heading-width)))
-            (when (> width limit)
+            (when (and limit (> width limit))
               (finding 'long-heading
                        (format "%d columns, over %d%s" width limit
                                (if (plist-get entry :bare)
@@ -448,24 +451,48 @@ Matched to the areas cadence: a monthly check-in asks about the month."
   :type 'integer
   :group 'org-convect)
 
-(defun org-convect-unclaimed-categories (entries &optional scan)
-  "Clocked categories that no area in ENTRIES claims, as (CATEGORY . MINUTES).
+;; Declared so the binding below is dynamic.  org-foresight is a soft
+;; dependency and may not be loaded when this file is compiled, and `let' on a
+;; symbol the compiler has never seen made special produces a lexical binding
+;; -- which would leave the scan grouping by its own default and this function
+;; quietly answering the wrong question.
+(defvar org-foresight-clock-property)
+
+(defun org-convect-clock-rows (&optional scan)
+  "Clocked minutes per area, as (AREA . MINUTES), with \"?\" for the rest.
 
 SCAN is a plist from `org-foresight-clock-scan'; one is fetched when that
 package is loaded and none is given.  The dependency is soft both ways: the
-ladder reads without a clock, and the clock reads without a ladder.
+ladder reads without a clock and the clock reads without a ladder.
 
-This is the question the whole package exists for.  Hours went somewhere, and
-some of that somewhere is not among the things claimed to matter.  The finding
-is not an accusation: a chore that shows up here every month is usually an area
-of accountability that was never named, and naming it is the fix."
-  (let* ((scan (or scan
-                   (and (fboundp 'org-foresight-clock-scan)
-                        (org-foresight-clock-scan org-convect-clock-window))))
+The scan is asked to group by `CONVECT_AREA' rather than by its usual CATEGORY
+-- one walk, a different question.  Entries carrying no area land under \"?\"."
+  (or scan
+      (and (fboundp 'org-foresight-clock-scan)
+           (let ((org-foresight-clock-property "CONVECT_AREA"))
+             (org-foresight-clock-scan org-convect-clock-window)))))
+
+(defun org-convect-unclaimed-time (entries &optional scan)
+  "Clocked time that no area accounts for, as two lists.
+
+Returns (UNATTRIBUTED . UNKNOWN), each an alist of (AREA . MINUTES):
+
+  UNATTRIBUTED  hours clocked against entries carrying no area at all.  This
+                is the question the whole package exists for -- time went
+                somewhere, and nothing claims to be answerable for it
+  UNKNOWN       hours booked to a name that is not a declared area, which is
+                a typo rather than a finding about your life
+
+Neither is an accusation.  A chore that shows up unattributed every month is
+usually an area of accountability that was never named, and naming it is the
+fix."
+  (let* ((rows (plist-get (org-convect-clock-rows scan) :rows))
          (declared (mapcar (lambda (e) (plist-get e :name))
                            (org-convect-entries entries 'area))))
-    (seq-remove (lambda (row) (member (car row) declared))
-                (plist-get scan :rows))))
+    (cons (seq-filter (lambda (row) (equal (car row) "?")) rows)
+          (seq-remove (lambda (row) (or (equal (car row) "?")
+                                        (member (car row) declared)))
+                      rows))))
 
 ;;;; Input
 
@@ -671,10 +698,16 @@ than a thing held to a standard, it is a principle."
 day and no branch is older than a week.
 
 No: \"Ship the migration.\"  It finishes, so it is a project -- it belongs in
-the task system, carrying this area's name as its CATEGORY."
+the task system, carrying this area's name in `CONVECT_AREA'."
      :when   "Monthly, and whenever the job or the household changes."
-     :note   "An area's heading is the CATEGORY its tasks carry, which is how
-the clock reports against it.  Keep the names short for that reason.
+     :note   "An area's name is what a task carries in `CONVECT_AREA', which is
+how the clock reports against it.  The property is read with inheritance, so
+marking a project marks everything under it -- but a task filed straight into
+a date tree has no project to inherit from and carries its own.
+
+Deliberately not CATEGORY.  That slot is Org's, every entry already has one,
+and other packages read it for their own purposes; taking it would mean
+telling you what your own categories have to say.
 
 Nothing here needs to point at a goal.  Most areas never will -- keeping the
 engines running is what they are for, and a chore is a real accountability.
@@ -738,25 +771,32 @@ command has to teach if it is going to teach at all."
 Meant for a capture template, through `%(org-convect-read-area)': the
 candidates are the areas that actually exist, so a task cannot be filed
 against a responsibility nobody has claimed.  Returns the empty string when
-nothing is picked, which a template renders as no category at all."
+nothing is picked, which a template renders as no area at all."
   (let ((names (org-convect-area-names)))
     (if (null names)
         ""
       (completing-read (or prompt "Area: ") names nil nil))))
 
 ;;;###autoload
-(defun org-convect-set-category ()
-  "Put a declared area's name in the CATEGORY of the entry at point.
+(defun org-convect-set-area ()
+  "Put a declared area's name in the `CONVECT_AREA\\=' of the entry at point.
 
-The only binding that runs downward, and it is not a pointer: CATEGORY is
-inherited, so marking a project marks everything under it, and the task itself
-carries nothing and is asked nothing.  That is what keeps the ladder out of
-the way of a five-minute job.
+The only binding that runs downward, and it is not a pointer: the property is
+read with inheritance, so marking a project marks everything under it and the
+task itself carries nothing and is asked nothing.  That is what keeps the
+ladder out of the way of a five-minute job.
 
-It is also the binding the clock reports through.  Until a task carries an
-area's name, its hours are booked to whatever the file happens to be called,
-and `org-convect-unclaimed-categories' has nothing to say about where the time
-went.
+It is deliberately not CATEGORY.  CATEGORY is Org's own, every Org user
+already has one on every entry, and other packages read it for their own
+purposes -- org-calsync writes what a thing *is* there, org-foresight asks
+which of *your* values mean private.  Those ask; prescribing that CATEGORY
+must name an area would take a slot that was never this package's to take.
+Which area a task serves is a different question from what kind of thing it
+is, and both are needed at once, so they need two slots.
+
+It is the binding the clock reports through.  Until an entry carries an area,
+its hours are unattributed -- which `org-convect-unclaimed-time' reports, and
+which is the point: time that went somewhere nothing claims to care about.
 
 Works on the entry at point in an Org buffer, or on the entry behind the line
 in an agenda -- which is where most of this gets decided."
@@ -772,13 +812,9 @@ in an agenda -- which is where most of this gets decided."
                            (truncate-string-to-width
                             (org-get-heading t t t t) 40)))))
         (if (org-string-nw-p area)
-            (org-entry-put nil "CATEGORY" area)
-          (org-entry-delete nil "CATEGORY"))
+            (org-entry-put nil "CONVECT_AREA" area)
+          (org-entry-delete nil "CONVECT_AREA"))
         (save-buffer)
-        ;; Reported from the answer, not by reading the property back: with no
-        ;; property of its own an entry's category is the file's name, so
-        ;; reading it after clearing would announce a category that is only
-        ;; Org's fallback and name no area at all.
         (message (if (org-string-nw-p area)
                      (format "Filed under %s" area)
                    "Area cleared"))))))
