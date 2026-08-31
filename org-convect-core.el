@@ -1661,16 +1661,26 @@ worth guarding against."
                 'org-agenda-type 'agenda
                 'help-echo "z add note · RET go to it")))
 
-(defun org-convect--review-evidence (entry entries scan)
-  "Lines of evidence to show under ENTRY on the board."
+(defun org-convect--evidence (entry entries scan &optional whole)
+  "Lines of evidence to show under ENTRY.
+
+WHOLE asks for the rung's body in full rather than its first line.  That is
+the difference between a list and a reading: the board carries every rung, so
+it can only afford a glimpse of each; a view that has narrowed to a handful
+has the room, and narrowing that showed *less* about what it narrowed to would
+be the wrong way round."
   (let* ((body (org-with-point-at (plist-get entry :marker)
                  (org-convect--body)))
-         (first (car (split-string body "\n" t)))
+         (lines (split-string body "\n" t))
          (near (org-convect-neighbourhood entries entry))
          (hours (cdr (assoc (plist-get entry :name)
                             (plist-get scan :rows)))))
     (append
-     (and first (list (truncate-string-to-width (string-trim first) 68 nil nil t)))
+     (if whole
+         (mapcar #'string-trim lines)
+       (and (car lines)
+            (list (truncate-string-to-width
+                   (string-trim (car lines)) 68 nil nil t))))
      (and hours (list (format "%s clocked" (org-duration-from-minutes hours))))
      (and (car near)
           (list (concat "serves "
@@ -1814,7 +1824,7 @@ itself should change."
                                    (org-convect--review-status entry now called))
                            (plist-get entry :marker)
                            (plist-get entry :name)))
-                  (dolist (line (org-convect--review-evidence entry entries scan))
+                  (dolist (line (org-convect--evidence entry entries scan))
                     (insert (format "      %s\n" line)))))
               (insert "\n"))))
         (insert "  z  write the conclusion here      RET  go to it\n")
@@ -1852,9 +1862,12 @@ Reached from the review board, from the file, or by name.  The board answers
 a different question and the one the file cannot be read for -- links point up
 only, so what serves a rung is never written near it."
   (interactive)
-  (let* ((entries (org-convect-scan))
+  (let* ((now (current-time))
+         (entries (org-convect-scan))
          (entry (org-convect--pick entries "Thread through: "))
          (thread (org-convect-lineage entries entry))
+         (called (org-convect-called entries))
+         (scan (org-convect-clock-rows))
          (buffer (get-buffer-create "*Horizons Thread*")))
     (with-current-buffer buffer
       (let ((inhibit-read-only t))
@@ -1875,7 +1888,15 @@ only, so what serves a rung is never written near it."
                                      "   <- from here" "")
                                  (if (org-convect-thread-ends-at-p e)
                                      "   -- serves nothing above" ""))
-                         (plist-get e :marker))))
+                         (plist-get e :marker)
+                         (plist-get e :name)))
+                (insert (format "      %s\n"
+                                (org-convect--review-status e now called)))
+                ;; The whole body here, not the glimpse the board gives.  A
+                ;; view that narrowed to a handful of rungs and then said less
+                ;; about each of them would be narrowing for nothing.
+                (dolist (line (org-convect--evidence e entries scan t))
+                  (insert (format "      %s\n" line))))
               (insert "\n"))))
         (goto-char (point-min))))
     (pop-to-buffer buffer)))
@@ -1894,8 +1915,17 @@ only, so what serves a rung is never written near it."
         (unless (derived-mode-p 'org-agenda-mode) (org-agenda-mode))
         (setq-local org-agenda-type 'agenda)
         (insert (org-convect--review-line
-                 (format "%s\n\n" (plist-get entry :name))
-                 (plist-get entry :marker)))
+                 (format "%s\n" (plist-get entry :name))
+                 (plist-get entry :marker)
+                 (plist-get entry :name)))
+        ;; What it says now, before how it came to say it.  A history read
+        ;; without the present tense of the thing is a list of edits.
+        (dolist (line (split-string
+                       (org-with-point-at (plist-get entry :marker)
+                         (org-convect--body))
+                       "\n" t))
+          (insert (format "  %s\n" (string-trim line))))
+        (insert "\n")
         (if (null history)
             (insert "  nothing yet\n")
           (pcase-dolist (`(,time ,kind ,text) history)
