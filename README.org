@@ -463,6 +463,26 @@ cannot.
 All three draw rows that are live, and each can be called on the row under
 point in either of the others.
 
+** Following the cursor
+
+On the board, moving the cursor lights up every rung linked to the one you are
+on — what it serves, what serves that, and the siblings answering to the same
+goal.  The mesh is the part of the ladder a file cannot show, and this is the
+cheapest way to see it: no command, no second buffer, just what moves together
+when you move.
+
+A rung that lights alone is telling you something too: it connects to nothing.
+
+The work is done once when the board is drawn, so moving the cursor is a hash
+lookup and an overlay swap, and a keystroke that stays on the same row does
+nothing at all.  =org-convect-highlight-lineage= turns it off if the movement
+is more distracting than the links are worth.
+
+The face inherits from =secondary-selection= rather than naming a colour.  It
+means "marked, but not the thing you are acting on", which is what these rows
+are — and a theme that has thought about that face has already thought about
+this one.
+
 ** The thread
 
 #+begin_example
