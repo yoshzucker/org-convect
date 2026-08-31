@@ -191,8 +191,15 @@ scratch.
 |       1 | Projects                          | weekly                        |
 |  Ground | Calendar/Actions                  | daily                         |
 
-H1 and Ground belong to [[https://github.com/yoshzucker/org-foresight][org-foresight]], which answers them with the clock.
-This package holds H2 upward.
+The line between this package and [[https://github.com/yoshzucker/org-foresight][org-foresight]] is not the altitude.  It is
+the question:
+
+| | asks |
+|---+---|
+| org-convect | *what is this for* — the ladder, and planning a project |
+| org-foresight | *when does it fit* — the clock, the day, the deadline |
+
+Which is why planning a project lives here even though a project is H1.
 
 Note the top two rows.  *GTD gives them no calendar at all.*  A yearly deadline
 for purpose would be this package inventing a rule and attributing it to GTD,
@@ -448,6 +455,75 @@ its *neighbourhood*: what it was raised for, what answers to it, what the
 clock says, and — from the overlay — what actually happened underneath it.  A
 standard read alone is a sentence; read beside the goal it serves and the
 hours that went to it, it is a judgement you can make.
+
+* Planning a project
+
+=M-x org-convect-plan= opens a space under the project at point — or behind
+the agenda line at point, which is usually where you are when you notice
+something needs breaking down.
+
+#+begin_example
+  * NEXT move the service off the old host
+    - Purpose ::
+    - Outcome ::
+  **                        ← point lands here
+#+end_example
+
+Then it gets out of the way.  =M-RET= for the next thought, =M-left= and
+=M-right= to organise them into a shape, =C-c C-t= on the ones you are
+committing to.
+
+** Why only two fields
+
+GTD's planning model has five steps: purpose, outcome, brainstorming,
+organising, next actions.  Only two of them leave anything behind.
+
+Brainstorming and organising are *acts*, not fields.  The brainstorm is raw
+material for the organising, and what the organising produces is the shape of
+the outline itself — so a form with five blanks would be asking for three
+things that have nowhere to sit, and two of them would stay empty forever.
+
+** Why the brainstorm is headings, and carries no keyword
+
+Because org-foresight says so, in as many words:
+
+#+begin_quote
+A heading with no TODO keyword gets no record at all.  That absence is the
+answer to "is this a project": it is scaffolding, a place to put things, and
+the outline is full of it.
+#+end_quote
+
+So a brainstorm can be as long and as wrong as it needs to be and not one
+thought of it is counted as work anybody has taken on.  Only what you mark
+becomes work.  And headings rather than list items because =M-RET= and
+=M-left/right= are the best structure editing Org has, which is exactly what
+organising is.
+
+** What the line under the cursor is asking for
+
+Guidance has three places it can live and each fails differently.  In the file
+it goes stale, written once and never learning anything.  In a command it is
+only there when you thought to run it.  In the echo area it is there while you
+are filling the thing in, which is the moment the question matters and the
+moment you are least likely to go looking.
+
+So the fields, and the rungs of the ladder, answer to Eldoc:
+
+#+begin_example
+  - Purpose ::
+    → Purpose -- why this is worth doing at all, and what should guide how
+
+  ** work.dev            (a rung, in horizons.org)
+    → Areas of Focus and Accountability -- Under each one, as plain lines,
+      the standard: what "kept up" means here.
+#+end_example
+
+It is idle-triggered, so it does not compete with typing, and it returns
+nothing anywhere it does not recognise, so other Org buffers are untouched.
+=org-convect-eldoc= turns it off.
+
+It does not replace the =:GUIDE:= drawers.  Those teach — the deciding
+question, an example of each answer, where to look for yours.  This reminds.
 
 * Three views, three questions
 

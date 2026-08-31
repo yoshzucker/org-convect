@@ -1302,6 +1302,186 @@ what it rules out
                                           findings)
                                 :detail)))))))
 
+;;;; Planning a project
+
+(defmacro org-convect-test--in-org (text &rest body)
+  "Run BODY in an Org buffer holding TEXT, point at its start."
+  (declare (indent 1))
+  `(with-temp-buffer
+     (org-mode)
+     (let ((org-todo-keywords '((sequence "NEXT" "ONGO" "|" "DONE" "CANCEL"))))
+       (insert ,text)
+       (goto-char (point-min))
+       ,@body)))
+
+(ert-deftest org-convect-test-plan-lays-down-only-what-persists ()
+  "Five steps and two of them leave anything behind.  A form with five blanks
+would be asking for three things that have nowhere to sit."
+  (org-convect-test--in-org "* NEXT move the service\n"
+    (re-search-forward "move")
+    (org-convect-plan)
+    (let ((text (buffer-string)))
+      (should (string-match-p "^- Purpose ::" text))
+      (should (string-match-p "^- Outcome ::" text))
+      (should-not (string-match-p "Brainstorm" text))
+      (should-not (string-match-p "Organi" text)))))
+
+(ert-deftest org-convect-test-plan-opens-a-space-with-no-keyword ()
+  "The child carries no TODO keyword, and that is the point: org-foresight
+gives a heading without one no record at all, so a brainstorm can be as long
+and as wrong as it needs to be without a thought of it counting as work."
+  (org-convect-test--in-org "* NEXT move the service\n"
+    (re-search-forward "move")
+    (org-convect-plan)
+    (goto-char (point-min))
+    (should (re-search-forward "^\\*\\* *$" nil t))
+    (should-not (string-match-p "\\*\\* NEXT" (buffer-string)))))
+
+(ert-deftest org-convect-test-plan-takes-its-depth-from-the-project ()
+  (org-convect-test--in-org "* work\n** NEXT move the service\n"
+    (re-search-forward "move")
+    (org-convect-plan)
+    (should (string-match-p "^\\*\\*\\* *$" (buffer-string)))))
+
+(ert-deftest org-convect-test-plan-does-not-repeat-itself ()
+  (org-convect-test--in-org "\
+* NEXT move the service
+- Purpose :: the old one is falling over
+- Outcome :: everything runs on the new one
+"
+    (re-search-forward "move")
+    (org-convect-plan)
+    (goto-char (point-min))
+    (should (= 1 (count-matches "^- Purpose ::")))
+    (should (= 1 (count-matches "^- Outcome ::")))))
+
+(ert-deftest org-convect-test-plan-leaves-an-existing-brainstorm-alone ()
+  "Called again on a project already being thought about, it must not add an
+empty heading to the pile."
+  (org-convect-test--in-org "\
+* NEXT move the service
+- Purpose :: the old one is falling over
+- Outcome :: everything runs on the new one
+** take stock of what depends on it
+"
+    (re-search-forward "move the service")
+    (org-convect-plan)
+    (should (= 1 (with-current-buffer (current-buffer)
+                   (goto-char (point-min))
+                   (count-matches "^\\*\\* "))))))
+
+(ert-deftest org-convect-test-plan-stays-in-its-own-entry ()
+  "Inserting the fields leaves point at the start of the line after them,
+which on an entry with no body is the *next heading*.  Going back to a heading
+from there arrives at the wrong one, and the space to think opens under
+somebody else's work."
+  (org-convect-test--in-org "\
+* NEXT move the service
+:PROPERTIES:
+:Effort: 0:10
+:END:
+* NEXT something else
+"
+    (re-search-forward "move the service")
+    (org-convect-plan)
+    (goto-char (point-min))
+    (re-search-forward "^\\* NEXT move the service")
+    (let ((mine (buffer-substring-no-properties
+                 (point) (save-excursion (org-end-of-subtree t t) (point)))))
+      (should (string-match-p "^- Purpose ::" mine))
+      (should (string-match-p "^\\*\\* *$" mine)))
+    ;; and the entry after it is untouched
+    (goto-char (point-min))
+    (should (re-search-forward "^\\* NEXT something else$" nil t))
+    (goto-char (point-max))
+    (should-not (string-match-p "\\*\\* *\\'" (buffer-substring-no-properties
+                                               (line-beginning-position) (point))))))
+
+(ert-deftest org-convect-test-plan-does-not-split-the-drawers ()
+  "Text written after the property drawer but before the LOGBOOK breaks a run
+Org expects to be unbroken -- and it is the easy mistake, because
+`org-end-of-meta-data' lands before the drawers and PROPERTIES is the one
+everybody remembers."
+  (org-convect-test--in-org "\
+* NEXT move the service
+:PROPERTIES:
+:Effort: 0:10
+:END:
+:LOGBOOK:
+CLOCK: [2026-06-16 Tue 20:33]--[2026-06-16 Tue 20:35] =>  0:02
+:END:
+"
+    (re-search-forward "move the service")
+    (org-convect-plan)
+    (let ((text (buffer-string)))
+      (should (string-match-p ":END:\n:LOGBOOK:" text))
+      (should (< (string-match ":LOGBOOK:" text)
+                 (string-match "- Purpose ::" text))))))
+
+(ert-deftest org-convect-test-plan-does-not-eat-the-next-heading ()
+  "`org-end-of-subtree' with TO-HEADING lands on the *start* of whatever
+follows, so a heading inserted there without a line of its own runs into that
+one and swallows it."
+  (org-convect-test--in-org "\
+* NEXT move the service
+- Purpose :: the old one is falling over
+- Outcome :: everything runs on the new one
+* NEXT something else
+"
+    (re-search-forward "move the service")
+    (org-convect-plan)
+    (goto-char (point-min))
+    (should (re-search-forward "^\\* NEXT something else$" nil t))))
+
+;;;; What the thing under the cursor is asking for
+
+(defun org-convect-test--eldoc ()
+  "What Eldoc would say about the line at point, or nil.
+
+Read from the return value, and the callback is handed one that fails, because
+answering through both is how the same line gets printed twice."
+  (org-convect-eldoc-function
+   (lambda (&rest _) (error "answered twice: callback as well as return"))))
+
+(ert-deftest org-convect-test-eldoc-answers-where-it-can ()
+  "Guidance in the file goes stale and guidance in a command is only there
+when you thought to run it.  This is there while you are filling the thing in."
+  (org-convect-test--in-org "\
+* NEXT move the service
+- Purpose ::
+- Outcome ::
+* work.dev
+:PROPERTIES:
+:CONVECT_HORIZON: area
+:END:
+"
+    (re-search-forward "- Purpose")
+    (should (string-match-p "\\`Purpose" (org-convect-test--eldoc)))
+    (goto-char (point-min)) (re-search-forward "- Outcome")
+    (should (string-match-p "\\`Outcome" (org-convect-test--eldoc)))
+    ;; and on a rung, what goes underneath it
+    (goto-char (point-min)) (re-search-forward "^\\* work.dev")
+    (should (string-match-p "Areas of Focus" (org-convect-test--eldoc)))))
+
+(ert-deftest org-convect-test-eldoc-is-silent-everywhere-else ()
+  "It runs in every Org buffer, so anywhere it does not recognise it must
+return nothing at all rather than something vague."
+  (org-convect-test--in-org "\
+* an ordinary heading
+  an ordinary line
+- a list item that is not a field
+"
+    (dolist (probe '("^\\* an ordinary" "an ordinary line" "a list item"))
+      (goto-char (point-min))
+      (re-search-forward probe)
+      (should-not (org-convect-test--eldoc)))))
+
+(ert-deftest org-convect-test-eldoc-can-be-turned-off ()
+  (org-convect-test--in-org "* NEXT x\n- Purpose ::\n"
+    (re-search-forward "- Purpose")
+    (let ((org-convect-eldoc nil))
+      (should-not (org-convect-test--eldoc)))))
+
 ;;;; The review
 
 (defconst org-convect-test--ready "\

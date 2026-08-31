@@ -51,6 +51,7 @@
 
 (require 'org)
 (require 'org-agenda)
+(require 'eldoc)
 (require 'seq)
 (require 'cl-lib)
 
@@ -211,18 +212,30 @@ beyond the next heading.  The region is clamped rather than assumed to run
 forwards, so the answer stays \"nothing\" instead of depending on which way a
 substring happens to be read."
   (save-excursion
-    (org-back-to-heading t)
-    (let ((bound (save-excursion (outline-next-heading) (point))))
-      (org-end-of-meta-data)
-      ;; Past every drawer, not only the properties.  A LOGBOOK is the
-      ;; machine's record of what happened to the rung; what is being looked
-      ;; for here is the sentence a person wrote saying what the rung *is*.
-      (while (and (< (point) bound) (looking-at org-drawer-regexp))
-        (if (re-search-forward "^[ \t]*:END:[ \t]*$" bound t)
-            (forward-line 1)
-          (goto-char bound))
-        (skip-chars-forward " \t\n"))
+    (let ((bound (progn (org-back-to-heading t)
+                        (save-excursion (outline-next-heading) (point)))))
+      (org-convect--after-meta bound)
       (string-trim (buffer-substring-no-properties (min (point) bound) bound)))))
+
+(defun org-convect--after-meta (bound)
+  "Move past the heading's planning line and every drawer, stopping at BOUND.
+
+Past *every* drawer, not only the properties.  Writing after the first one
+puts text between PROPERTIES and LOGBOOK, which splits a run that Org expects
+to be unbroken -- and it is easy to do, because `org-end-of-meta-data\\=' lands
+before the drawers and the property drawer is the one everybody remembers.
+
+BOUND is where the entry ends.  On a heading with nothing written the walk
+lands exactly there -- on the next heading's own line -- which is the right
+place to write and the wrong place to read, so the two callers clamp for their
+own reasons rather than this one deciding for them."
+  (org-end-of-meta-data)
+  (while (and (< (point) bound) (looking-at org-drawer-regexp))
+    (if (re-search-forward "^[ \t]*:END:[ \t]*$" bound t)
+        (forward-line 1)
+      (goto-char bound))
+    (skip-chars-forward " \t\n"))
+  (goto-char (min (point) bound)))
 
 (defun org-convect--entry-at-point (file)
   "Return the horizon entry at point as a plist, or nil if there is none.
@@ -1628,6 +1641,143 @@ that you should be choosing to leave them, rather than not noticing."
         (goto-char (point-min))
         (special-mode)))
     (pop-to-buffer buffer)))
+
+;;;; Planning a project
+
+(defcustom org-convect-plan-fields
+  '(("Purpose" . "why this is worth doing at all, and what should guide how")
+    ("Outcome" . "what is true once it has worked, written in the present tense"))
+  "The parts of a project's plan that are worth keeping, and what each asks.
+
+GTD's planning model has five steps and only these two leave anything behind.
+Brainstorming and organising are *acts*, not fields: the brainstorm is raw
+material for the organising, and what organising produces is the shape of the
+outline itself.  Next actions are headings with a keyword on them.
+
+So a form with five blanks would be asking for three things that have nowhere
+to sit, and would leave two of them empty forever."
+  :type '(alist :key-type string :value-type string)
+  :group 'org-convect)
+
+;;;###autoload
+(defun org-convect-plan ()
+  "Open a planning space under the project at point.
+
+Puts down the two fields worth keeping and a first empty child to brainstorm
+into, then gets out of the way.  What follows is Org's own: \\[org-meta-return]
+for the next thought, \\[org-metaleft] and \\[org-metaright] to organise them
+into a shape, \\[org-todo] on the ones you are committing to.
+
+The child carries no keyword, and that is the point rather than an omission.
+org-foresight gives a heading with no TODO keyword no record at all -- it
+reads the absence as scaffolding, a place to put things -- so a brainstorm can
+be as long and as wrong as it needs to be without a single thought of it being
+counted as work anybody has taken on.  Only what you mark becomes work.
+
+Works on the heading at point, or on the entry behind an agenda line -- which
+is where you usually are when you notice something needs breaking down."
+  (interactive)
+  (let ((marker (if (derived-mode-p 'org-agenda-mode)
+                    (or (org-get-at-bol 'org-hd-marker)
+                        (user-error "No entry on this line"))
+                  (point-marker)))
+        target)
+    (org-with-point-at marker
+      (org-back-to-heading t)
+      ;; Held, because inserting the fields leaves point at the beginning of
+      ;; the line after them -- which is the *next* heading when the entry had
+      ;; no body.  Going "back to heading" from there arrives at the wrong
+      ;; entry, and the space to think then opens under somebody else's work.
+      (let* ((here (point-marker))
+             (level (org-current-level))
+             (body (org-convect--body))
+             (missing (seq-remove
+                       (lambda (field)
+                         (string-match-p (concat "^- " (regexp-quote (car field))
+                                                 " ::")
+                                         body))
+                       org-convect-plan-fields)))
+        ;; the fields first, in order, above whatever is already there
+        (when missing
+          (org-convect--after-meta
+           (save-excursion (outline-next-heading) (point)))
+          (unless (bolp) (insert "\n"))
+          (dolist (field missing)
+            (insert (format "- %s :: \n" (car field)))))
+        ;; then somewhere to think
+        (goto-char here)
+        (let ((end (save-excursion (org-end-of-subtree t t))))
+          (if (save-excursion (outline-next-heading)
+                              (and (< (point) end) (> (org-current-level) level)))
+              (goto-char end)
+            (goto-char end)
+            (unless (bolp) (insert "\n"))
+            ;; A line of its own.  `org-end-of-subtree' with TO-HEADING lands
+            ;; on the *start* of whatever follows, so a heading inserted here
+            ;; without a newline runs into that one and eats it.
+            (save-excursion (insert (make-string (1+ level) ?*) " \n"))
+            (end-of-line)))
+        (setq target (point-marker))))
+    (when (derived-mode-p 'org-agenda-mode)
+      (pop-to-buffer (marker-buffer target)))
+    (goto-char target)
+    (message "%s.  Then %s for the next thought, %s to shape them, %s on what you commit to"
+             (mapconcat (lambda (f) (format "%s: %s" (car f) (cdr f)))
+                        org-convect-plan-fields " / ")
+             (substitute-command-keys "\\[org-meta-return]")
+             (substitute-command-keys "\\[org-metaright]")
+             (substitute-command-keys "\\[org-todo]"))))
+
+;;;; What the thing under the cursor is asking for
+
+(defcustom org-convect-eldoc t
+  "Whether to say in the echo area what the line at point is asking for.
+
+Guidance has three places it can live and each has a failure.  In the file it
+goes stale, because it is written once and never learns anything.  In a
+command it is only there when you thought to run it.  In the echo area it is
+there while you are actually filling the thing in, which is the moment the
+question matters and the moment you are least likely to go looking.
+
+Eldoc is idle-triggered, so this does not compete with typing.  It returns
+nothing anywhere it does not recognise, so other Org buffers are untouched."
+  :type 'boolean
+  :group 'org-convect)
+
+(defun org-convect-eldoc-function (&rest _)
+  "Say what the line at point is asking for, or nil.
+
+For `eldoc-documentation-functions\\=', whose contract is either/or: a function
+may call the callback it is handed, *or* ignore it and return the string.
+Doing both hands Eldoc the same answer twice and it prints two identical
+lines.  Deciding here costs a regexp and a property read, so this takes the
+second road and simply returns."
+  (when org-convect-eldoc
+    (let ((said
+           (save-excursion
+             (beginning-of-line)
+             (cond
+              ;; a field of a project's plan
+              ((looking-at "^[ \t]*- \\([A-Za-z]+\\) ::")
+               (let ((asks (assoc-default (match-string 1)
+                                          org-convect-plan-fields)))
+                 (and asks (format "%s -- %s" (match-string 1) asks))))
+              ;; a rung of the ladder: what goes underneath it
+              ((org-at-heading-p)
+               (let ((horizon (org-entry-get nil "CONVECT_HORIZON")))
+                 (and horizon
+                      (org-convect-horizon-p (intern horizon))
+                      (format "%s -- %s"
+                              (org-convect-horizon-name (intern horizon))
+                              (org-convect--one-line (intern horizon) :write)))))))))
+      said)))
+
+(defun org-convect-eldoc-setup ()
+  "Let Eldoc ask this package about the line at point, in this buffer."
+  (add-hook 'eldoc-documentation-functions #'org-convect-eldoc-function nil t))
+
+;;;###autoload
+(add-hook 'org-mode-hook #'org-convect-eldoc-setup)
 
 ;;;; The review
 
