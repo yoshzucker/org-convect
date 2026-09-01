@@ -658,22 +658,98 @@ leave: a rung can stay bare on purpose while you go up and fetch the goal that
 says what it is for, and most areas serve nothing at all.  What it is for is
 that you should be *choosing* to leave them, rather than not noticing.
 
+Every row is live, because it is an agenda buffer and the row carries the
+marker.  Nothing here is bound by this package except redrawing:
+
+| =RET= | go to the heading the finding is about |
+| =z=   | write a note on it                     |
+| =v f= | follow — the rung opens beside the list as you move down it |
+| =r=   | redraw, after you have fixed something  |
+
+Follow starts off.  It is worth turning on while you work through the list,
+because whether a finding matters is decided by looking at the rung and not at
+its name — a rung you meant to leave bare looks exactly like one you forgot.
+
+=r= is why the remedies are worth having.  Fix something, press =r=, and the
+report is current, landing you back on the same rung rather than at the top.  A
+report you have to re-run by name after every fix is one you stop consulting.
+
+Under each group is the thing that answers it.  A report that names a condition
+and not the command that resolves it leaves you to go and find the command,
+which is how a finding comes to be read as scenery.
+
 * Findings
 
 ~org-convect-findings~ reports:
 
-| Kind                | Means                                          |
-|---------------------+------------------------------------------------|
-| ~unknown-horizon~   | a typo in ~CONVECT_HORIZON~                    |
-| ~duplicate-name~    | two rungs share a name, so pointing is ambiguous |
-| ~unresolved-serves~ | a name pointing at nothing                     |
-| ~unserved-goal~     | a goal nothing serves                          |
-| ~overdue-review~    | past the cadence GTD gives that horizon        |
+| Kind                | Means                                            | Answered by                    |
+|---------------------+--------------------------------------------------+--------------------------------|
+| ~bare-rung~         | a heading with nothing written under it          | write it, or leave it on purpose |
+| ~long-heading~      | a name that has become a sentence                | move the sentence to the body  |
+| ~undated-goal~      | a goal with no ~CONVECT_BY~                      | ~org-convect-set-date~         |
+| ~past-its-date~     | a goal still sitting there after its date        | close it, or move the date     |
+| ~unserved-rung~     | nothing below points at it                       | ~C-u org-convect-link~         |
+| ~unresolved-serves~ | it points above at a name that is not in the file | ~org-convect-relink~          |
+| ~duplicate-name~    | two rungs share a name, so pointing is ambiguous | ~org-convect-reword~           |
+| ~unknown-horizon~   | a typo in ~CONVECT_HORIZON~                      | fix the property               |
+| ~overdue-review~    | past the cadence GTD gives that horizon          | =z= on the row                 |
 
-Note what is *not* asked: whether a project or an area serves anything.  Most
-work is justified on its own — keeping the engines running is what an area is
-for, and the company's chores are a real accountability.  Asking every rung to
-name a purpose would turn an honest answer into a defect.
+The last two rows about links read as a pair and are worded as one, but they
+are *not* opposites.  ~unserved-rung~ is an absence — nothing below points
+here.  ~unresolved-serves~ is a break — something does point, at a name no rung
+answers to, which is a typo or a rename nothing followed.
+
+The true opposite of the first, a rung that points at nothing, is deliberately
+not a finding at all.  Most work is justified on its own — keeping the engines
+running is what an area is for, and the company's chores are a real
+accountability.  Asking every rung to name a purpose would turn an honest
+answer into a defect.
+
+** Nothing below points at it
+
+The one worth saying more about, because it is the one with a command behind
+it.  A purpose that nothing was derived from is either not being used yet or is
+not really held, and the ladder cannot tell which — but it can say that the
+link is missing.
+
+Links only run upward: ~CONVECT_SERVES~ sits on the lower rung and names the
+higher one.  So resolving this means writing a property on rungs *below* the
+one the finding is about — which you cannot do standing where the complaint is,
+unless the command comes to you.  It does:
+
+#+begin_src
+C-u M-x org-convect-link
+#+end_src
+
+Standing on the purpose, it offers every rung below it, and writes
+~CONVECT_SERVES~ onto each one you pick.  The direction of the data does not
+change; only the end you are standing at when you say it, which for an upper
+rung is the end where you know the answer.  It runs from a doctor row as well
+as from the file.
+
+~org-convect-declare~ deliberately does *not* ask this.  It marks headings in
+bulk — paste thirty areas, mark them, run it once — and a link prompt there
+would either ask thirty times or apply one answer to all thirty, and one goal
+for every area is the exact mistake the goal guidance warns about.
+
+** Points above at something that is not there
+
+The other link finding, and the only one that is always a defect: a
+~CONVECT_SERVES~ naming something no rung answers to — a typo, or a rung
+renamed without its references following.
+
+Neither of the other two commands repairs it.  ~org-convect-link~ only ever
+*adds*, which is right for the ordinary case but here would put a second name
+beside the broken one; ~org-convect-reword~ renames a rung, not the link
+pointing at it.  So there is a third:
+
+#+begin_src
+M-x org-convect-relink
+#+end_src
+
+It offers the links this rung carries, marking the ones that resolve to
+nothing, and asks what to point at instead.  An empty answer drops the link,
+which is the honest repair when the thing it named is gone.
 
 * Install
 
@@ -692,14 +768,47 @@ name a purpose would turn an honest answer into a defect.
 first, which is the direction the ladder is read.
 
 Each section carries a folded =:GUIDE:= drawer — one line until you press TAB.
-It says, in order: what that rung is, where to look for yours, *what to write
-underneath it once the heading exists*, how often to come back, and last the
-keystrokes that do it.
+Inside, every paragraph is labelled with the question it answers, in a teaching
+order:
 
-The middle one is the one that gets forgotten.  A rung is a heading so that it
-can go on accumulating; a file of bare headings is a file where the monthly
-look has nothing to be a look *at*.  For an area what goes underneath is the
-standard — what "kept up" means, the thing you would notice slipping.
+| *What this is*        | what that rung is                              |
+| *Where to find yours* | where to look, which is rarely inside your head |
+| *What goes underneath* | what to write once the heading exists         |
+| *One written out*     | a whole one, heading and body                  |
+| *The test*            | the question that decides                      |
+| *Telling them apart*  | one that is, and one that looks like it and is not |
+| *How often*           | the cadence GTD asks for                       |
+| *How the file works*  | which property holds what, where there is one  |
+| *What to type*        | the commands, last                             |
+
+The labels also mark where the register changes.  Everything down to *How
+often* is about the thinking — what you are being asked for, and how to tell
+whether you have it.  *How the file works* is about the file: which property
+holds what, which command writes it.  Mixing the two is what leaves a paragraph
+unreadable as either advice or rule, so mechanism is kept to the field labelled
+for it.
+
+Two of the others earn their place.
+
+*What goes underneath* is the one that gets forgotten.  A rung is a heading so
+that it can go on accumulating; a file of bare headings is a file where the
+monthly look has nothing to be a look *at*.  For an area what goes underneath
+is the standard — what "kept up" means, the thing you would notice slipping.
+
+*One written out* is the one that answers fastest.  Every other paragraph
+describes a rung, and a reader who has followed all of them can still be unsure
+whether the standard belongs in the heading or under it.  Being shown one
+settles it without a sentence:
+
+#+begin_example
+  ** engineering
+     Kept up means: reviews come back the same day; no branch is older
+     than a week; the build is green when I leave.
+#+end_example
+
+The heading and the body are all anybody types.  The properties are written by
+the commands, and are left out of the examples so that nothing in them looks
+like something to copy by hand.
 
 Nothing reads those drawers back, so delete them once they are in the way.
 =M-x org-convect-refresh-guides= puts the current wording back under every
