@@ -1742,18 +1742,23 @@ history to find it."
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map org-agenda-mode-map)
     (define-key map (kbd "r") #'org-convect-doctor)
-    (define-key map (kbd "g") #'org-convect-doctor)
     map)
-  "Keys the doctor adds to the agenda's own.
+  "The one key the doctor adds to the agenda's own.
 
-Only redrawing.  Everything else the report needs -- going to a row, writing a
-note on it, turning follow on with `v f' -- is already an agenda key acting on
-the marker the row carries, and rebinding those would be replacing working
-commands with worse ones.
+Redrawing, and nothing else.  Everything the report needs -- going to a row,
+writing a note on it, turning follow on with `v f' -- is already an agenda key
+acting on the marker the row carries, and rebinding those would be replacing
+working commands with worse ones.  `r' earns its place because a report you
+have to re-run by name after every fix is a report you stop consulting.
 
-`r' and `g' are both here because the agenda calls redrawing one and the rest
-of Emacs calls it the other, and a report you have to re-run by name after
-every fix is a report you stop consulting.")
+`g' is deliberately absent.  It is a motion prefix for a great many people --
+`gg', `gj', `gs' -- and binding it to a command here would take the prefix and
+every motion under it away in this buffer alone.
+
+A sequence under it, `g r', would in fact be safe: `define-key' through an
+inherited prefix builds a child map that itself inherits, so the parent's other
+`g' keys go on working.  It is left out anyway, because `r' already redraws and
+a second key for one command is a second thing to remember.")
 
 (defun org-convect--finding-label (kind)
   "The line of English for finding KIND."

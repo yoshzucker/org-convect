@@ -670,6 +670,10 @@ Follow starts off.  It is worth turning on while you work through the list,
 because whether a finding matters is decided by looking at the rung and not at
 its name — a rung you meant to leave bare looks exactly like one you forgot.
 
+Only =r= is bound by this package.  =g= is left alone: it is a motion prefix
+for a great many people — =gg=, =gj=, =gs= — and a command on it would take the
+prefix and everything under it away in this buffer alone.
+
 =r= is why the remedies are worth having.  Fix something, press =r=, and the
 report is current, landing you back on the same rung rather than at the top.  A
 report you have to re-run by name after every fix is one you stop consulting.
