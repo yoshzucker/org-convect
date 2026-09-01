@@ -577,24 +577,102 @@ would ask a question it gives no help with.
 the guide used to say what a rung is and where to find yours, and stop --
 leaving the file full of bare headings and no word about what goes under them."
   (dolist (horizon (mapcar #'car org-convect-horizons))
-    (dolist (field '(:what :test :find :examples :write :when :do :prompt :hint))
+    (dolist (field '(:what :test :find :examples :write :shape :when :do
+                     :prompt :hint))
       (should (org-convect-guide horizon field)))))
 
-(ert-deftest org-convect-test-the-guide-ends-with-the-keystrokes ()
-  "Reading comes first and doing comes last, in every drawer."
+(ert-deftest org-convect-test-the-guide-teaches-in-order ()
+  "Reading comes first and doing comes last, and the test comes after there is
+something to apply it to: you are shown one written out before being asked
+whether yours is one."
   (dolist (horizon (mapcar #'car org-convect-horizons))
     (let* ((drawer (org-convect--guide-drawer horizon))
            (at (lambda (field)
                  (string-match
-                  (regexp-quote (org-convect--fill (org-convect-guide horizon field)))
+                  (regexp-quote (org-convect--guide-field horizon field))
                   drawer))))
-      ;; every rendered field is in the drawer, in this order
-      (dolist (field '(:what :test :find :examples :write :when :do))
-        (should (funcall at field)))
-      (let ((order '(:what :test :find :examples :write :when :do)))
+      (let ((order '(:what :find :write :shape :test :examples :when :do)))
+        (dolist (field order)
+          (should (funcall at field)))
         (while (cdr order)
           (should (< (funcall at (car order)) (funcall at (cadr order))))
           (setq order (cdr order)))))))
+
+(ert-deftest org-convect-test-every-part-of-the-guide-says-what-it-is ()
+  "Nine fields answering nine different questions arrive as nine paragraphs
+that look exactly alike, and sorting them is work the reader should not be
+given.  The label is what says which question is being answered."
+  (dolist (horizon (mapcar #'car org-convect-horizons))
+    (dolist (entry org-convect-guide-fields)
+      (when (org-convect-guide horizon (car entry))
+        (should (string-prefix-p
+                 (concat "*" (nth 1 entry) "*.")
+                 (org-convect--guide-field horizon (car entry))))))))
+
+(ert-deftest org-convect-test-the-label-is-set-off-from-the-answer ()
+  "The full stop goes outside the emphasis.  Inside it, `.*' is not a sentence
+end to `fill-region', which closes the two spaces after the label to one and
+makes it read as the first words of the answer rather than as a label."
+  (should (string-match-p "\\*What this is\\*\\.  Why"
+                          (org-convect--guide-drawer 'purpose))))
+
+(ert-deftest org-convect-test-the-guide-is-not-indented-under-a-bullet ()
+  "`adaptive-fill-regexp' counts a leading `*' as a bullet, so a paragraph
+opening with a bold label would have every line after the first indented one
+column under a list that does not exist -- while the same field's second
+paragraph, which carries no label, stayed flush."
+  (dolist (horizon (mapcar #'car org-convect-horizons))
+    (should-not (string-match-p "\n [^ \n]" (org-convect--guide-drawer horizon)))))
+
+(ert-deftest org-convect-test-the-guide-shows-one-written-out ()
+  "Describing a rung and showing one are different jobs, and only the second
+settles whether the standard goes in the heading or underneath it.
+
+The example needs a body: a heading on its own shows nothing that was not
+already obvious, and what goes underneath is the part people get wrong.  Its
+heading is indented, because at column zero it would be a heading in the file
+rather than a picture of one."
+  (dolist (horizon (mapcar #'car org-convect-horizons))
+    (let ((lines (split-string (org-convect-guide horizon :shape) "\n")))
+      (should (string-match-p "\\`  \\*\\* " (car lines)))
+      (should (seq-some #'org-string-nw-p (cdr lines))))))
+
+(ert-deftest org-convect-test-the-example-is-not-refilled ()
+  "An example reflowed to 72 columns is no longer an example of anything: the
+heading and the body run into one line, which is the one thing it is showing."
+  (should (string-match-p "^  \\*\\* engineering$"
+                          (org-convect--guide-drawer 'area))))
+
+(ert-deftest org-convect-test-the-guide-drawer-holds-all-of-it ()
+  "Nothing in the guidance may close the drawer early.
+
+Org ends a drawer at the first line reading `:END:', so one buried in an
+example would spill the rest of the guidance into the section's body, where it
+would look like something the user had written.  Checked by searching the built
+file the way Org does, because the line that does it need not look dangerous --
+an indented property drawer in an example is enough."
+  (with-temp-buffer
+    (org-mode)
+    (insert (org-convect--build-skeleton))
+    (should (= (length org-convect-horizons)
+               (length (org-element-map (org-element-parse-buffer) 'headline
+                         #'identity))))
+    (dolist (horizon (mapcar #'car org-convect-horizons))
+      (goto-char (point-min))
+      (should (re-search-forward
+               (format "^\\* %s$" (regexp-quote (org-convect-horizon-name horizon)))
+               nil t))
+      (let* ((bound (save-excursion (org-end-of-subtree t t)))
+             ;; the regexps Org itself ends a drawer by: leading whitespace
+             ;; is allowed, so an indented `:END:' closes it just as well.
+             (from (progn (re-search-forward "^[ \t]*:GUIDE:[ \t]*$" bound t)
+                          (point)))
+             (to (progn (re-search-forward "^[ \t]*:END:[ \t]*$" bound t)
+                        (match-beginning 0))))
+        ;; the last field is on the far side of everything before it
+        (should (string-match-p
+                 (regexp-quote (org-convect--guide-field horizon :do))
+                 (buffer-substring-no-properties from to)))))))
 
 (ert-deftest org-convect-test-the-guide-names-its-own-commands ()
   "Every rung's guidance ends in something you can actually type."
@@ -609,6 +687,53 @@ they do not read as one."
   (should (string-match-p "\n\n" (org-convect--fill "one.\n\nother.")))
   (should (string-match-p "quietly stop working\\.\n\nName the role"
                           (org-convect--guide-drawer 'area))))
+
+(ert-deftest org-convect-test-an-indented-question-stays-indented ()
+  "The areas guidance turns on one question, set on a line of its own so that
+it is asked rather than read past.  Filling trims what it is given, so without
+this the question arrives as one more paragraph of prose."
+  (should (string-match-p "\n\n  second" (org-convect--fill "first.\n\n  second one")))
+  (should (string-match-p "\n  If this had slipped this month"
+                          (org-convect--guide-drawer 'area))))
+
+(ert-deftest org-convect-test-mechanism-stays-in-the-field-labelled-for-it ()
+  "A reader who cannot tell advice from a rule cannot use either.
+
+Everything up to `:when' is about the thinking; `:note' is about the file and
+`:do' is about the keys.  A property name or a command in any of the others is
+a change of register with nothing to announce it, and the paragraph reads as
+though the package were describing a wish rather than a mechanism."
+  (dolist (horizon (mapcar #'car org-convect-horizons))
+    (dolist (entry org-convect-guide-fields)
+      (let ((field (car entry))
+            (text (org-convect-guide horizon (car entry))))
+        (when (and text (not (memq field '(:note :do))))
+          (should-not (string-match-p "CONVECT_" text))
+          (should-not (string-match-p "M-x" text)))))))
+
+(ert-deftest org-convect-test-a-rung-points-at-another-without-defining-it ()
+  "The goal guidance names the areas, because looking at the areas is how goals
+are found.  What it must not do is say what an area *is*: that belongs to the
+area's own rung, and a definition kept in two places is a definition that will
+eventually disagree with itself.
+
+The rule is pointing versus defining, so what is banned is the sentence shape a
+definition takes -- \"an area is\", \"an area with\" -- rather than the word."
+  (dolist (horizon (mapcar #'car org-convect-horizons))
+    (dolist (entry org-convect-guide-fields)
+      (let ((text (org-convect-guide horizon (car entry))))
+        (dolist (other (mapcar #'car org-convect-horizons))
+          (unless (eq other horizon)
+            (should-not
+             (and text
+                  (string-match-p
+                   ;; sentence-initial and capitalised, which is where a
+                   ;; definition sits.  Mid-sentence the same words are
+                   ;; ordinary prose -- \"producing a purpose is the most
+                   ;; common thing\" defines nothing.
+                   (format "\\(\\`\\|[.!?]  \\|\n\\)\\(An?\\|Each\\|Every\\) %s \\(is\\|with\\|has\\)"
+                           (symbol-name other))
+                   text)))))))))
 
 (ert-deftest org-convect-test-the-areas-guide-rules-out-objects ()
   "The distinction that decides what an area may be called."
@@ -1162,6 +1287,227 @@ heading, so the file cannot show its own gaps."
         (should (string-match-p "Nothing written under it" report))
         (should (string-match-p "work.dev" report))
         (should-not (string-match-p "family.father$" report))))))
+
+(ert-deftest org-convect-test-doctor-rows-are-live ()
+  "A finding names a heading, and the heading is where you decide whether the
+finding matters.  Without the marker the report is a list of names you have to
+go and look up, which is how a finding comes to be read as scenery."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (save-window-excursion (org-convect-doctor))
+    (with-current-buffer org-convect-doctor-buffer
+      (should (derived-mode-p 'org-agenda-mode))
+      (goto-char (point-min))
+      (should (re-search-forward "^Nothing below points at it$" nil t))
+      (forward-line 1)
+      (let ((marker (org-get-at-bol 'org-hd-marker)))
+        (should (markerp marker))
+        (should (marker-buffer marker))
+        ;; and the rung reads back through it, which is what lets every
+        ;; command that fixes a finding be run from the row
+        (should (org-convect--rung-at-point))))))
+
+(ert-deftest org-convect-test-the-doctor-follows-through-the-agenda ()
+  "Following is the agenda's own, turned on with `v f' and off to begin with.
+
+Writing another one was the wrong instinct: the agenda already has follow mode,
+its keys are the ones already in the fingers, and the reason it looked broken
+was elsewhere.  What it needs from a row is `org-marker' -- `org-hd-marker'
+alone is not what `org-agenda-do-context-action' reads."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (save-window-excursion
+      (org-convect-doctor)
+      (with-current-buffer org-convect-doctor-buffer
+        (should-not org-agenda-follow-mode)
+        (should (eq (key-binding (kbd "v")) 'org-agenda-view-mode-dispatch))
+        (goto-char (point-min))
+        (should (re-search-forward "^Nothing below points at it$" nil t))
+        (forward-line 1)
+        (should (markerp (org-get-at-bol 'org-marker)))
+        (org-agenda-follow-mode)
+        (should org-agenda-follow-mode)
+        (goto-char (point-min))
+        (re-search-forward "^Nothing below points at it$")
+        (org-agenda-next-line)
+        (should (get-buffer-window
+                 (marker-buffer (org-get-at-bol 'org-hd-marker))))))))
+
+(ert-deftest org-convect-test-the-doctor-redraws-on-r ()
+  "A report you have to re-run by name after every fix is a report you stop
+consulting -- and the whole point of the remedies is that you fix things while
+looking at it."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (save-window-excursion
+      (org-convect-doctor)
+      (with-current-buffer org-convect-doctor-buffer
+        (should (eq (key-binding (kbd "r")) 'org-convect-doctor))
+        (should (eq (key-binding (kbd "g")) 'org-convect-doctor))
+        (goto-char (point-min))
+        (re-search-forward "^Nothing below points at it$")
+        (forward-line 1)
+        (let ((was (org-get-at-bol 'org-convect-rung)))
+          (should was)
+          (call-interactively (key-binding (kbd "r")))
+          (with-current-buffer org-convect-doctor-buffer
+            ;; the row, not the line: a fix removes lines above the one you
+            ;; were on, and a line number would land somewhere else each time
+            (should (equal was (org-get-at-bol 'org-convect-rung)))))))))
+
+(ert-deftest org-convect-test-a-redraw-shows-what-changed ()
+  "Otherwise it is a picture of the file as it was when you opened it."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (save-window-excursion
+      (org-convect-doctor)
+      (with-current-buffer org-convect-doctor-buffer
+        (should (string-match-p "Honesty" (buffer-string))))
+      (with-current-buffer (find-file-noselect (car org-convect-files))
+        (goto-char (point-min))
+        (re-search-forward "^\\*+ Honesty")
+        (org-entry-put nil "CONVECT_HORIZON" "area")
+        (save-buffer))
+      (with-current-buffer org-convect-doctor-buffer
+        (call-interactively (key-binding (kbd "r")))
+        (with-current-buffer org-convect-doctor-buffer
+          ;; an area nothing points at is never a finding
+          (should-not (string-match-p "Nothing below points at it"
+                                      (buffer-string))))))))
+
+(ert-deftest org-convect-test-relink-repoints-a-broken-link ()
+  "Neither of the other two can do this.  `org-convect-link' adds a name beside
+the broken one and `org-convect-reword' renames a rung rather than the link
+pointing at it, so without this the one finding that is always a defect had no
+command behind it."
+  (org-convect-test--with-ladder "\
+* Honesty
+:PROPERTIES:
+:CONVECT_HORIZON: purpose
+:END:
+Rules out staying quiet.
+
+* engineering
+:PROPERTIES:
+:CONVECT_HORIZON: area
+:CONVECT_SERVES: Honestly
+:END:
+Reviews come back the same day.
+"
+    (with-current-buffer (find-file-noselect (car org-convect-files))
+      (goto-char (point-min))
+      (re-search-forward "^\\* engineering")
+      (cl-letf (((symbol-function 'completing-read)
+                 (lambda (prompt &rest _)
+                   (if (string-match-p "Repoint which" prompt)
+                       "Honestly  (not in the file)"
+                     "Honesty"))))
+        (org-convect-relink))
+      (should (equal "Honesty" (org-entry-get nil "CONVECT_SERVES"))))
+    (should-not (memq 'unresolved-serves
+                      (org-convect-test--kinds
+                       (org-convect-findings (org-convect-scan)) "engineering")))))
+
+(ert-deftest org-convect-test-relink-drops-a-link-on-an-empty-answer ()
+  "When the thing it named is gone, dropping it is the honest repair -- and
+leaving the property behind with nothing in it would be a second finding."
+  (org-convect-test--with-ladder "\
+* engineering
+:PROPERTIES:
+:CONVECT_HORIZON: area
+:CONVECT_SERVES: A goal nobody kept
+:END:
+Reviews come back the same day.
+"
+    (with-current-buffer (find-file-noselect (car org-convect-files))
+      (goto-char (point-min))
+      (re-search-forward "^\\* engineering")
+      (cl-letf (((symbol-function 'completing-read)
+                 (lambda (prompt &rest _)
+                   (if (string-match-p "Repoint which" prompt)
+                       "A goal nobody kept  (not in the file)"
+                     ""))))
+        (org-convect-relink))
+      (should-not (org-entry-get nil "CONVECT_SERVES")))))
+
+(ert-deftest org-convect-test-relink-refuses-a-rung-with-no-links ()
+  "There is nothing to repoint, and a prompt offering an empty list teaches
+people to dismiss prompts."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (with-current-buffer (find-file-noselect (car org-convect-files))
+      (goto-char (point-min))
+      (re-search-forward "^\\*+ Honesty")
+      (should-error (org-convect-relink) :type 'user-error))))
+
+(ert-deftest org-convect-test-every-finding-says-what-answers-it ()
+  "Naming a condition without naming what resolves it leaves the reader to go
+and find the command, and a report you have to research is a report you stop
+reading."
+  (dolist (entry org-convect--finding-labels)
+    (should (org-string-nw-p (org-convect--finding-label (car entry))))
+    (should (org-string-nw-p (org-convect--finding-remedy (car entry)))))
+  ;; the ones whose answer is a command name it
+  (should (string-match-p "org-convect-link"
+                          (org-convect--finding-remedy 'unserved-rung)))
+  ;; not reword, which renames a rung, and not link, which only ever adds
+  (should (string-match-p "org-convect-relink"
+                          (org-convect--finding-remedy 'unresolved-serves)))
+  (should (string-match-p "org-convect-reword"
+                          (org-convect--finding-remedy 'duplicate-name)))
+  (should (string-match-p "org-convect-set-date"
+                          (org-convect--finding-remedy 'undated-goal))))
+
+(ert-deftest org-convect-test-the-remedy-is-shown-with-the-finding ()
+  "In the report, not only in the source."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (save-window-excursion (org-convect-doctor))
+    (with-current-buffer org-convect-doctor-buffer
+      (should (string-match-p "C-u M-x org-convect-link" (buffer-string))))))
+
+(ert-deftest org-convect-test-the-two-link-findings-are-worded-as-a-pair ()
+  "They are read together and they are about the same one property, so they are
+worded alike -- same verb, and the direction said out loud.
+
+They are not opposites, though, and the wording must not claim they are.  One
+is an absence, nothing below points here; the other is a break, something does
+point, at a name that is not in the file.  The true opposite of the first is
+deliberately not a finding: most areas serve nothing."
+  (let ((down (org-convect--finding-label 'unserved-rung))
+        (up (org-convect--finding-label 'unresolved-serves)))
+    (should (string-match-p "points" down))
+    (should (string-match-p "points" up))
+    (should (string-match-p "below" down))
+    (should (string-match-p "above" up))))
+
+(ert-deftest org-convect-test-a-date-set-from-a-board-lands-on-the-rung ()
+  "`org-convect-set-date' used to write at point, which is the board when the
+rung was read from a row -- so the property went into the report and the goal
+kept its silence."
+  (org-convect-test--with-ladder org-convect-test--ladder-written
+    (save-window-excursion (org-convect-doctor))
+    (with-current-buffer org-convect-doctor-buffer
+      (goto-char (point-min))
+      (should (re-search-forward "goal +A team that runs itself" nil t))
+      (beginning-of-line)
+      (org-convect-set-date "2030-12-31")
+      (should-not (string-match-p "CONVECT_BY" (buffer-string))))
+    (with-current-buffer (find-file-noselect (car org-convect-files))
+      (goto-char (point-min))
+      (should (re-search-forward "^\\*+ A team that runs itself" nil t))
+      (should (equal "[2030-12-31]" (org-entry-get nil "CONVECT_BY"))))))
+
+(defconst org-convect-test--directory
+  (file-name-directory (or load-file-name buffer-file-name default-directory))
+  "Where this file lives, taken while it loads.
+
+`load-file-name' is bound during the load and nil by the time a test runs, so
+a test that wants a file next to this one has to have been told at load time.")
+
+(ert-deftest org-convect-test-the-readme-lists-every-finding ()
+  "The table drifted once already -- it carried a kind called `unserved-goal'
+that the code has never reported -- and a table of findings that is missing one
+is worse than no table, because it reads as complete."
+  (let ((readme (expand-file-name "../README.org" org-convect-test--directory)))
+    (skip-unless (file-readable-p readme))
+    (let ((text (with-temp-buffer (insert-file-contents readme) (buffer-string))))
+      (dolist (entry org-convect--finding-labels)
+        (should (string-match-p (format "~%s~" (car entry)) text))))))
 
 (ert-deftest org-convect-test-doctor-counts-highest-first ()
   "The report reads down the way the file does.  Counting up would put the

@@ -676,9 +676,13 @@ is usually the easier one, and it is half the answer."
 A principle is pointed at by name, reviewed on its own and has choice points
 recorded under it, and none of that can happen to a line in a list.
 
-Under each heading, what it rules out: the behaviour you would refuse even at
-a cost.  A principle with nothing it forbids is a slogan, and nothing can be
-measured against it."
+Under each heading, in ordinary prose, what it rules out: the behaviour you
+would refuse even at a cost.  A principle with nothing it forbids is a slogan,
+and nothing can be measured against it."
+     :shape  "  ** I do not let a number stand that I know is wrong
+     Rules out: staying quiet in a review because the meeting is
+     nearly over.  Rules out: repeating a figure I have not checked
+     because someone senior said it first."
      :test   "Three questions, and the third is the one that decides.
 
 Does it finish?  A principle never does.  Is it something you do, or something
@@ -718,6 +722,10 @@ handle -- something short enough to point at from a goal -- and the body is
 where the picture goes.  This is the one rung whose body is meant to run long,
 but it still needs the heading, because loose prose under the section is not a
 rung and nothing can be said about it."
+     :shape  "  ** The team ships without me in the room
+     A release goes out on a Thursday and I hear about it afterwards.
+     The review that catches the bad number is somebody else's, and it
+     catches it.  Nobody waits to be told it is safe to say so."
      :test   "Can you write it in the present tense, as though it were already
 the case?  A vision reads that way and a goal does not.
 
@@ -746,31 +754,20 @@ not go down the list of areas looking for one each -- that is the commonest
 way this level goes wrong.  One goal usually touches several areas, and most
 areas have no goal at all at any given moment.
 
-An area with no goal is an area in good order.  It is maintained, not achieved;
-if the standard is being met there is nothing to aim at, and inventing
-something produces a goal you will not pursue.  A goal appears when something
-has to become *different*: the standard itself needs to rise, or something is
-in the way of meeting it, or a thing that does not exist yet is wanted.
+A goal appears when something has to become *different*: a standard has to
+rise, or something is in the way of meeting one, or a thing that does not exist
+yet is wanted.  So read the areas for pressure rather than for material.
 
-So look at the areas for pressure, not for material -- an area you could not
-write a standard for is often one waiting to be told what it is for, and
-coming back down with a goal in hand is how that gets said.  But the goals
-themselves usually come from somewhere else, and usually they are already
-written down: this year's objectives, a plan someone is holding you to, the
-thing you told your family you would do.  Copy them, the way the areas were
+The goals themselves usually come from somewhere else, and usually they are
+already written down: this year's objectives, a plan someone is holding you to,
+the thing you told your family you would do.  Copy them, the way the areas were
 copied."
      :write  "Under each one, as plain lines, how you would know it had
 happened.  Nothing else -- no label, no date in the text.  A goal you cannot
-judge is a vision that has been given a date.
-
-The date is a property, `CONVECT_BY', so that it can be read rather than
-noticed: M-x org-convect-set-date, or answer the prompt when adding one.  A
-goal still sitting there after its date has been reached, abandoned, or was
-never a goal, and the review says so.
-
-Which areas a goal changes is a link, and links only ever run upward -- the
-area names the goal, never the reverse.  Standing on the goal, where you know
-the answer, C-u M-x org-convect-link writes it onto the areas you pick."
+judge is a vision that has been given a date."
+     :shape  "  ** Two other people review releases, unprompted
+     Reached when: two releases in a row go out with a review I did not
+     ask anyone for."
      :test   "Can you say what would count as having reached it, and roughly
 when?
 
@@ -779,9 +776,29 @@ all, it is an area you maintain or a principle you hold."
      :examples "Yes: \"Vo2max of 55 by the end of the year.\"  There is a
 number and a date, and on the day it is true you are done.
 
-No: \"Stay fit.\"  Nothing about that finishes, which makes it an area -- and
-its standard is what \"fit\" means from week to week."
+No: \"Stay fit.\"  Nothing about that finishes, which makes it an area."
      :when   "Yearly, with a look each quarter."
+     :note   "The date a goal is for and the date it is next looked at are two
+different dates, and only the first of them is a property.
+
+`CONVECT_BY' is the goal's own target: when it is meant to be true.  It is a
+property so that it can be read rather than noticed; M-x org-convect-set-date
+writes it, or answer the prompt when adding one.  A goal still sitting there
+after that date has been reached, abandoned, or was never a goal, and the
+review says so.
+
+The quarterly look is an interval rather than a date -- 90 days, in
+`org-convect-review-cadence' -- counted from the last note written on the
+entry, or from the day it was written when there is none.  So looking at a
+goal is what postpones the next look at it, and a target two years out does
+not buy two years of quiet.
+
+Links only ever run upward.  The property is `CONVECT_SERVES', it sits on the
+lower rung and names the higher one, and there is none pointing the other way:
+two directions would be two answers that could disagree, and nothing would say
+which was right.  Writing it is not confined to the lower end, though --
+standing on the goal, where you know which areas it changes, C-u M-x
+org-convect-link writes it onto the areas you pick."
      :do     "Add one with M-x org-convect-add, or write several as child
 headings here, mark them, and run M-x org-convect-declare.  Then, on each:
 write how you would know it had happened, set the date with M-x
@@ -822,6 +839,9 @@ years from now, that is not a bad answer -- it is a good answer to a different
 rung.  Move it up to Purpose or Vision and ask the question again with the
 clock in it.  Being asked for a standard and producing a purpose is the most
 common thing that happens here."
+     :shape  "  ** engineering
+     Kept up means: reviews come back the same day; no branch is older
+     than a week; the build is green when I leave."
      :test   "Does it finish?  It must not.  Do the words \"kept up\" attach to
 it?  They must.  Are you answerable for it?  You must be.
 
@@ -831,7 +851,7 @@ than a thing held to a standard, it is a principle."
 day and no branch is older than a week.
 
 No: \"Ship the migration.\"  It finishes, so it is a project -- it belongs in
-the task system, carrying this area's name in `CONVECT_AREA'."
+the task system rather than here."
      :when   "Monthly, and whenever the job or the household changes."
      :note   "An area's name is what a task carries in `CONVECT_AREA', which is
 how the clock reports against it.  The property is read with inheritance, so
@@ -855,19 +875,18 @@ built from it, and so are the prompts `org-convect-add' asks.  Keeping the
 substance in one place is what stops a file written years ago from disagreeing
 with the command being run today.
 
-The fields, in the order they are read:
-
-  :what   what this rung is
-  :find   where to look for yours
-  :write  what goes underneath, once the heading exists
-  :when   how often to come back to it
-  :note   anything mechanical worth knowing
-  :do     the keystrokes, last, because that is what you want when the
-          reading is done
+The fields are listed, labelled and ordered by `org-convect-guide-fields'.
 
 `:write' is the one that gets forgotten.  A rung is a heading so that it can go
 on accumulating, and a file full of bare headings is a file where the review
 has nothing to be a review *of*.
+
+`:shape' is the one that answers fastest.  Everything else describes a rung and
+it describes one, so a reader who has followed every paragraph can still be
+unsure whether the standard goes in the heading or underneath.  Being shown one
+settles that without a sentence.  It is written out verbatim, so its line breaks
+are the content -- see `org-convect-guide-verbatim-fields' for the one thing it
+may not contain.
 
 `:prompt' and `:hint' are the minibuffer's share of the same text.
 
@@ -877,9 +896,76 @@ descriptions are not the David Allen Company's text."
   :type '(alist :key-type symbol :value-type plist)
   :group 'org-convect)
 
+(defconst org-convect-guide-fields
+  '((:what     "What this is")
+    (:find     "Where to find yours")
+    (:write    "What goes underneath")
+    (:shape    "One written out"
+               "The heading and the body, which is all anybody types.  The
+properties are the commands' work, and are left out so that nothing in the
+example looks like something to copy by hand.")
+    (:test     "The test")
+    (:examples "Telling them apart")
+    (:when     "How often")
+    (:note     "How the file works")
+    (:do       "What to type"))
+  "The parts of a guide drawer in reading order, as (FIELD LABEL [GLOSS]).
+
+The labels are the point.  Nine fields answering nine different questions used
+to arrive as nine paragraphs that looked exactly alike, leaving the reader to
+work out which question each one was answering -- which is the writer's work,
+not the reader's.  Three words at the front of a paragraph do it.
+
+The order is a teaching order.  A test is something applied to what you have,
+so it comes after there is something to apply it to: what this is, where to find
+yours, what goes underneath, one written out, and only then the test.
+
+The labels also mark a change of register, which is the other thing that made
+these drawers hard to read.  Everything up to `:when' is about the thinking:
+what you are being asked for and how to tell whether you have it.  `:note' is
+about the file -- which property holds what, which command writes it, what the
+package will and will not do.  Mixing the two leaves the reader unable to say
+whether a sentence is advice or a rule, so mechanism is confined to the field
+labelled for it.
+
+GLOSS is wording that belongs to the field itself rather than to any one
+horizon, and so has nowhere in `org-convect-horizon-guide' to live.")
+
+(defconst org-convect-guide-verbatim-fields '(:shape)
+  "Guide fields whose line breaks are the content and must not be refilled.
+
+An example of a rung is Org text, and Org text reflowed to 72 columns is no
+longer an example of anything.
+
+What such a field may not contain is a line reading `:END:', indented or not.
+Org ends a drawer at the first one it finds, so it would close the `:GUIDE:'
+drawer around it and spill the rest of the guidance into the entry's body.
+That rules out showing a property drawer in an example -- which is no loss,
+since the properties are written by the commands rather than typed by hand.")
+
 (defun org-convect-guide (horizon field)
   "The FIELD of HORIZON's entry in `org-convect-horizon-guide'."
   (plist-get (alist-get horizon org-convect-horizon-guide) field))
+
+(defun org-convect--guide-field (horizon field)
+  "HORIZON's FIELD as it appears in the guide drawer, or nil when it has none.
+
+The label is set into the same paragraph as the answer, so the question arrives
+first and costs no line of its own.  Its full stop goes outside the emphasis:
+`.*' is not a sentence end to `fill-region', which would then close the two
+spaces after the label to one and set it apart from every other sentence.
+
+A verbatim field gets its label on a paragraph of its own, because running an
+example into prose would be running prose into the example."
+  (let ((text (org-convect-guide horizon field))
+        (entry (assq field org-convect-guide-fields)))
+    (when (and entry (org-string-nw-p text))
+      (let* ((gloss (nth 2 entry))
+             (lead (concat "*" (nth 1 entry) "*."
+                           (and gloss (concat "  " gloss)))))
+        (if (memq field org-convect-guide-verbatim-fields)
+            (concat (org-convect--fill lead) "\n\n" (string-trim-right text))
+          (org-convect--fill (concat lead "  " text)))))))
 
 (defun org-convect--one-line (horizon &optional field)
   "The first sentence of HORIZON's FIELD (default `:what').
@@ -961,19 +1047,30 @@ The source strings are broken where the source is easiest to read, which is
 not where the file should break.  Joining and refilling keeps the two apart:
 a sentence end keeps its two spaces, every other line break becomes one space.
 
-A blank line is not a line break in that sense -- it is a paragraph, and the
-one thing in the source that means what it says -- so those survive and each
-paragraph is filled on its own."
+Two things in the source do mean what they say and survive.  A blank line is a
+paragraph, so each paragraph is filled on its own.  And a paragraph indented in
+the source stays indented, which is how a question meant to be asked on its own
+goes on looking like one instead of joining the prose around it."
   (mapconcat
    (lambda (paragraph)
+     (let ((indent (if (string-match "\\`[ \t]+" paragraph)
+                       (match-string 0 paragraph)
+                     "")))
      (with-temp-buffer
-       (insert (replace-regexp-in-string
+       (insert indent
+               (replace-regexp-in-string
                 "\n[ \t]*" " "
                 (replace-regexp-in-string "\\([.?!]\\)\n[ \t]*" "\\1  "
                                           (string-trim paragraph))))
-       (let ((fill-column 72))
+       (let ((fill-column 72)
+             (fill-prefix indent)
+             ;; Off, because a paragraph here may open with a bold label and
+             ;; `adaptive-fill-regexp' counts a leading `*' as a bullet: every
+             ;; line after the first would be indented under a list that is not
+             ;; there.
+             (adaptive-fill-mode nil))
          (fill-region (point-min) (point-max)))
-       (buffer-string)))
+       (buffer-string))))
    (split-string (string-trim text) "\n[ \t]*\n" t)
    "\n\n"))
 
@@ -986,10 +1083,10 @@ nothing, since nothing reads it back.  What it does *not* hold is the mechanics
 of writing an entry -- those live in `org-convect-add', which cannot go stale
 the way a file written once at creation can."
   (concat ":GUIDE:\n"
-          (mapconcat #'org-convect--fill
-                     (delq nil (mapcar (lambda (field)
-                                         (org-convect-guide horizon field))
-                                       '(:what :test :find :examples :write :when :note :do)))
+          (mapconcat #'identity
+                     (delq nil (mapcar (lambda (entry)
+                                         (org-convect--guide-field horizon (car entry)))
+                                       org-convect-guide-fields))
                      "\n\n")
           "\n"
           ":END:\n"))
@@ -1130,10 +1227,21 @@ are not read and not moved."
     refreshed))
 
 (defun org-convect--rung-at-point ()
-  "The rung at point as a plist, or nil when point is not on one."
-  (and (derived-mode-p 'org-mode)
-       (ignore-errors (org-back-to-heading t) t)
-       (org-convect--entry-at-point (buffer-file-name))))
+  "The rung at point as a plist, or nil when point is not on one.
+
+In an Org buffer that is the heading.  In a board -- the review, a lineage,
+the doctor -- it is the entry the row stands for, read through the marker the
+row carries.  Boards are where most of this gets decided, so a command that
+only worked in the file would be one you had to leave the board to run."
+  (cond
+   ((derived-mode-p 'org-mode)
+    (and (ignore-errors (org-back-to-heading t) t)
+         (org-convect--entry-at-point (buffer-file-name))))
+   ((derived-mode-p 'org-agenda-mode)
+    (let ((marker (org-get-at-bol 'org-hd-marker)))
+      (and (markerp marker) (marker-buffer marker)
+           (org-with-point-at marker
+             (org-convect--entry-at-point (buffer-file-name))))))))
 
 ;;;###autoload
 (defun org-convect-set-date (&optional date)
@@ -1148,9 +1256,12 @@ you intend to stop being answerable for it."
     (unless (org-convect-guide (plist-get rung :horizon) :dated)
       (user-error "A %s carries no date" (plist-get rung :horizon)))
     (let ((date (or date (org-read-date nil nil nil "Reached by"))))
-      (if (org-string-nw-p date)
-          (org-entry-put nil "CONVECT_BY" (format "[%s]" date))
-        (org-entry-delete nil "CONVECT_BY")))))
+      ;; through the marker rather than at point: the rung may have been read
+      ;; from a board row, and point is then in the board.
+      (org-with-point-at (plist-get rung :marker)
+        (if (org-string-nw-p date)
+            (org-entry-put nil "CONVECT_BY" (format "[%s]" date))
+          (org-entry-delete nil "CONVECT_BY"))))))
 
 ;;;###autoload
 (defun org-convect-link (&optional downward)
@@ -1201,6 +1312,65 @@ is the end where you know the answer."
           (org-convect--add-serves (plist-get here :marker) pick))
         (message "%s now serves %d rung%s" name (length chosen)
                  (if (= 1 (length chosen)) "" "s"))))))
+
+;;;###autoload
+(defun org-convect-relink ()
+  "Repoint or drop one of the links written on the rung at point.
+
+`org-convect-link' only ever adds, which is right for the ordinary case: saying
+what something is in service of is no reason to disturb what it already serves.
+It leaves nothing able to repair a name that has stopped resolving, though, and
+that is exactly what `unresolved-serves' reports -- a typo, or a rung renamed
+without its references following.  Neither is fixed by adding a second name
+beside the broken one, and `org-convect-reword' renames a rung rather than the
+link that points at it.
+
+Offers the links this rung carries, marking the ones that resolve to nothing,
+and asks what to point at instead.  An empty answer drops the link, which is
+the honest repair when the thing it named is gone."
+  (interactive)
+  (let* ((entries (org-convect-scan))
+         (here (or (org-convect--rung-at-point) (user-error "Not on a rung")))
+         (index (org-convect-name-index entries))
+         (serves (plist-get here :serves)))
+    (unless serves
+      (user-error "\"%s\" points at nothing" (plist-get here :name)))
+    (let* ((table (mapcar (lambda (name)
+                            (cons (if (gethash name index)
+                                      name
+                                    (format "%s  (not in the file)" name))
+                                  name))
+                          serves))
+           ;; the broken one first, because a broken one is why you are here
+           (broken (seq-find (lambda (cell) (not (gethash (cdr cell) index))) table))
+           (old (cdr (assoc (completing-read "Repoint which link: " table nil t
+                                             nil nil (car (or broken (car table))))
+                            table)))
+           (above (mapcar (lambda (e) (plist-get e :name))
+                          (seq-filter
+                           (lambda (e)
+                             (memq (plist-get e :horizon)
+                                   (org-convect-above (plist-get here :horizon))))
+                           entries)))
+           (new (string-trim
+                 (completing-read
+                  (format "\"%s\" now points at (empty drops it): " old)
+                  above nil nil))))
+      (org-with-point-at (plist-get here :marker)
+        (let ((kept (seq-uniq
+                     (seq-remove #'string-empty-p
+                                 (mapcar (lambda (name)
+                                           (if (equal name old) new name))
+                                         serves)))))
+          (if kept
+              (org-entry-put nil "CONVECT_SERVES"
+                             (string-join
+                              kept (concat org-convect-serves-separator " ")))
+            (org-entry-delete nil "CONVECT_SERVES"))
+          (save-buffer)))
+      (message (if (string-empty-p new)
+                   (format "Dropped \"%s\"" old)
+                 (format "\"%s\" now points at \"%s\"" old new))))))
 
 (defun org-convect--add-serves (marker name)
   "Add NAME to the `CONVECT_SERVES\\=' of the rung at MARKER, without repeating it."
@@ -1568,17 +1738,68 @@ history to find it."
 (defconst org-convect-doctor-buffer "*Horizons*"
   "Where `org-convect-doctor' writes.")
 
+(defvar org-convect-doctor-mode-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map org-agenda-mode-map)
+    (define-key map (kbd "r") #'org-convect-doctor)
+    (define-key map (kbd "g") #'org-convect-doctor)
+    map)
+  "Keys the doctor adds to the agenda's own.
+
+Only redrawing.  Everything else the report needs -- going to a row, writing a
+note on it, turning follow on with `v f' -- is already an agenda key acting on
+the marker the row carries, and rebinding those would be replacing working
+commands with worse ones.
+
+`r' and `g' are both here because the agenda calls redrawing one and the rest
+of Emacs calls it the other, and a report you have to re-run by name after
+every fix is a report you stop consulting.")
+
+(defun org-convect--finding-label (kind)
+  "The line of English for finding KIND."
+  (nth 1 (assq kind org-convect--finding-labels)))
+
+(defun org-convect--finding-remedy (kind)
+  "What answers finding KIND, as one line."
+  (nth 2 (assq kind org-convect--finding-labels)))
+
 (defconst org-convect--finding-labels
-  '((bare-rung         . "Nothing written under it")
-    (long-heading      . "Long for a name -- if it is a sentence, it belongs in the body")
-    (undated-goal      . "No date")
-    (past-its-date     . "Past its date")
-    (unserved-rung     . "Nothing below points at it")
-    (unresolved-serves . "Serves something that is not there")
-    (duplicate-name    . "Shares its name with another rung")
-    (unknown-horizon   . "Not a horizon this package knows")
-    (overdue-review    . "Due to be looked at"))
-  "One line of English per finding kind, for the doctor's report.")
+  '((bare-rung "Nothing written under it"
+     "open it and write what goes underneath -- or leave it, if a rung above
+still has to say what it is being kept up for")
+    (long-heading "Long for a name -- if it is a sentence, it belongs in the body"
+     "move the sentence down into the body and leave a name behind")
+    (undated-goal "No date"
+     "M-x org-convect-set-date.  Roughly when is half of what makes it a goal")
+    (past-its-date "Past its date"
+     "reached, abandoned, or never a goal -- say which, then close it or move
+the date")
+    (unserved-rung "Nothing below points at it"
+     "C-u M-x org-convect-link, standing on the rung: it asks which rungs below
+should point at it, and writes the link onto each")
+    (unresolved-serves "Points above at something that is not there"
+     "M-x org-convect-relink, standing on the rung: it offers the links this
+one carries and asks what to point at instead, or drops it for an empty answer")
+    (duplicate-name "Shares its name with another rung"
+     "two rungs answering to one name, so a link cannot say which it meant.
+M-x org-convect-reword one of them")
+    (unknown-horizon "Not a horizon this package knows"
+     "`CONVECT_HORIZON\=' holds something that is not a rung of this ladder")
+    (overdue-review "Due to be looked at"
+     "z on the row writes your conclusion onto the rung, which is also what
+postpones the next look at it"))
+  "Per finding kind: the line of English, and what answers it.
+
+The remedy is the half that was missing.  A report that names a condition and
+not the command that resolves it leaves the reader to go and find the command,
+which is how a finding comes to be read as scenery.
+
+The two link findings are worded as a pair because they are read as one, but
+they are not opposites.  `unserved-rung\=' is an absence: nothing below points
+here.  `unresolved-serves\=' is a break: something does point, at a name that
+is not in the file.  The true opposite of the first -- a rung that points at
+nothing -- is deliberately not a finding at all, because most areas serve
+nothing and the top rung serves nothing by definition.")
 
 ;;;###autoload
 (defun org-convect-doctor ()
@@ -1591,13 +1812,29 @@ this counts them.
 It is a report and not a scold.  Several of the things it lists are fine to
 leave: a rung can stay bare on purpose while you go up and fetch the goal that
 says what it is for, and most areas serve nothing at all.  What it is for is
-that you should be choosing to leave them, rather than not noticing."
+that you should be choosing to leave them, rather than not noticing.
+
+Which is why the rows are live and each group carries the thing that answers
+it.  Deciding to leave a finding means looking at the rung, so \\[org-agenda-switch-to]
+goes to it and the cursor opens it alongside; and deciding to fix one means
+knowing the command, so the command is written under the complaint rather than
+left to be looked up."
   (interactive)
   (let* ((entries (org-convect-scan))
          (findings (org-convect-findings entries))
-         (buffer (get-buffer-create org-convect-doctor-buffer)))
+         (buffer (get-buffer-create org-convect-doctor-buffer))
+         ;; where to land after a redraw.  The row, not the line: fixing a
+         ;; finding removes lines above the one you were on, so a line number
+         ;; would put you somewhere else every time.
+         (was (and (eq (current-buffer) buffer)
+                   (org-get-at-bol 'org-convect-rung))))
     (with-current-buffer buffer
       (let ((inhibit-read-only t))
+        ;; an agenda buffer, for the same reason the review board is one: the
+        ;; rows carry markers, and Org's own keys then act on the rung behind
+        ;; the row without this package binding anything.
+        (unless (derived-mode-p 'org-agenda-mode) (org-agenda-mode))
+        (setq-local org-agenda-type 'agenda)
         (erase-buffer)
         (insert "Horizons\n\n")
         ;; the shape of the ladder, highest first, the way the file reads
@@ -1628,18 +1865,32 @@ that you should be choosing to leave them, rather than not noticing."
           (let ((these (seq-filter (lambda (f) (eq (plist-get f :kind) kind))
                                    findings)))
             (when these
-              (insert (format "\n%s\n"
-                              (alist-get kind org-convect--finding-labels)))
+              (insert (format "\n%s\n" (org-convect--finding-label kind)))
               (dolist (f these)
-                (insert (format "  %-8s %s%s\n"
-                                (plist-get f :horizon)
-                                (plist-get f :name)
-                                (if (plist-get f :detail)
-                                    (format "  (%s)" (plist-get f :detail))
-                                  "")))))))
+                ;; a row, not a picture of one: the marker is what makes RET
+                ;; go to it and the follow window show it
+                (insert (org-convect--review-line
+                         (format "  %-8s %s%s\n"
+                                 (plist-get f :horizon)
+                                 (plist-get f :name)
+                                 (if (plist-get f :detail)
+                                     (format "  (%s)" (plist-get f :detail))
+                                   ""))
+                         (plist-get f :marker)
+                         (plist-get f :name))))
+              ;; the answer, after the list rather than before it, so that the
+              ;; rows stay a column and the remedy stays prose
+              (dolist (line (split-string (org-convect--fill (org-convect--finding-remedy kind))
+                                  "\n" t))
+                (insert (format "      %s\n" line))))))
         (unless findings (insert "\nNothing missing.\n"))
+        (insert "\n  RET  go to it   r  redraw   v f  follow   q  quit\n")
+        (use-local-map org-convect-doctor-mode-map)
         (goto-char (point-min))
-        (special-mode)))
+        (when was
+          (let ((found (text-property-search-forward
+                        'org-convect-rung was #'equal)))
+            (goto-char (if found (prop-match-beginning found) (point-min)))))))
     (pop-to-buffer buffer)))
 
 ;;;; Planning a project
