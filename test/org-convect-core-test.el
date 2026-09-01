@@ -1340,7 +1340,12 @@ looking at it."
       (org-convect-doctor)
       (with-current-buffer org-convect-doctor-buffer
         (should (eq (key-binding (kbd "r")) 'org-convect-doctor))
-        (should (eq (key-binding (kbd "g")) 'org-convect-doctor))
+        ;; `g' is left to whatever the buffer already had.  It is a motion
+        ;; prefix -- `gg', `gj', `gs' -- and a command on it would take the
+        ;; prefix and everything under it away in this buffer alone.
+        (let ((own (copy-keymap org-convect-doctor-mode-map)))
+          (set-keymap-parent own nil)
+          (should-not (lookup-key own (kbd "g"))))
         (goto-char (point-min))
         (re-search-forward "^Nothing below points at it$")
         (forward-line 1)
