@@ -464,18 +464,32 @@ first half is live: the job changes, and an area with it.
 whatever is in service of it, and so on down.
 
 #+begin_example
-  purpose Honesty                        no calendar
-            say the number you believe
-  area    ├─ engineering                 due
-  │          reviews come back the same day
-  area    └─ admin                       due
-             the vendor list is current
+  purpose Honesty                       no calendar
+          │  Say the number you actually believe, and say it while it
+          │  still costs something.
+  vision  ├─ The team ships without me  no calendar
+          │  │  A release goes out on a Thursday and I hear about it
+          │  │  afterwards.
+  area    │  ├─ engineering             due
+          │  │     Kept up means reviews come back the same day.
+  area    │  └─ procurement             due
+          │        The vendor list is current.
+  purpose └─ Steadiness                 no calendar
+                Do the same thing on a bad day.
 #+end_example
 
 The altitude moves into a column, because a descent cannot group by it: a link
 may skip an altitude, so two rows at one indentation can be a goal and an area.
 Depth says how far the justification runs; the column says how high the rung
 is; neither can be read off the other.
+
+A rung's prose goes *one step* in from its name, and that step is the bar its
+children hang from — so the row, what it says, and what answers to it close
+into one block.  Two spaces would put the prose past the column the children's
+connectors start at, and a rung's prose would cross into the block below it
+with nothing on the page saying where one ended.  A rung with no children takes
+a blank instead of the bar: a bar there would promise a subtree that never
+arrives.
 
 The ladder is a mesh rather than a tree, so a rule decides where a rung is
 *drawn*: under the first name in its own =CONVECT_SERVES= that resolves, and

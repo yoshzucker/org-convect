@@ -2599,6 +2599,66 @@ the vendor list is current
         (should-not (string-match-p (regexp-quote bar)
                                     (thing-at-point 'line t)))))))
 
+(ert-deftest org-convect-test-the-prose-sits-inside-the-block ()
+  "A rung's prose goes one step in from its name, and the step is the bar its
+children hang from.
+
+Two spaces put the prose *past* the column its children's connectors start at,
+so a rung's prose crossed into the block below it and nothing said where one
+rung ended.  One step puts it level with where the children are named, and the
+bar in that step is what closes the three -- row, prose, children -- into one."
+  (let* ((glyphs (org-convect-outline-glyphs))
+         (bar (nth 0 glyphs))
+         (gap (nth 3 glyphs))
+         (unit (string-width bar))
+         (gutter "  area    ")
+         (blank (make-string (string-width gutter) ?\s)))
+    (should (equal (concat blank bar) (org-convect--review-under gutter "" t t)))
+    ;; a leaf takes the blank: a bar there promises a subtree that never comes
+    (should (equal (concat blank gap) (org-convect--review-under gutter "" t nil)))
+    (should (= unit (- (string-width (org-convect--review-under gutter "" t nil))
+                       (string-width gutter))))
+    ;; and with no tree there is no step to take
+    (should (= (string-width gutter)
+               (string-width (org-convect--review-under gutter "" nil nil))))))
+
+(ert-deftest org-convect-test-the-bar-reaches-the-children-it-promises ()
+  "The bar beside a rung's prose has to stand in the column its children's
+connectors stand in, or it is a line that starts under the row and arrives
+nowhere -- which is worse than no line at all."
+  (org-convect-test--with-ladder "\
+* Honesty
+:PROPERTIES:
+:CONVECT_HORIZON: purpose
+:END:
+say the number you believe
+* engineering
+:PROPERTIES:
+:CONVECT_HORIZON: area
+:CONVECT_SERVES: Honesty
+:END:
+reviews come back the same day
+* admin
+:PROPERTIES:
+:CONVECT_HORIZON: area
+:CONVECT_SERVES: Honesty
+:END:
+the vendor list is current
+"
+    (let ((org-convect-review-threaded t))
+      (save-window-excursion (org-convect-review nil (org-convect-test--day 2026 9 5))))
+    (with-current-buffer org-convect-review-buffer
+      (let ((bar (string-trim-right (nth 0 (org-convect-outline-glyphs))))
+            (tee (string-trim-right (nth 1 (org-convect-outline-glyphs))))
+            (column (lambda (needle)
+                      (goto-char (point-min))
+                      (should (re-search-forward (regexp-quote needle) nil t))
+                      (goto-char (match-beginning 0))
+                      (current-column))))
+        ;; the purpose's prose carries a bar; the first child's connector is a
+        ;; tee, since another sibling follows it
+        (should (= (funcall column bar) (funcall column tee)))))))
+
 (ert-deftest org-convect-test-narrowing-a-descent-keeps-its-ancestors ()
   "A tree cannot be filtered row by row.  Dropping a rung that is not due
 orphans everything drawn under it, and the connectors then point at nothing."
