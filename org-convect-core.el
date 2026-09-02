@@ -447,8 +447,12 @@ to be reassembled by hand from both ends."
               (push (plist-get down :name) queue))))))
     thread))
 
-(defcustom org-convect-outline-glyphs '("│  " "├─ " "└─ " "   ")
+(defcustom org-convect-outline-glyphs '(" │ " " ├ " " └ " "   ")
   "The connectors an outline is drawn with: bar, tee, ell, gap.
+
+No horizontal arm, and a space either side.  The arm is what makes a tree look
+drawn; without it the line is thin enough to be a margin, which is what it is
+-- the rungs are the page and the connectors say where each one sits.
 
 All four must be the same width in display columns, because the width of one
 is what a level of depth means.  They are checked at draw time and the ASCII
@@ -463,7 +467,7 @@ The look is deliberately shared and the meaning is not."
   :type '(list string string string string)
   :group 'org-convect)
 
-(defconst org-convect-outline-ascii '("|  " "+- " "`- " "   ")
+(defconst org-convect-outline-ascii '(" | " " + " " ` " "   ")
   "The connectors used when `org-convect-outline-glyphs\\=' will not line up.")
 
 (defun org-convect-outline-glyphs ()
