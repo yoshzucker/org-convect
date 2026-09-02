@@ -2005,6 +2005,238 @@ return nothing at all rather than something vague."
     (let ((org-convect-eldoc nil))
       (should-not (org-convect-test--eldoc)))))
 
+;;;; The descent
+
+(defun org-convect-test--rung (name horizon &rest serves)
+  "A scan-shaped plist, without a file behind it.
+
+The ordering walk reads nothing but the plists, which is what lets it be
+tested this cheaply -- and a fixture that had to write files would not be able
+to hold a cycle, since no command will write one."
+  (list :name name :horizon horizon :serves serves))
+
+(defun org-convect-test--ladder-mesh ()
+  "Six rungs holding every shape the ordering has to answer for:
+two parents, a skipped altitude, a root at the bottom, and a cycle."
+  (list (org-convect-test--rung "Honesty" 'purpose)
+        (org-convect-test--rung "A team that runs itself" 'goal "Honesty")
+        (org-convect-test--rung "engineering" 'area
+                                "Honesty" "A team that runs itself")
+        (org-convect-test--rung "procurement" 'area)
+        (org-convect-test--rung "Craft" 'purpose "Steadiness")
+        (org-convect-test--rung "Steadiness" 'purpose "Craft")))
+
+(defun org-convect-test--row (rows name)
+  "The row of ROWS for the rung called NAME."
+  (seq-find (lambda (r) (equal (plist-get (car r) :name) name)) rows))
+
+(ert-deftest org-convect-test-every-rung-is-drawn-exactly-once ()
+  "The ladder is a mesh, and a walk that expands under every parent draws a
+subtree twice while a walk that guards badly drops one.  Counted against a
+fixture holding a duplicate name, a name that resolves to nothing, a rung
+serving itself and a cycle -- which is where dropping happens."
+  (let* ((entries (append (org-convect-test--ladder-mesh)
+                          (list (org-convect-test--rung "engineering" 'area)
+                                (org-convect-test--rung "orphan" 'goal "nowhere")
+                                (org-convect-test--rung "self" 'area "self"))))
+         (rows (org-convect-outline entries)))
+    (should (= (length rows) (length entries)))
+    (should (equal (sort (mapcar (lambda (r) (plist-get (car r) :name)) rows)
+                         #'string<)
+                   (sort (mapcar (lambda (e) (plist-get e :name)) entries)
+                         #'string<)))))
+
+(ert-deftest org-convect-test-a-rung-is-drawn-under-the-first-name-it-serves ()
+  "The rule has to be local, or a redraw becomes unreadable: homing by the
+order a walk happens to arrive, or by which parent comes first in the file,
+means an unrelated heading added at the top moves rows that have nothing to do
+with it.  This one reads the rung's own property and nothing else -- and it is
+the one a person can change, by putting the other name first."
+  (let* ((rows (org-convect-outline (org-convect-test--ladder-mesh)))
+         (row (org-convect-test--row rows "engineering")))
+    ;; drawn under the purpose, which is named first, not under the goal
+    (should (= 1 (nth 1 row)))
+    (should (equal '("A team that runs itself") (nth 3 row)))
+    ;; and swapping the property swaps the two, leaving everything else alone
+    (let* ((swapped (mapcar (lambda (e)
+                              (if (equal (plist-get e :name) "engineering")
+                                  (org-convect-test--rung
+                                   "engineering" 'area
+                                   "A team that runs itself" "Honesty")
+                                e))
+                            (org-convect-test--ladder-mesh)))
+           (moved (org-convect-test--row (org-convect-outline swapped)
+                                         "engineering")))
+      (should (= 2 (nth 1 moved)))
+      (should (equal '("Honesty") (nth 3 moved))))))
+
+(ert-deftest org-convect-test-an-unrelated-heading-moves-no-row ()
+  "The property that makes a redraw worth reading.  Every ordering rule that
+looks at the file rather than at the rung fails here."
+  (let* ((before (org-convect-outline (org-convect-test--ladder-mesh)))
+         (after (org-convect-outline
+                 (cons (org-convect-test--rung "Something else" 'purpose)
+                       (org-convect-test--ladder-mesh))))
+         (shape (lambda (rows)
+                  (mapcar (lambda (r) (list (plist-get (car r) :name)
+                                            (nth 1 r) (nth 2 r) (nth 3 r)))
+                          rows))))
+    (dolist (name '("Honesty" "A team that runs itself" "engineering"
+                    "procurement" "Craft" "Steadiness"))
+      (should (equal (assoc name (funcall shape before))
+                     (assoc name (funcall shape after)))))))
+
+(ert-deftest org-convect-test-a-cycle-is-cut-at-its-own-earliest-member ()
+  "It has to terminate, it has to lose nothing, and it has to say what it did.
+
+Cutting where the chase entered the cycle rather than inside it is the bug
+worth naming: the cycle itself is then still unvisited, and a rung that merely
+hangs off it becomes a root."
+  ;; The tail comes *first* in the file, so the chase enters the cycle from
+  ;; outside it.  With the tail last, the walk happens to reach the cycle at
+  ;; one of its own members and cutting there is right by accident.
+  (let* ((entries (append (list (org-convect-test--rung "hangs off" 'goal
+                                                        "Steadiness"))
+                          (org-convect-test--ladder-mesh)))
+         (rows (org-convect-outline entries)))
+    (should (= (length rows) (length entries)))
+    ;; the earliest member of the cycle is the one promoted
+    (should (= 0 (nth 1 (org-convect-test--row rows "Craft"))))
+    ;; and the link that was cut is named rather than dropped
+    (should (member "Steadiness" (nth 3 (org-convect-test--row rows "Craft"))))
+    ;; the rest of the cycle is drawn beneath it, and so is what hung off it
+    (should (= 1 (nth 1 (org-convect-test--row rows "Steadiness"))))
+    (should (= 2 (nth 1 (org-convect-test--row rows "hangs off"))))))
+
+(ert-deftest org-convect-test-a-cycle-moves-no-healthy-row ()
+  "Cut roots go after the natural ones, so writing a cycle into the file does
+not rearrange the part of the ladder that is fine."
+  (let* ((healthy (seq-remove
+                   (lambda (e) (member (plist-get e :name) '("Craft" "Steadiness")))
+                   (org-convect-test--ladder-mesh)))
+         (alone (org-convect-outline healthy))
+         (with-cycle (org-convect-outline (org-convect-test--ladder-mesh))))
+    (dolist (name '("Honesty" "A team that runs itself" "engineering"
+                    "procurement"))
+      (should (equal (org-convect-test--row alone name)
+                     (org-convect-test--row with-cycle name))))))
+
+(ert-deftest org-convect-test-a-rung-serving-itself-is-a-root ()
+  "Otherwise it is its own parent and the descent never starts."
+  (let* ((rows (org-convect-outline
+                (list (org-convect-test--rung "self" 'area "self"))))
+         (row (car rows)))
+    (should (= 1 (length rows)))
+    (should (= 0 (nth 1 row)))
+    (should (equal '("self") (nth 3 row)))))
+
+(ert-deftest org-convect-test-a-name-resolves-to-something-other-than-itself ()
+  "A rung sharing its name with another and serving that name is served by the
+*other* one -- the name does resolve, just not to the rung that wrote it.
+
+This is the case that decides the rule, and the single-rung one does not: with
+nothing else of that name, treating the rung as its own parent and treating it
+as a root come out identical, because the cycle chase then cuts it back to a
+root anyway."
+  (let* ((entries (list (org-convect-test--rung "Honesty" 'purpose "Honesty")
+                        (org-convect-test--rung "Honesty" 'goal)))
+         (rows (org-convect-outline entries)))
+    (should (= 2 (length rows)))
+    (should (= 1 (nth 1 (car (last rows)))))
+    (should (eq 'purpose (plist-get (car (car (last rows))) :horizon)))))
+
+(ert-deftest org-convect-test-a-name-that-resolves-to-nothing-does-not-take-the-place ()
+  "A dangling first name used to consume the home slot, which silently turned
+a child into a root -- and the ladder then read as though nothing served the
+rung above it."
+  (let* ((rows (org-convect-outline
+                (list (org-convect-test--rung "Honesty" 'purpose)
+                      (org-convect-test--rung "engineering" 'area
+                                              "Honestly" "Honesty"))))
+         (row (org-convect-test--row rows "engineering")))
+    (should (= 1 (nth 1 row)))
+    ;; and the dangling one is still reported
+    (should (equal '("Honestly") (nth 3 row)))))
+
+(ert-deftest org-convect-test-a-shared-name-homes-to-the-first-in-the-file ()
+  "`org-convect-name-index' hands back its buckets in reverse file order, so
+reusing it here would make \"the first in the file\" mean the last one."
+  (let* ((entries (list (org-convect-test--rung "Honesty" 'purpose)
+                        (org-convect-test--rung "Honesty" 'goal)
+                        (org-convect-test--rung "engineering" 'area "Honesty")))
+         (rows (org-convect-outline entries)))
+    ;; `descend' emits a parent and then its children, so the order of the
+    ;; whole descent is what says which of the two it went under.  Depth alone
+    ;; cannot: both are roots, and either would put it at depth 1.
+    (should (equal (mapcar (lambda (r) (plist-get (car r) :horizon)) rows)
+                   '(purpose area goal)))))
+
+(ert-deftest org-convect-test-roots-come-out-highest-first ()
+  "The order the file reads in.  File order would scatter the unattached areas
+through the descents instead of collecting them."
+  (let* ((entries (list (org-convect-test--rung "an area" 'area)
+                        (org-convect-test--rung "a goal" 'goal)
+                        (org-convect-test--rung "a purpose" 'purpose)
+                        (org-convect-test--rung "a vision" 'vision)))
+         (rows (org-convect-outline entries)))
+    (should (equal (mapcar (lambda (r) (plist-get (car r) :horizon)) rows)
+                   '(purpose vision goal area)))))
+
+(ert-deftest org-convect-test-an-unknown-horizon-sorts-last ()
+  "`org-convect-above' answers nil for a horizon it does not know, and a rank
+taken from its length would put a typo above every purpose in the file."
+  (let* ((entries (list (org-convect-test--rung "typo" 'purpsoe)
+                        (org-convect-test--rung "real" 'purpose)))
+         (rows (org-convect-outline entries)))
+    (should (equal (mapcar (lambda (r) (plist-get (car r) :name)) rows)
+                   '("real" "typo")))))
+
+(ert-deftest org-convect-test-the-strip-beneath-a-row-leads-its-children ()
+  "The one property that keeps a body inside the tree.  A body indented by any
+other measure drifts out of it the moment an ancestor's last child goes past."
+  (let ((rows (org-convect-outline (org-convect-test--ladder-mesh))))
+    (dolist (row rows)
+      (let ((strip (org-convect-outline-under (nth 2 row)))
+            (depth (nth 1 row)))
+        (dolist (other rows)
+          (when (= (nth 1 other) (1+ depth))
+            ;; a child of this row is any deeper row whose prefix begins with
+            ;; this row's strip; every one of them must
+            (when (string-prefix-p strip (nth 2 other))
+              (should (string-prefix-p strip (nth 2 other))))))))
+    ;; and concretely: the non-last child keeps the bar, the last one does not
+    (let ((tee (nth 1 (org-convect-outline-glyphs)))
+          (bar (nth 0 (org-convect-outline-glyphs)))
+          (ell (nth 2 (org-convect-outline-glyphs))))
+      (should (equal bar (org-convect-outline-under tee)))
+      (should (equal (make-string (length ell) ?\s)
+                     (org-convect-outline-under ell))))))
+
+(ert-deftest org-convect-test-a-prefix-is-as-wide-as-it-is-deep ()
+  "Depth is measured in columns, and the connectors are East Asian Ambiguous:
+under a CJK `char-width-table' they are two columns wide and every column in
+the tree moves.  The ASCII set is what that falls back to."
+  (let* ((rows (org-convect-outline (org-convect-test--ladder-mesh)))
+         (unit (string-width (car (org-convect-outline-glyphs)))))
+    (dolist (row rows)
+      (should (= (string-width (nth 2 row)) (* (nth 1 row) unit)))))
+  ;; a set that does not line up is refused
+  (let ((org-convect-outline-glyphs '("│ " "├─ " "└─ " "   ")))
+    (should (equal (org-convect-outline-glyphs) org-convect-outline-ascii))))
+
+(ert-deftest org-convect-test-the-descent-reads-no-file ()
+  "The ordering is pure over the plists.  A walk that reached through the
+markers would make drawing the board quadratic in the size of the files, and
+it would not be able to answer about a cycle at all -- no command writes one."
+  (cl-letf (((symbol-function 'org-with-point-at)
+             (lambda (&rest _) (error "the ordering read a file"))))
+    (should (org-convect-outline (org-convect-test--ladder-mesh)))))
+
+(ert-deftest org-convect-test-the-descent-is-the-same-twice ()
+  (let ((entries (org-convect-test--ladder-mesh)))
+    (should (equal (org-convect-outline entries)
+                   (org-convect-outline entries)))))
+
 ;;;; The review
 
 (defconst org-convect-test--ready "\
@@ -2195,17 +2427,266 @@ saying \"nothing\" would read as \"they are fine\"."
       (with-current-buffer org-convect-review-buffer
         (should (string-match-p "12 choice points, 5 away" (buffer-string)))))))
 
+(ert-deftest org-convect-test-a-list-in-a-body-stays-a-list ()
+  "The bodies are prose -- the guidance's own examples write a standard as one
+sentence with semicolons in it -- so they are filled as paragraphs, and a rung
+hard-wrapped at one width does not come out ragged at another.
+
+Somebody who wrote one criterion per line and marked them as a list meant them
+to be read as separate things, though, and filling those together would answer
+a different question from the one they wrote down."
+  (should (equal '("one\ntwo") (org-convect--blocks "one\ntwo")))
+  (should (equal '("one" "two") (org-convect--blocks "one\n\ntwo")))
+  (should (equal '("one" "- two" "- three")
+                 (org-convect--blocks "one\n- two\n- three")))
+  (should (equal '("1. first" "2. second")
+                 (org-convect--blocks "1. first\n2. second"))))
+
+(ert-deftest org-convect-test-the-tally-is-one-line ()
+  "Four lines once -- the clock, what it serves, how many answer to it, and
+whatever a layer above adds -- and each of them short.  The rows they cost are
+what the standard is read in now.
+
+Asked of a rung that has two of them to say, because one fact fits on one line
+however it is emitted, and a rung with one is no test of anything."
+  (org-convect-test--with-ladder "\
+* Honesty
+:PROPERTIES:
+:CONVECT_HORIZON: purpose
+:END:
+say the number you believe
+* a team that runs itself
+:PROPERTIES:
+:CONVECT_HORIZON: goal
+:CONVECT_SERVES: Honesty
+:CONVECT_BY: [2030-12-31]
+:END:
+the rota has someone else on it
+* engineering
+:PROPERTIES:
+:CONVECT_HORIZON: area
+:CONVECT_SERVES: a team that runs itself
+:END:
+reviews come back the same day
+"
+    (save-window-excursion (org-convect-review nil (org-convect-test--day 2026 9 5)))
+    (with-current-buffer org-convect-review-buffer
+      (goto-char (point-min))
+      (should (re-search-forward "^  a team that runs itself" nil t))
+      (let ((tallies nil))
+        (while (and (zerop (forward-line 1)) (not (looking-at "^$")))
+          (when (looking-at (concat "^ *" (regexp-quote org-convect-review-mark)))
+            (push (string-trim (thing-at-point 'line t)) tallies)))
+        (should (= 1 (length tallies)))
+        ;; and both facts are on it, joined rather than stacked
+        (should (string-match-p "serves Honesty" (car tallies)))
+        (should (string-match-p "1 below" (car tallies)))
+        (should (string-match-p " · " (car tallies)))))))
+
+(ert-deftest org-convect-test-the-board-asks-something-at-every-altitude ()
+  "A board that shows facts and no question leaves the reader looking at a
+rung with nothing to decide by.  GTD gives no procedure above the projects, so
+the questions are this package's -- and every rung has to carry one, or the
+altitudes that got skipped are the ones nobody reviews."
+  (dolist (horizon (mapcar #'car org-convect-horizons))
+    (should (org-string-nw-p (org-convect-guide horizon :review))))
+  (should (assq :review org-convect-guide-fields))
+  ;; the area's is GTD's own, and it is the one that is easy to leave out
+  (should (string-match-p "delegated or dropped"
+                          (org-convect-guide 'area :review)))
+  (org-convect-test--with-ladder org-convect-test--ready
+    (save-window-excursion (org-convect-review nil (org-convect-test--day 2026 9 5)))
+    (with-current-buffer org-convect-review-buffer
+      (should (string-match-p "Reached, still reachable" (buffer-string))))))
+
+(ert-deftest org-convect-test-the-board-turns-into-a-descent ()
+  "The same rungs, ordered by the other thing that is true about them."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (save-window-excursion (org-convect-review nil (org-convect-test--day 2026 9 5)))
+    (with-current-buffer org-convect-review-buffer
+      (should (eq (key-binding (kbd "t")) 'org-convect-review-thread))
+      (should (eq (key-binding (kbd "r")) 'org-convect-review-redraw))
+      ;; `g' is a motion prefix and is left to whatever the buffer had
+      (let ((own (copy-keymap org-convect-review-mode-map)))
+        (set-keymap-parent own nil)
+        (should-not (lookup-key own (kbd "g"))))
+      (should-not org-convect--review-threaded)
+      (should (string-match-p "^Areas of Focus" (buffer-string)))
+      (call-interactively #'org-convect-review-thread)
+      (with-current-buffer org-convect-review-buffer
+        (should org-convect--review-threaded)
+        ;; the section headings are gone; the altitude is a column instead
+        (should-not (string-match-p "^Areas of Focus" (buffer-string)))
+        (should (string-match-p "^  area  " (buffer-string)))
+        ;; and the area is drawn under the goal it serves
+        (let ((text (buffer-string)))
+          (should (string-match-p "a team that runs itself" text))
+          (should (string-match-p
+                   (concat (regexp-quote (nth 2 (org-convect-outline-glyphs)))
+                           "engineering")
+                   text)))))))
+
+(ert-deftest org-convect-test-a-descent-shows-the-altitude-on-every-row ()
+  "Links may skip an altitude, so two rows at one indentation can be a goal and
+an area.  Blanking the column where it repeats would read as \"the same as
+above\", which is the one inference it exists to stop."
+  (org-convect-test--with-ladder "\
+* Honesty
+:PROPERTIES:
+:CONVECT_HORIZON: purpose
+:END:
+say the number you believe
+* engineering
+:PROPERTIES:
+:CONVECT_HORIZON: area
+:CONVECT_SERVES: Honesty
+:END:
+reviews come back the same day
+* admin
+:PROPERTIES:
+:CONVECT_HORIZON: area
+:CONVECT_SERVES: Honesty
+:END:
+the vendor list is current
+"
+    (let ((org-convect-review-threaded t))
+      (save-window-excursion (org-convect-review nil (org-convect-test--day 2026 9 5))))
+    (with-current-buffer org-convect-review-buffer
+      (goto-char (point-min))
+      (should (re-search-forward "^  purpose Honesty" nil t))
+      ;; both areas hang off the purpose with no goal between, and both say so
+      (goto-char (point-min))
+      (should (re-search-forward "^  area .*engineering" nil t))
+      (goto-char (point-min))
+      (should (re-search-forward "^  area .*admin" nil t)))))
+
+(ert-deftest org-convect-test-a-descent-keeps-the-tree-through-the-prose ()
+  "A rung's prose hangs beneath its row, and where an ancestor still has later
+siblings the bar has to run through it.  Otherwise the tree breaks at the first
+line of text and the descent stops meaning anything."
+  (org-convect-test--with-ladder "\
+* Honesty
+:PROPERTIES:
+:CONVECT_HORIZON: purpose
+:END:
+say the number you believe
+* engineering
+:PROPERTIES:
+:CONVECT_HORIZON: area
+:CONVECT_SERVES: Honesty
+:END:
+reviews come back the same day
+* admin
+:PROPERTIES:
+:CONVECT_HORIZON: area
+:CONVECT_SERVES: Honesty
+:END:
+the vendor list is current
+"
+    (let ((org-convect-review-threaded t))
+      (save-window-excursion (org-convect-review nil (org-convect-test--day 2026 9 5))))
+    (with-current-buffer org-convect-review-buffer
+      (let ((bar (string-trim-right (nth 0 (org-convect-outline-glyphs)))))
+        (goto-char (point-min))
+        ;; the first area is not the last child, so its prose carries the bar
+        (should (re-search-forward "engineering" nil t))
+        (forward-line 1)
+        (should (string-match-p (regexp-quote bar) (thing-at-point 'line t)))
+        ;; the last one is, so its prose does not
+        (goto-char (point-min))
+        (should (re-search-forward "admin" nil t))
+        (forward-line 1)
+        (should-not (string-match-p (regexp-quote bar)
+                                    (thing-at-point 'line t)))))))
+
+(ert-deftest org-convect-test-narrowing-a-descent-keeps-its-ancestors ()
+  "A tree cannot be filtered row by row.  Dropping a rung that is not due
+orphans everything drawn under it, and the connectors then point at nothing."
+  (org-convect-test--with-ladder "\
+* Honesty
+:PROPERTIES:
+:CONVECT_HORIZON: purpose
+:END:
+say the number you believe
+* engineering
+:PROPERTIES:
+:CONVECT_HORIZON: area
+:CONVECT_SERVES: Honesty
+:CREATED: [2026-01-05 Mon]
+:END:
+reviews come back the same day
+"
+    (let ((org-convect-review-threaded t))
+      (save-window-excursion (org-convect-review t (org-convect-test--day 2026 9 5))))
+    (with-current-buffer org-convect-review-buffer
+      (let ((text (buffer-string)))
+        ;; the area is due; the purpose is not, and is kept because the area
+        ;; hangs off it
+        (should (string-match-p "engineering" text))
+        (should (string-match-p "Honesty" text))))))
+
+(ert-deftest org-convect-test-the-board-redraws-onto-the-same-rung ()
+  "`\\[org-agenda-add-note]' changes what the board says about the rung you are
+standing on, so redrawing has to land you back on it."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (save-window-excursion (org-convect-review nil (org-convect-test--day 2026 9 5)))
+    (with-current-buffer org-convect-review-buffer
+      (goto-char (point-min))
+      (should (re-search-forward "^  engineering" nil t))
+      (beginning-of-line)
+      (let ((was (org-get-at-bol 'org-convect-rung)))
+        (should was)
+        (save-window-excursion (call-interactively #'org-convect-review-redraw))
+        (with-current-buffer org-convect-review-buffer
+          (should (equal was (org-get-at-bol 'org-convect-rung))))))))
+
+(ert-deftest org-convect-test-the-prose-is-lit-with-its-rung ()
+  "Following the cursor reads the rung off the character under point.  A body
+of five lines carrying nothing is five lines on which the thread goes dark --
+which with the whole standard on the board is most of it."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (save-window-excursion (org-convect-review nil (org-convect-test--day 2026 9 5)))
+    (with-current-buffer org-convect-review-buffer
+      (goto-char (point-min))
+      (should (re-search-forward "^  engineering" nil t))
+      (forward-line 1)
+      (should (equal "engineering" (org-get-at-bol 'org-convect-rung))))))
+
+(ert-deftest org-convect-test-the-status-column-is-one-column ()
+  "Measured over what will be drawn, indent and all.  Measuring the name alone
+left exactly the widest row two columns past every other one."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (save-window-excursion (org-convect-review nil (org-convect-test--day 2026 9 5)))
+    (with-current-buffer org-convect-review-buffer
+      (goto-char (point-min))
+      (let (columns)
+        (while (not (eobp))
+          (let ((line (buffer-substring-no-properties
+                       (line-beginning-position) (line-end-position))))
+            (when (and (org-get-at-bol 'org-convect-rung)
+                       (string-match "  \\(due\\|no calendar\\|called\\)" line))
+              (push (string-width (substring line 0 (match-beginning 0)))
+                    columns)))
+          (forward-line 1))
+        (should (cdr columns))
+        (should (apply #'= columns))))))
+
 ;;;; The thread under the cursor
 
 (defun org-convect-test--lit (target)
-  "Names of the rows lit when the cursor is on TARGET's row."
+  "Names of the rungs lit when the cursor is on TARGET's row.
+
+Uniqued: a rung is several lines now -- its row, its prose, its tally -- and
+every one of them is lit, which is the point.  What the test is about is which
+*rungs* moved together."
   (goto-char (point-min))
   (re-search-forward (concat "^  " (regexp-quote target)))
   (beginning-of-line)
   (org-convect--light-lineage)
-  (sort (mapcar (lambda (o)
-                  (get-text-property (overlay-start o) 'org-convect-rung))
-                org-convect--lit)
+  (sort (seq-uniq (mapcar (lambda (o)
+                            (get-text-property (overlay-start o)
+                                               'org-convect-rung))
+                          org-convect--lit))
         #'string<))
 
 (ert-deftest org-convect-test-the-highlight-names-no-colour ()
@@ -2309,10 +2790,13 @@ stops."
       (should-not (org-convect-thread-ends-at-p area))
       (should-not (org-convect-thread-ends-at-p honesty)))))
 
-(ert-deftest org-convect-test-narrowing-shows-more-not-less ()
-  "Focusing on a handful of rungs and then saying less about each of them
-would be narrowing for nothing.  The board carries every rung and can afford a
-glimpse; the thread has the room for the whole standard."
+(ert-deftest org-convect-test-the-board-shows-the-standard-whole ()
+  "The board used to show the first line of a standard, cut at 68 columns.
+
+That was right while the board was a list of what wanted looking at.  It is
+where the reviewing happens, and a standard cut to its first line is enough to
+recognise and not enough to judge -- so it shows the prose whole, and so does
+the thread.  What the thread narrows is how many rungs, not how much of each."
   (org-convect-test--with-ladder "\
 * engineering
 :PROPERTIES:
@@ -2335,17 +2819,19 @@ the rota has someone else on it
       (save-window-excursion
         (org-convect-review nil (org-convect-test--day 2026 9 5)))
       (with-current-buffer org-convect-review-buffer
-        ;; the board shows the first line only
-        (should (string-match-p "reviews come back the same day" (buffer-string)))
-        (should-not (string-match-p "the build is green" (buffer-string))))
+        ;; every word of it, whatever the fill did to the line breaks
+        (let ((text (replace-regexp-in-string "[ \n]+" " " (buffer-string))))
+          (should (string-match-p "reviews come back the same day" text))
+          (should (string-match-p "no branch is older than a week" text))
+          (should (string-match-p "the build is green when I leave" text))))
       (cl-letf (((symbol-function 'org-convect--pick) (lambda (&rest _) area)))
         (save-window-excursion (org-convect-lineage-show)))
       (with-current-buffer "*Horizons Thread*"
-        (let ((text (buffer-string)))
+        (let ((text (replace-regexp-in-string "[ \n]+" " " (buffer-string))))
           ;; the thread shows all of it, and the state the board showed
           (should (string-match-p "reviews come back the same day" text))
           (should (string-match-p "no branch is older than a week" text))
-          (should (string-match-p "the build is green" text))
+          (should (string-match-p "the build is green when I leave" text))
           (should (string-match-p "serves a team that runs itself" text))
           (should (string-match-p "due" text)))))))
 
