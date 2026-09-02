@@ -2495,26 +2495,50 @@ Printed on every row, never blanked when it repeats -- a blank would read as
   (let ((horizon (symbol-name (plist-get entry :horizon))))
     (format "  %-7s " (truncate-string-to-width horizon 7 nil ?\s t))))
 
+(defun org-convect--review-under (gutter prefix &optional threaded kids)
+  "Where a rung's prose is laid, given its GUTTER and its PREFIX.
+
+Blank where the altitude was: it is a fact about the rung, and a body line
+repeating it would read as four more rungs at that altitude rather than as one
+rung's prose.
+
+In a descent the prose goes one step further in than the row -- level with
+where the rung's own children will be named, rather than two spaces in.  Two
+spaces put it *past* the column its children's connectors start at, so a
+rung's prose crossed the boundary of the block below it and nothing on the
+page said where one rung ended and the next began.
+
+KIDS says the rung has children, and then the step is a bar rather than a
+blank: the same bar the children hang from, run up through the prose so that
+the row, what it says, and what answers to it are one bracketed block.  A rung
+with no children takes the blank -- a bar there would promise a subtree that
+never arrives."
+  (let ((blank (make-string (string-width gutter) ?\s)))
+    (if (not threaded)
+        blank
+      (pcase-let ((`(,bar ,_tee ,_ell ,gap) (org-convect-outline-glyphs)))
+        (concat blank (org-convect-outline-under prefix) (if kids bar gap))))))
+
 (defun org-convect--review-insert (entry gutter prefix column now called
-                                        entries scan &optional threaded also)
+                                        entries scan &optional threaded also
+                                        kids)
   "Insert one rung's block: its row, its prose, and one line of tally.
 
 GUTTER is what stands to the left of the tree -- the altitude column, or the
-plain indent when there is no tree.  PREFIX is the row's connectors.
-Everything under the row is laid against `org-convect-outline-under' of the
-same PREFIX, so the tree cannot break where the prose begins.
+plain indent when there is no tree.  PREFIX is the row's connectors, KIDS
+whether anything is drawn under it.  Everything below the row is laid against
+`org-convect--review-under', so the tree cannot break where the prose begins.
 
 The prose carries the same `org-convect-rung' the row does.  Following the
 cursor reads that property off the character under point, and a body of five
 lines with no property on it is five lines on which the thread goes dark."
   (let* ((name (plist-get entry :name))
          (lead (concat gutter prefix))
-         ;; blank where the altitude was: it is a fact about the rung, and a
-         ;; body line repeating it would read as four more rungs at that
-         ;; altitude rather than as one rung's prose
-         (under (concat (make-string (string-width gutter) ?\s)
-                        (org-convect-outline-under prefix)))
-         (indent (string-width under)))
+         (under (org-convect--review-under gutter prefix threaded kids))
+         ;; the step is already in UNDER when there is a tree; without one the
+         ;; prose still has to sit in from the name
+         (pad (if threaded "" "  "))
+         (indent (+ (string-width under) (string-width pad))))
     (insert (org-convect--review-line
              (format "%s%s%s  %s\n" lead name
                      (make-string (max 0 (- column (string-width lead)
@@ -2522,16 +2546,16 @@ lines with no property on it is five lines on which the thread goes dark."
                                   ?\s)
                      (org-convect--review-status entry now called))
              (plist-get entry :marker) name))
-    (dolist (line (org-convect--evidence-body entry (+ indent 2)))
-      (insert (org-convect--review-line (format "%s  %s\n" under line)
+    (dolist (line (org-convect--evidence-body entry indent))
+      (insert (org-convect--review-line (format "%s%s%s\n" under pad line)
                                         (plist-get entry :marker) name)))
     (when also
       (insert (org-convect--review-line
-               (format "%s  %s also serves %s\n" under org-convect-review-mark
-                       (string-join also ", "))
+               (format "%s%s%s also serves %s\n" under pad
+                       org-convect-review-mark (string-join also ", "))
                (plist-get entry :marker) name)))
     (when-let ((tally (org-convect--evidence-tally entry entries scan threaded)))
-      (insert (org-convect--review-line (format "%s  %s\n" under tally)
+      (insert (org-convect--review-line (format "%s%s%s\n" under pad tally)
                                         (plist-get entry :marker) name)))))
 
 ;;;###autoload
@@ -2629,10 +2653,16 @@ follows the links instead of the altitudes."
                     (dolist (line (cdr lines))
                       (insert (format "%s%s\n" (make-string 10 ?\s) line))))))
               (insert "\n")
-              (pcase-dolist (`(,entry ,_depth ,prefix ,also) rows)
-                (org-convect--review-insert
-                 entry (org-convect--review-altitude entry) prefix
-                 column now called entries scan t also))
+              (let ((rest rows))
+                (while rest
+                  (pcase-let ((`(,entry ,depth ,prefix ,also) (car rest)))
+                    (org-convect--review-insert
+                     entry (org-convect--review-altitude entry) prefix
+                     column now called entries scan t also
+                     ;; the next row is a child of this one exactly when it is
+                     ;; deeper: the descent emits a rung and then its subtree
+                     (and (cadr rest) (> (nth 1 (cadr rest)) depth))))
+                  (setq rest (cdr rest))))
               (insert "\n"))
           (dolist (horizon (reverse (mapcar #'car org-convect-horizons)))
             (let ((at (seq-filter (lambda (e)
