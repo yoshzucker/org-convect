@@ -465,18 +465,22 @@ whatever is in service of it, and so on down.
 
 #+begin_example
   purpose Honesty                       no calendar
-          │  Say the number you actually believe, and say it while it
-          │  still costs something.
-  vision  ├─ The team ships without me  no calendar
-          │  │  A release goes out on a Thursday and I hear about it
-          │  │  afterwards.
-  area    │  ├─ engineering             due
-          │  │     Kept up means reviews come back the same day.
-  area    │  └─ procurement             due
-          │        The vendor list is current.
-  purpose └─ Steadiness                 no calendar
+           │ Say the number you actually believe, and say it while it
+           │ still costs something.
+  vision   ├ The team ships without me  no calendar
+           │  │ A release goes out on a Thursday and I hear about it
+           │  │ afterwards.
+  area     │  ├ engineering             due
+           │  │    Kept up means reviews come back the same day.
+  area     │  └ procurement             due
+           │       The vendor list is current.
+  purpose  └ Steadiness                 no calendar
                 Do the same thing on a bad day.
 #+end_example
+
+No horizontal arm on the connectors, and a space either side.  The arm is what
+makes a tree look *drawn*; without it the line is thin enough to read as a
+margin, which is what it is — the rungs are the page.
 
 The altitude moves into a column, because a descent cannot group by it: a link
 may skip an altitude, so two rows at one indentation can be a goal and an area.
