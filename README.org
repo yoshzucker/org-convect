@@ -403,26 +403,90 @@ overlay loaded at all.
 Its rows are live: =z= writes your conclusion onto the rung, =RET= goes to it.
 
 #+begin_example
-  Horizons Review                                    2026-10-05
+  Horizons Review                          2026-10-05
     3 due, 1 called
 
   Purpose and Principles
-    Honesty                        called -- 3 away in a row
-        I do not let a number stand that I know is wrong
-        12 choice points, 7 away
+    Am I still behaving like this?  A principle does not go out of date, so
+    asking whether it is current asks nothing — the question that carries is
+    whether it is being kept, and where it was not.
+    Honesty                       called -- 3 away in a row
+      I do not let a number stand that I know is wrong
+      ↳ 12 choice points, 7 away
 
   Goals and Objectives
-    a team that runs itself        due 2030-12-31
-        the rota has someone else on it
-        3 below point at it
+    Reached, still reachable, or no longer a goal?  All three are answers;
+    leaving it sitting there is not.
+    a team that runs itself       due 2030-12-31
+      the rota has someone else on it
+      ↳ 3 below
 
   Areas of Focus and Accountability
-    engineering                    due
-        reviews come back the same day
-        12:30 clocked, serves a team that runs itself
+    Is the standard being met — and is this still yours to keep up?  GTD asks
+    the second out loud: should you be answerable for this at all, and could it
+    be delegated or dropped?
+    engineering                   due
+      reviews come back the same day
+      no branch is older than a week
+      the build is green when I leave
+      ↳ 12:30 clocked · serves a team that runs itself
 
-    z  write the conclusion here      RET  go to it
+    z  write the conclusion here   RET  go to it   t  follow the links   r  redraw
 #+end_example
+
+Three lines answer one rung: what it is, what it says, and one line of
+everything else that is known about it.  The tally used to be four lines — the
+clock, what it serves, how many answer to it, whatever the overlay adds — and
+those are the rows the standard is read in now.
+
+** What to ask when you come back
+
+GTD says *when* to revisit each altitude and never says what to ask there.  So
+each section carries a question, and they are not the same question:
+
+| purpose | am I still behaving like this?  A principle does not go out of date, so asking whether it is *current* asks nothing |
+| vision  | is this still the picture, and has anything moved toward it |
+| goal    | reached, still reachable, or no longer a goal — all three are answers |
+| area    | is the standard met, and *is this still yours to keep up* |
+
+The area's is GTD's own, and it is the one most easily left out: /should you be
+responsible for this at all?  Can you delegate or drop it altogether?/  A
+standard being met perfectly is still worth losing if it was never yours.
+
+Reading them as one question — "has it changed, and if not am I following it?"
+— gets the upper rungs wrong.  A purpose almost never changes, so the first
+half asks nothing there and the second is the whole of it.  Lower down the
+first half is live: the job changes, and an area with it.
+
+** Two ways to order it
+
+=t= turns the board into a descent: a purpose, then indented beneath it
+whatever is in service of it, and so on down.
+
+#+begin_example
+  purpose Honesty                        no calendar
+            say the number you believe
+  area    ├─ engineering                 due
+  │          reviews come back the same day
+  area    └─ admin                       due
+             the vendor list is current
+#+end_example
+
+The altitude moves into a column, because a descent cannot group by it: a link
+may skip an altitude, so two rows at one indentation can be a goal and an area.
+Depth says how far the justification runs; the column says how high the rung
+is; neither can be read off the other.
+
+The ladder is a mesh rather than a tree, so a rule decides where a rung is
+*drawn*: under the first name in its own =CONVECT_SERVES= that resolves, and
+among rungs of that name, the first in the file.  Everything else it serves is
+named in the tally as =also serves=.
+
+That rule and no other, because it is the only one that is local.  Ordering by
+where a walk happens to arrive, or by which parent comes first in the file,
+means adding an unrelated heading at the top moves rows that have nothing to do
+with it.  So **the order of =CONVECT_SERVES= means something**: put the other
+name first to move the row.
 
 ** Why the whole ladder
 
@@ -455,6 +519,27 @@ its *neighbourhood*: what it was raised for, what answers to it, what the
 clock says, and — from the overlay — what actually happened underneath it.  A
 standard read alone is a sentence; read beside the goal it serves and the
 hours that went to it, it is a judgement you can make.
+
+All of it on one line, marked =↳=, which is org-foresight's sign for /this
+belongs to the line above/.  In a descent the tree already says what a rung
+serves and what answers to it, so those drop out and only =also serves= — the
+links the tree could not draw — is left.
+
+** Keys
+
+| =RET= | go to the rung |
+| =z=   | write the conclusion onto it |
+| =t=   | follow the links, or the altitudes |
+| =r=   | redraw |
+
+Only =t= and =r= are bound by this package; the rest is Org's own, acting on
+the marker each row carries.
+
+=t= is =org-agenda-todo= underneath, and taking it is a repair rather than a
+displacement: a rung deliberately carries [[*Goals carry no TODO state][no TODO keyword]], so pressing it on
+one of these rows would *give* it one.  =g= is left alone — it opens the
+motions for a great many people, and a command on it would take the prefix and
+everything under it away here alone.
 
 * Planning a project
 
@@ -539,12 +624,13 @@ cannot.
 All three draw rows that are live, and each can be called on the row under
 point in either of the others.
 
-They differ in how much they say per rung, and the direction is deliberate:
-*narrowing shows more, not less*.  The board carries every rung, so it can
-only afford a glimpse of each — the first line of the standard.  The thread
-has narrowed to a handful and shows the standard whole, along with everything
-the board was showing.  A view that focused and then said less about what it
-focused on would be narrowing for nothing.
+All three show a rung's prose whole.  The board used to glimpse it — the first
+line, cut at 68 columns — on the argument that it carries every rung and cannot
+afford more.  That was right while the board was a list of what wanted looking
+at.  It is where the reviewing happens, and a standard cut to its first line is
+enough to recognise and not enough to judge.
+
+What the thread narrows is *how many rungs*, not how much of each.
 
 ** Following the cursor
 

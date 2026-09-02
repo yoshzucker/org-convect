@@ -447,6 +447,169 @@ to be reassembled by hand from both ends."
               (push (plist-get down :name) queue))))))
     thread))
 
+(defcustom org-convect-outline-glyphs '("│  " "├─ " "└─ " "   ")
+  "The connectors an outline is drawn with: bar, tee, ell, gap.
+
+All four must be the same width in display columns, because the width of one
+is what a level of depth means.  They are checked at draw time and the ASCII
+set is used instead when they are not -- `│\\=' and its family are East Asian
+Ambiguous, so a `char-width-table\\=' set for CJK makes them two columns wide
+and every column in the tree moves.
+
+Not the glyphs org-foresight draws down the agenda's left edge, though they
+are the same characters.  There they bracket a *stretch of hours*, and `├\\='
+means a stretch that opens and closes on one row; here they are a descent.
+The look is deliberately shared and the meaning is not."
+  :type '(list string string string string)
+  :group 'org-convect)
+
+(defconst org-convect-outline-ascii '("|  " "+- " "`- " "   ")
+  "The connectors used when `org-convect-outline-glyphs\\=' will not line up.")
+
+(defun org-convect-outline-glyphs ()
+  "The connectors to draw with, in display columns that agree."
+  (let ((widths (mapcar #'string-width org-convect-outline-glyphs)))
+    (if (apply #'= widths) org-convect-outline-glyphs org-convect-outline-ascii)))
+
+(defun org-convect-outline-under (prefix &optional glyphs)
+  "The vertical strip that runs beneath a row whose connector is PREFIX.
+
+The body of that row indents from this, and its children's connectors start
+after it.  One function for both, because a body indented by any other measure
+drifts out of the tree the moment an ancestor's last child goes past it.
+
+A row's own connector is the last unit of its prefix.  Beneath the row that
+connector becomes a bar when the row has later siblings and a gap when it does
+not, and every ancestor column is left exactly as it was -- which is the whole
+of what continuing a tree downward means."
+  (pcase-let ((`(,bar ,tee ,ell ,_gap) (or glyphs (org-convect-outline-glyphs))))
+    (cond ((string-suffix-p tee prefix)
+           (concat (substring prefix 0 (- (length prefix) (length tee))) bar))
+          ((string-suffix-p ell prefix)
+           (concat (substring prefix 0 (- (length prefix) (length ell)))
+                   (make-string (length ell) ?\s)))
+          (t prefix))))
+
+(defun org-convect--outline-index (entries)
+  "Hash NAME -> ids into ENTRIES carrying it, in file order.
+
+Deliberately not `org-convect-name-index\\=', whose buckets come out in reverse
+file order: it conses onto the front as it walks.  Taking the first of one of
+its buckets means the *last* rung of that name in the file, which is the
+opposite of the rule the outline is built on."
+  (let ((index (make-hash-table :test 'equal))
+        (id 0))
+    (dolist (entry entries index)
+      (let ((name (plist-get entry :name)))
+        (puthash name (append (gethash name index) (list id)) index))
+      (setq id (1+ id)))))
+
+(defun org-convect--outline-rank (entry)
+  "How high ENTRY sits, lowest number highest, for ordering the roots.
+
+A horizon this package does not know sorts last rather than first.  It has no
+altitude to compare, and `org-convect-above\\=' answering nil for it would put
+a typo above every purpose in the file."
+  (let ((horizon (plist-get entry :horizon)))
+    (if (org-convect-horizon-p horizon)
+        (length (org-convect-above horizon))
+      most-positive-fixnum)))
+
+(defun org-convect-outline (entries)
+  "ENTRIES as rows of a top-down descent: (ENTRY DEPTH PREFIX ALSO-SERVES).
+
+A purpose, then indented beneath it whatever is in service of it, and so on
+down.  ALSO-SERVES names the rungs it serves that it is not drawn under.
+
+The ladder is a mesh rather than a tree -- a rung may serve several, and a link
+may skip an altitude -- so a rule is needed for where a rung is *drawn*.  It is
+drawn under the first name in its own `CONVECT_SERVES\\=' that resolves to
+something else, and among rungs of that name, the first in the file.
+
+That rule and no other, because it is the only one that is local.  Homing by
+the order a walk happens to reach a rung, or by which parent comes first in the
+file, means adding an unrelated heading at the top moves rows that have nothing
+to do with it.  Homing at the highest parent empties the goals: every area that
+mentions a purpose leaves the goal it was raised under, and what the goal frames
+stops being visible.  This one depends on the rung's own property and nothing
+else, so it is stable under every edit elsewhere -- and it is the one a person
+can change, by putting the other name first.
+
+The cost is that the order of `CONVECT_SERVES\\=' now means something.  It did
+not before.
+
+Every entry comes out exactly once, whatever the file says.  A rung serving
+itself is a root; a cycle is broken at its earliest member and the broken link
+is named in ALSO-SERVES rather than dropped."
+  (let* ((n (length entries))
+         (by-id (vconcat entries))
+         (ids (org-convect--outline-index entries))
+         (home (make-vector n nil))
+         (kids (make-vector n nil))
+         (also (make-vector n nil))
+         (seen (make-vector n nil))
+         (glyphs (org-convect-outline-glyphs))
+         roots rows)
+    ;; Where each rung is drawn, and what it serves besides.  Local to the
+    ;; entry: no walk, nothing read from any other rung's answer.
+    (dotimes (id n)
+      (let (won rest)
+        (dolist (name (plist-get (aref by-id id) :serves))
+          (let ((found (and (null won)
+                            (seq-find (lambda (other) (/= other id))
+                                      (gethash name ids)))))
+            (if found (setq won found) (push name rest))))
+        (aset home id won)
+        (aset also id (nreverse rest))))
+    (dotimes (id n)
+      (when-let ((parent (aref home id)))
+        (push id (aref kids parent))))
+    (dotimes (id n) (aset kids id (nreverse (aref kids id))))
+    (dotimes (id n) (unless (aref home id) (push id roots)))
+    ;; Highest first, the way the file reads, and file order within an
+    ;; altitude -- `sort' on a list is stable, so no tiebreak is needed.
+    (setq roots (sort (nreverse roots)
+                      (lambda (a b) (< (org-convect--outline-rank (aref by-id a))
+                                       (org-convect--outline-rank (aref by-id b))))))
+    (cl-labels
+        ((descend (id depth prefix)
+           (aset seen id t)
+           (push (list (aref by-id id) depth prefix (aref also id)) rows)
+           (let* ((children (aref kids id))
+                  (last (car (last children)))
+                  (strip (org-convect-outline-under prefix glyphs)))
+             (pcase-let ((`(,_bar ,tee ,ell ,_gap) glyphs))
+               (dolist (child children)
+                 (descend child (1+ depth)
+                          (concat strip (if (eq child last) ell tee))))))))
+      (dolist (root roots) (descend root 0 ""))
+      ;; What is left is reachable from no root, which by construction means it
+      ;; is in a cycle or hangs off one.  Chase the home chain until it repeats,
+      ;; and cut at the *earliest member of the cycle* -- cutting where the
+      ;; chase entered would leave the cycle itself unvisited and promote a rung
+      ;; that is not in it.
+      (dotimes (id n)
+        (unless (aref seen id)
+          (let ((marked (make-hash-table :test 'eq))
+                (path nil)
+                (at id))
+            (while (not (gethash at marked))
+              (puthash at t marked)
+              (push at path)
+              (setq at (aref home at)))
+            (let* ((cycle (seq-take path (1+ (seq-position path at))))
+                   (cut (apply #'min cycle))
+                   (parent (aref home cut)))
+              (aset kids parent (delq cut (aref kids parent)))
+              (push (plist-get (aref by-id parent) :name) (aref also cut))
+              (aset home cut nil)
+              (descend cut 0 "")))))
+      ;; Unreachable by the argument above, and kept so that "no rung is
+      ;; dropped" is something the code guarantees rather than something the
+      ;; comment above claims.
+      (dotimes (id n) (unless (aref seen id) (descend id 0 ""))))
+    (nreverse rows)))
+
 (defun org-convect-thread-ends-at-p (entry)
   "Non-nil when nothing above ENTRY is named, though something could be.
 
@@ -738,6 +901,9 @@ costs something.
 No: \"Become the person the team trusts.\"  That is a state to arrive at rather
 than a way of behaving, which makes it a vision."
      :when   "No schedule.  Read these when direction or motivation has gone."
+     :review "Am I still behaving like this?  A principle does not go out of
+date, so asking whether it is current asks nothing -- the question that carries
+is whether it is being kept, and where it was not."
      :note   "Choice points are usually recorded under these, because a value
 in ACT is a way of behaving and so is a principle.  They are not confined to
 them: an area can be the honest answer when the pull was away from a
@@ -777,6 +943,9 @@ state, describable as though already true, with no date attached.
 No: \"Hand the on-call rota over by March.\"  Dated and completable, so it is a
 goal -- and probably one that serves the vision above it."
      :when   "No schedule.  Rewrite it when the picture stops fitting."
+     :review "Is this still the picture, and has anything actually moved toward
+it this year?  A vision nothing has moved toward is either not held or not
+being worked from."
      :do     "Add one with M-x org-convect-add, then write the picture
 underneath it.")
     (goal
@@ -817,6 +986,8 @@ number and a date, and on the day it is true you are done.
 
 No: \"Stay fit.\"  Nothing about that finishes, which makes it an area."
      :when   "Yearly, with a look each quarter."
+     :review "Reached, still reachable, or no longer a goal?  All three are
+answers; leaving it sitting there is not."
      :note   "The date a goal is for and the date it is next looked at are two
 different dates, and only the first of them is a property.
 
@@ -892,6 +1063,10 @@ day and no branch is older than a week.
 No: \"Ship the migration.\"  It finishes, so it is a project -- it belongs in
 the task system rather than here."
      :when   "Monthly, and whenever the job or the household changes."
+     :review "Is the standard being met -- and is this still yours to keep up?
+GTD asks the second out loud: should you be answerable for this at all, and
+could it be delegated or dropped?  A standard that is being met perfectly is
+still worth losing if it was never yours."
      :note   "An area's name is what a task carries in `CONVECT_AREA', which is
 how the clock reports against it.  The property is read with inheritance, so
 marking a project marks everything under it -- but a task filed straight into
@@ -946,6 +1121,7 @@ example looks like something to copy by hand.")
     (:test     "The test")
     (:examples "Telling them apart")
     (:when     "How often")
+    (:review   "What to ask when you come back")
     (:note     "How the file works")
     (:do       "What to type"))
   "The parts of a guide drawer in reading order, as (FIELD LABEL [GLOSS]).
@@ -1079,8 +1255,8 @@ in an agenda -- which is where most of this gets decided."
 
 ;;;; The file itself
 
-(defun org-convect--fill (text)
-  "TEXT wrapped to a width that reads in a narrow window.
+(defun org-convect--fill (text &optional columns)
+  "TEXT wrapped to COLUMNS, or to a width that reads in a narrow window.
 
 The source strings are broken where the source is easiest to read, which is
 not where the file should break.  Joining and refilling keeps the two apart:
@@ -1101,7 +1277,7 @@ goes on looking like one instead of joining the prose around it."
                 "\n[ \t]*" " "
                 (replace-regexp-in-string "\\([.?!]\\)\n[ \t]*" "\\1  "
                                           (string-trim paragraph))))
-       (let ((fill-column 72)
+       (let ((fill-column (or columns 72))
              (fill-prefix indent)
              ;; Off, because a paragraph here may open with a bold label and
              ;; `adaptive-fill-regexp' counts a leading `*' as a bullet: every
@@ -1810,14 +1986,6 @@ inherited prefix builds a child map that itself inherits, so the parent's other
 `g' keys go on working.  It is left out anyway, because `r' already redraws and
 a second key for one command is a second thing to remember.")
 
-(defun org-convect--finding-label (kind)
-  "The line of English for finding KIND."
-  (nth 1 (assq kind org-convect--finding-labels)))
-
-(defun org-convect--finding-remedy (kind)
-  "What answers finding KIND, as one line."
-  (nth 2 (assq kind org-convect--finding-labels)))
-
 (defconst org-convect--finding-labels
   '((bare-rung "Nothing written under it"
      "open it and write what goes underneath -- or leave it, if a rung above
@@ -1859,6 +2027,14 @@ here.  `unresolved-serves\=' is a break: something does point, at a name that
 is not in the file.  The true opposite of the first -- a rung that points at
 nothing -- is deliberately not a finding at all, because most areas serve
 nothing and the top rung serves nothing by definition.")
+
+(defun org-convect--finding-label (kind)
+  "The line of English for finding KIND."
+  (nth 1 (assq kind org-convect--finding-labels)))
+
+(defun org-convect--finding-remedy (kind)
+  "What answers finding KIND, as one line."
+  (nth 2 (assq kind org-convect--finding-labels)))
 
 ;;;###autoload
 (defun org-convect-doctor ()
@@ -2121,36 +2297,91 @@ worth guarding against."
                 'org-agenda-type 'agenda
                 'help-echo "z add note · RET go to it")))
 
-(defun org-convect--evidence (entry entries scan &optional whole)
-  "Lines of evidence to show under ENTRY.
+(defcustom org-convect-review-columns 80
+  "How wide the review board sets its prose.
 
-WHOLE asks for the rung's body in full rather than its first line.  That is
-the difference between a list and a reading: the board carries every rung, so
-it can only afford a glimpse of each; a view that has narrowed to a handful
-has the room, and narrowing that showed *less* about what it narrowed to would
-be the wrong way round."
-  (let* ((body (org-with-point-at (plist-get entry :marker)
-                 (org-convect--body)))
-         (lines (split-string body "\n" t))
-         (near (org-convect-neighbourhood entries entry))
-         (hours (cdr (assoc (plist-get entry :name)
-                            (plist-get scan :rows)))))
-    (append
-     (if whole
-         (mapcar #'string-trim lines)
-       (and (car lines)
-            (list (truncate-string-to-width
-                   (string-trim (car lines)) 68 nil nil t))))
-     (and hours (list (format "%s clocked" (org-duration-from-minutes hours))))
-     (and (car near)
-          (list (concat "serves "
-                        (mapconcat (lambda (e) (plist-get e :name))
-                                   (car near) ", "))))
-     (and (cdr near)
-          (list (format "%d below point at it" (length (cdr near)))))
-     (apply #'append
-            (mapcar (lambda (f) (funcall f entry))
-                    org-convect-review-evidence-functions)))))
+A rung's body is filled to this less whatever the row is indented by, so the
+standard reads as a paragraph rather than as however it happened to be typed."
+  :type 'integer
+  :group 'org-convect)
+
+(defconst org-convect-review-mark "↳"
+  "What marks a line as belonging to the row above it.
+
+org-foresight's, and deliberately the same: it means one thing there -- this
+elaborates the line above -- and it should not come to mean a second thing on
+a board the same person reads in the same session.")
+
+(defun org-convect--evidence-body (entry indent)
+  "ENTRY's own prose, filled to what is left of the line after INDENT columns.
+
+Whole rather than glimpsed.  The board used to show the first line cut at 68
+columns, which is enough to recognise a standard and not enough to review one
+-- and reviewing is what the board is for.  What paid for it was the four
+lines of tally underneath, which are one line now.
+
+Filled rather than reproduced: the source breaks where it was convenient to
+type, and a review reads better as a paragraph than as a transcript of a
+window that no longer exists."
+  (let ((body (org-with-point-at (plist-get entry :marker) (org-convect--body)))
+        (width (max 20 (- org-convect-review-columns indent))))
+    (unless (string-empty-p body)
+      ;; Filled as paragraphs, because that is what these bodies are: the
+      ;; guidance's own worked examples write a standard as a sentence with
+      ;; semicolons in it, and a rung hard-wrapped at one width and reproduced
+      ;; at another comes out ragged for no reason.
+      ;;
+      ;; A list item keeps its own line, though.  Somebody who wrote one
+      ;; criterion per line and marked them as a list meant them to be read as
+      ;; separate things, and running them together would be answering a
+      ;; different question from the one they wrote down.
+      (apply #'append
+             (mapcar (lambda (block)
+                       (split-string (org-convect--fill block width) "\n" t))
+                     (org-convect--blocks body))))))
+
+(defun org-convect--blocks (text)
+  "TEXT split where it must not be filled across: blank lines and list items."
+  (let (blocks current)
+    (dolist (line (split-string text "\n"))
+      (cond ((string-blank-p line)
+             (when current (push (string-join (nreverse current) "\n") blocks))
+             (setq current nil))
+            ((string-match-p "\\`[ \t]*\\([-+*]\\|[0-9]+[.)]\\)[ \t]" line)
+             (when current (push (string-join (nreverse current) "\n") blocks))
+             (setq current (list line)))
+            (t (push line current))))
+    (when current (push (string-join (nreverse current) "\n") blocks))
+    (nreverse blocks)))
+
+(defun org-convect--evidence-tally (entry entries scan &optional threaded)
+  "One line of what is known about ENTRY besides its own prose, or nil.
+
+Four lines once, and each of them short: the clock, what it serves, how many
+answer to it, and whatever a layer above adds.  Joined into one, most specific
+first, because when the line will not fit it is the end that should go.
+
+THREADED says the board is drawing a descent, where what a rung serves and
+what answers to it are already on the page as position.  Saying them again in
+words is the same fact twice, so they are left out and only the links the tree
+could not draw are named."
+  (let* ((near (org-convect-neighbourhood entries entry))
+         (hours (cdr (assoc (plist-get entry :name) (plist-get scan :rows))))
+         (terms (append
+                 (and hours (list (format "%s clocked"
+                                          (org-duration-from-minutes hours))))
+                 (unless threaded
+                   (append
+                    (and (car near)
+                         (list (concat "serves "
+                                       (mapconcat (lambda (e) (plist-get e :name))
+                                                  (car near) ", "))))
+                    (and (cdr near)
+                         (list (format "%d below" (length (cdr near)))))))
+                 (apply #'append
+                        (mapcar (lambda (f) (funcall f entry))
+                                org-convect-review-evidence-functions)))))
+    (and terms (concat org-convect-review-mark " " (string-join terms " · ")))))
 
 (defun org-convect--review-status (entry now called)
   "How ENTRY stands at NOW, as a short phrase for its row.
@@ -2216,6 +2447,93 @@ actually moved onto a different rung."
                        (org-convect-lineage entries entry))
                table))))
 
+(defcustom org-convect-review-threaded nil
+  "Whether the board opens as a descent rather than as four sections.
+
+Sections group by altitude, which is what the file looks like.  A descent
+follows the links instead: a purpose, then indented beneath it whatever is in
+service of it.  Neither is the true one -- the ladder is read both ways, and
+`\\<org-convect-review-mode-map>\\[org-convect-review-thread]' moves between
+them without redrawing from the files."
+  :type 'boolean
+  :group 'org-convect)
+
+(defvar-local org-convect--review-threaded nil
+  "Whether the board on screen is drawn as a descent.")
+
+(defvar-local org-convect--review-args nil
+  "The arguments the board on screen was drawn with, so it can redraw itself.")
+
+(defvar org-convect-review-mode-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map org-agenda-mode-map)
+    (define-key map (kbd "t") #'org-convect-review-thread)
+    (define-key map (kbd "r") #'org-convect-review-redraw)
+    map)
+  "Keys the board adds to the agenda's own.
+
+`t' is `org-agenda-todo' underneath, and taking it is a repair rather than a
+displacement: a rung deliberately carries no TODO keyword, so pressing it on
+one of these rows would *give* it one and make the ladder look like a task
+list.  `r' is redrawing, which the board needs more than most views do --
+`\\[org-agenda-add-note]' writes a note that changes what the board says about
+the rung you are standing on.
+
+`g' is left alone.  It opens the motions for a great many people, and a
+command on it would take the prefix and everything under it away here alone.")
+
+(defun org-convect--review-altitude (entry)
+  "ENTRY's altitude as a fixed-width gutter.
+
+A column rather than a heading, because a descent cannot group by altitude:
+links may skip one, so two rows at the same indentation can be a goal and an
+area.  Depth says how far the justification runs; this says how high the rung
+is; neither can be read off the other.
+
+Printed on every row, never blanked when it repeats -- a blank would read as
+\"the same as above\", which is the one inference the column exists to stop."
+  (let ((horizon (symbol-name (plist-get entry :horizon))))
+    (format "  %-7s " (truncate-string-to-width horizon 7 nil ?\s t))))
+
+(defun org-convect--review-insert (entry gutter prefix column now called
+                                        entries scan &optional threaded also)
+  "Insert one rung's block: its row, its prose, and one line of tally.
+
+GUTTER is what stands to the left of the tree -- the altitude column, or the
+plain indent when there is no tree.  PREFIX is the row's connectors.
+Everything under the row is laid against `org-convect-outline-under' of the
+same PREFIX, so the tree cannot break where the prose begins.
+
+The prose carries the same `org-convect-rung' the row does.  Following the
+cursor reads that property off the character under point, and a body of five
+lines with no property on it is five lines on which the thread goes dark."
+  (let* ((name (plist-get entry :name))
+         (lead (concat gutter prefix))
+         ;; blank where the altitude was: it is a fact about the rung, and a
+         ;; body line repeating it would read as four more rungs at that
+         ;; altitude rather than as one rung's prose
+         (under (concat (make-string (string-width gutter) ?\s)
+                        (org-convect-outline-under prefix)))
+         (indent (string-width under)))
+    (insert (org-convect--review-line
+             (format "%s%s%s  %s\n" lead name
+                     (make-string (max 0 (- column (string-width lead)
+                                            (string-width name)))
+                                  ?\s)
+                     (org-convect--review-status entry now called))
+             (plist-get entry :marker) name))
+    (dolist (line (org-convect--evidence-body entry (+ indent 2)))
+      (insert (org-convect--review-line (format "%s  %s\n" under line)
+                                        (plist-get entry :marker) name)))
+    (when also
+      (insert (org-convect--review-line
+               (format "%s  %s also serves %s\n" under org-convect-review-mark
+                       (string-join also ", "))
+               (plist-get entry :marker) name)))
+    (when-let ((tally (org-convect--evidence-tally entry entries scan threaded)))
+      (insert (org-convect--review-line (format "%s  %s\n" under tally)
+                                        (plist-get entry :marker) name)))))
+
 ;;;###autoload
 (defun org-convect-review (&optional only-wanting now)
   "Show the ladder, with what wants looking at marked.
@@ -2236,66 +2554,196 @@ reads them when direction or motivation has gone, which is a condition -- so
 they say \"no calendar\" until something notices the condition, and \"called\"
 when something does.
 
+Each rung's own prose is shown whole.  The board is where reviewing happens,
+and a standard cut to its first line is enough to recognise and not enough to
+judge.
+
 Rows are live: \\[org-agenda-add-note] writes your conclusion onto the rung,
 \\[org-agenda-switch-to] goes to it when the conclusion is that the rung
-itself should change."
+itself should change, and \\<org-convect-review-mode-map>\\[org-convect-review-thread]
+follows the links instead of the altitudes."
   (interactive "P")
   (let* ((now (or now (current-time)))
          (entries (org-convect-scan))
          (called (org-convect-called entries))
          (due (org-convect-due entries now))
          (scan (org-convect-clock-rows))
-         ;; Wide enough for the widest name there is.  A fixed column would
-         ;; cut a principle in half, and a principle read in half is a
-         ;; different principle.
-         (column (apply #'max 24 (mapcar (lambda (e)
-                                           (string-width (plist-get e :name)))
-                                         entries)))
-         (buffer (get-buffer-create org-convect-review-buffer)))
+         (buffer (get-buffer-create org-convect-review-buffer))
+         (threaded (if (eq (current-buffer) buffer)
+                       org-convect--review-threaded
+                     org-convect-review-threaded))
+         (was (and (eq (current-buffer) buffer)
+                   (org-get-at-bol 'org-convect-rung)))
+         (wanted (lambda (e) (or (memq e due) (assq e called))))
+         (rows (when threaded (org-convect--review-rows entries only-wanting
+                                                        wanted)))
+         ;; Where the status column starts: the widest row there is, measured
+         ;; the way it will be drawn -- gutter, connectors and name together.
+         ;; Measuring the name alone leaves exactly the widest row two columns
+         ;; past every other one, which is the shape the bug took.  A fixed
+         ;; column would cut a principle in half, and a principle read in half
+         ;; is a different principle.  Measured over what will be drawn: a name
+         ;; that was filtered out has no business widening the page.
+         (column (if threaded
+                     (apply #'max 24
+                            (mapcar (lambda (r)
+                                      (+ (string-width
+                                          (org-convect--review-altitude (car r)))
+                                         (string-width (nth 2 r))
+                                         (string-width
+                                          (plist-get (car r) :name))))
+                                    rows))
+                   (apply #'max 24
+                          (mapcar (lambda (e)
+                                    (+ 2 (string-width (plist-get e :name))))
+                                  (if only-wanting
+                                      (seq-filter wanted entries)
+                                    entries))))))
     (with-current-buffer buffer
       (let ((inhibit-read-only t))
         (erase-buffer)
         (unless (derived-mode-p 'org-agenda-mode) (org-agenda-mode))
         (setq-local org-agenda-type 'agenda)
+        ;; The date sits where the statuses do, so the head of the page is
+        ;; ruled by the same column as everything under it.
         (insert (format "Horizons Review%s%s\n"
-                        (make-string 38 ?\s) (format-time-string "%Y-%m-%d" now)))
+                        (make-string (max 2 (- (+ column 2) 15)) ?\s)
+                        (format-time-string "%Y-%m-%d" now)))
         (insert (format "  %d due, %d called%s\n\n"
                         (length due) (length called)
                         (if org-convect-signal-functions ""
                           " (nothing is watching the rungs with no calendar)")))
-        (dolist (horizon (reverse (mapcar #'car org-convect-horizons)))
-          (let ((at (seq-filter
-                     (lambda (e)
-                       (or (not only-wanting)
-                           (memq e due) (assq e called)))
-                     (org-convect-entries entries horizon))))
-            (when (or at (not only-wanting))
-              (insert (org-convect-horizon-name horizon) "\n")
-              (if (null at)
-                  (insert "  nothing\n")
-                (dolist (entry at)
-                  (insert (org-convect--review-line
-                           (format "  %s%s  %s\n"
-                                   (plist-get entry :name)
-                                   (make-string
-                                    (max 0 (- column
-                                              (string-width (plist-get entry :name))))
-                                    ?\s)
-                                   (org-convect--review-status entry now called))
-                           (plist-get entry :marker)
-                           (plist-get entry :name)))
-                  (dolist (line (org-convect--evidence entry entries scan))
-                    (insert (format "      %s\n" line)))))
-              (insert "\n"))))
-        (insert "  z  write the conclusion here      RET  go to it\n")
+        (if threaded
+            (progn
+              ;; The questions have nowhere else to go here: a descent has no
+              ;; section headings to put them under, and one per row would say
+              ;; the same four things over and over.
+              (dolist (horizon (reverse (mapcar #'car org-convect-horizons)))
+                (when-let ((asks (org-convect-guide horizon :review)))
+                  (let ((lines (split-string
+                                (org-convect--fill
+                                 asks (- org-convect-review-columns 10))
+                                "\n" t)))
+                    (insert (format "  %-7s %s\n" (symbol-name horizon)
+                                    (car lines)))
+                    (dolist (line (cdr lines))
+                      (insert (format "%s%s\n" (make-string 10 ?\s) line))))))
+              (insert "\n")
+              (pcase-dolist (`(,entry ,_depth ,prefix ,also) rows)
+                (org-convect--review-insert
+                 entry (org-convect--review-altitude entry) prefix
+                 column now called entries scan t also))
+              (insert "\n"))
+          (dolist (horizon (reverse (mapcar #'car org-convect-horizons)))
+            (let ((at (seq-filter (lambda (e)
+                                    (or (not only-wanting) (funcall wanted e)))
+                                  (org-convect-entries entries horizon))))
+              (when (or at (not only-wanting))
+                (insert (org-convect-horizon-name horizon) "\n")
+                (when-let ((asks (org-convect-guide horizon :review)))
+                  (dolist (line (split-string
+                                 (org-convect--fill
+                                  asks (- org-convect-review-columns 2))
+                                 "\n" t))
+                    (insert (format "  %s\n" line))))
+                (if (null at)
+                    (insert "  nothing\n")
+                  (dolist (entry at)
+                    (org-convect--review-insert entry "  " "" column now called
+                                                entries scan)))
+                (insert "\n")))))
+        (insert (format "  z  write the conclusion here   RET  go to it   %s\n"
+                        (if threaded "t  by altitude   r  redraw"
+                          "t  follow the links   r  redraw")))
         (when (not only-wanting)
           (insert "  C-u M-x org-convect-review  shows only what wants looking at\n"))
-        (setq org-convect--lineages (org-convect--remember-lineages entries)
+        (use-local-map org-convect-review-mode-map)
+        (setq org-convect--review-threaded threaded
+              org-convect--review-args (list only-wanting now)
+              org-convect--lineages (org-convect--remember-lineages entries)
               org-convect--lit nil
               org-convect--lit-for :none)
         (add-hook 'post-command-hook #'org-convect--light-lineage nil t)
-        (goto-char (point-min))))
+        (goto-char (point-min))
+        (when was
+          (let ((found (text-property-search-forward 'org-convect-rung was #'equal)))
+            (goto-char (if found (prop-match-beginning found) (point-min)))))))
     (pop-to-buffer buffer)))
+
+(defun org-convect-review-thread ()
+  "Draw the board the other way: by the links, or by the altitudes.
+
+Not a filter and not a second buffer -- the same rungs, ordered by the other
+thing that is true about them.  The cursor stays on the rung it was on, which
+is the whole use of the toggle: you are asking what this one is for."
+  (interactive)
+  (unless (equal (buffer-name) org-convect-review-buffer)
+    (user-error "Not the review board"))
+  (setq org-convect--review-threaded (not org-convect--review-threaded))
+  (apply #'org-convect-review org-convect--review-args))
+
+(defun org-convect-review-redraw ()
+  "Draw the board again from the files, keeping the rung under the cursor.
+
+Wanted more here than on most views: `\\[org-agenda-add-note]' writes the
+conclusion onto the rung, and what the board says about that rung -- when it
+was last looked at, whether it is still due -- is what the note has just
+changed."
+  (interactive)
+  (unless (equal (buffer-name) org-convect-review-buffer)
+    (user-error "Not the review board"))
+  ;; NOW is dropped: redrawing means asking again, and asking again at the
+  ;; moment the board was first opened would be asking the old question.
+  (org-convect-review (car org-convect--review-args)))
+
+(defun org-convect--review-rows (entries only-wanting wanted)
+  "The descent's rows, narrowed to what WANTED keeps when ONLY-WANTING.
+
+A tree cannot be filtered row by row: dropping a rung orphans everything drawn
+under it, and the connectors then point at nothing.  So an ancestor of a rung
+that is wanted is kept as well, and the prefixes are built again afterwards --
+which of a rung's siblings is the last one changes when the others go."
+  (let ((rows (org-convect-outline entries)))
+    (if (not only-wanting)
+        rows
+      (let* ((keep (make-hash-table :test 'eq))
+             (stack nil))
+        ;; Walking backwards, a row's ancestors are the rows above it whose
+        ;; depth is smaller -- which is what the stack holds.
+        (dolist (row rows)
+          (setq stack (cons row (seq-drop-while
+                                 (lambda (r) (>= (nth 1 r) (nth 1 row)))
+                                 stack)))
+          (when (funcall wanted (car row))
+            (dolist (up stack) (puthash up t keep))))
+        (org-convect--review-reprefix
+         (seq-filter (lambda (r) (gethash r keep)) rows))))))
+
+(defun org-convect--review-reprefix (rows)
+  "ROWS with their connectors built again for the tree that is left."
+  (let ((glyphs (org-convect-outline-glyphs))
+        (prefixes (make-vector (1+ (apply #'max 0 (mapcar (lambda (r) (nth 1 r))
+                                                          rows)))
+                               ""))
+        out)
+    (pcase-let ((`(,_bar ,tee ,ell ,_gap) glyphs))
+      (let ((rest rows))
+        (while rest
+          (pcase-let ((`(,entry ,depth ,_prefix ,also) (car rest)))
+            (let* ((parent (if (zerop depth) "" (aref prefixes (1- depth))))
+                   ;; the last sibling is the last row at this depth before
+                   ;; anything shallower comes along
+                   (last (not (seq-find (lambda (r) (= (nth 1 r) depth))
+                                        (seq-take-while
+                                         (lambda (r) (> (nth 1 r) (1- depth)))
+                                         (cdr rest)))))
+                   (prefix (if (zerop depth) ""
+                             (concat (org-convect-outline-under parent glyphs)
+                                     (if last ell tee)))))
+              (when (< depth (length prefixes)) (aset prefixes depth prefix))
+              (push (list entry depth prefix also) out)))
+          (setq rest (cdr rest)))))
+    (nreverse out)))
 
 ;;;; One thread, and one rung's past
 
@@ -2355,7 +2803,9 @@ only, so what serves a rung is never written near it."
                 ;; The whole body here, not the glimpse the board gives.  A
                 ;; view that narrowed to a handful of rungs and then said less
                 ;; about each of them would be narrowing for nothing.
-                (dolist (line (org-convect--evidence e entries scan t))
+                (dolist (line (append (org-convect--evidence-body e 6)
+                                      (delq nil (list (org-convect--evidence-tally
+                                                       e entries scan)))))
                   (insert (format "      %s\n" line))))
               (insert "\n"))))
         (goto-char (point-min))))
