@@ -694,12 +694,13 @@ which is how a finding comes to be read as scenery.
 | ~past-its-date~     | a goal still sitting there after its date        | close it, or move the date     |
 | ~unserved-rung~     | nothing below points at it                       | ~C-u org-convect-link~         |
 | ~unresolved-serves~ | it points above at a name that is not in the file | ~org-convect-relink~          |
+| ~misaimed-serves~   | it points at a rung that is not above it         | ~org-convect-relink~          |
 | ~duplicate-name~    | two rungs share a name, so pointing is ambiguous | ~org-convect-reword~           |
 | ~unknown-horizon~   | a typo in ~CONVECT_HORIZON~                      | fix the property               |
 | ~overdue-review~    | past the cadence GTD gives that horizon          | =z= on the row                 |
 
-The last two rows about links read as a pair and are worded as one, but they
-are *not* opposites.  ~unserved-rung~ is an absence — nothing below points
+The three rows about links are worded alike because they are read together, but
+the first two are *not* opposites.  ~unserved-rung~ is an absence — nothing below points
 here.  ~unresolved-serves~ is a break — something does point, at a name no rung
 answers to, which is a typo or a rename nothing followed.
 
@@ -725,7 +726,9 @@ unless the command comes to you.  It does:
 C-u M-x org-convect-link
 #+end_src
 
-Standing on the purpose, it offers every rung below it, and writes
+Standing on the purpose, it offers every rung below it — each shown with its
+altitude, because two rungs can be worded alike and which one you meant is the
+difference between a principle and the goal that serves it — and writes
 ~CONVECT_SERVES~ onto each one you pick.  The direction of the data does not
 change; only the end you are standing at when you say it, which for an upper
 rung is the end where you know the answer.  It runs from a doctor row as well
@@ -754,6 +757,46 @@ M-x org-convect-relink
 It offers the links this rung carries, marking the ones that resolve to
 nothing, and asks what to point at instead.  An empty answer drops the link,
 which is the honest repair when the thing it named is gone.
+
+** How far up a link may run
+
+Up, and as far up as you like.
+
+GTD does not require an item to have a parent one level above it.  The horizons
+are altitudes to look from rather than a tree — [[https://gettingthingsdone.com/2011/01/the-6-horizons-of-focus/][David Allen's own account]] says work
+"can be approached from many altitudes", and describes the upper levels as
+*driving*, *generating* and *surfacing* what is below rather than owning it.
+Clarity higher up reveals what is missing lower down; it does not mandate a
+one-to-one correspondence.
+
+So skipping is ordinary.  An area of accountability that serves a principle
+with no goal or vision in between is one of the commonest honest shapes there
+is — /Parent/ is answerable to something you hold, not to this year's
+objectives.  ~org-convect-link~ offers every rung above, not the next one up.
+
+What has no reading is a link that does not run up at all: a rung in service of
+something at or below its own altitude.  The commands cannot produce one — they
+only ever offer what sits above — so ~misaimed-serves~ is about a
+~CONVECT_SERVES~ written by hand.
+
+*** Does everything have to be connected?
+
+No, and the two directions are not alike.
+
+Pointing *up* is optional and its absence is never a finding.  Most areas serve
+nothing at all: keeping the engines running is what an area is for.
+
+Being pointed *at* is the question, and only above the areas.  A rung up there
+exists to shape what is under it, so a purpose that nothing was derived from is
+either not being used yet or is not really held — and the file cannot tell you
+which.  That is why it is reported as a question rather than a defect.
+
+An unconnected purpose is therefore fine to *have* and impossible to *check*.
+It becomes checkable the moment either something below points at it, or conduct
+is recorded under it — which is why a rung with choice points under it counts
+as in use even when nothing in the ladder points at it.  What a principle
+produces is behaviour, not a lower rung, and the ladder is the wrong place to
+look for its output.
 
 * Install
 

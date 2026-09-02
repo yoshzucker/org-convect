@@ -1376,6 +1376,178 @@ looking at it."
           (should-not (string-match-p "Nothing below points at it"
                                       (buffer-string))))))))
 
+(ert-deftest org-convect-test-a-link-may-skip-as-many-rungs-as-it-likes ()
+  "GTD puts no ceiling on how far up a rung may point.  The horizons are
+altitudes to look from rather than a tree -- clarity higher up reveals what is
+missing lower down, and nothing requires a parent one level above.
+
+An area answerable to a principle with no goal or vision in between is one of
+the commonest honest shapes there is."
+  (org-convect-test--with-ladder "\
+* Honesty
+:PROPERTIES:
+:CONVECT_HORIZON: purpose
+:END:
+Rules out staying quiet.
+
+* engineering
+:PROPERTIES:
+:CONVECT_HORIZON: area
+:CONVECT_SERVES: Honesty
+:END:
+Reviews come back the same day.
+"
+    (let ((kinds (org-convect-test--kinds
+                  (org-convect-findings (org-convect-scan)) "engineering")))
+      (should-not (memq 'misaimed-serves kinds))
+      (should-not (memq 'unresolved-serves kinds)))
+    ;; and the command offers the whole way up, not the next rung
+    (with-current-buffer (find-file-noselect (car org-convect-files))
+      (goto-char (point-min))
+      (re-search-forward "^\\* engineering")
+      (let (offered)
+        (cl-letf (((symbol-function 'completing-read-multiple)
+                   (lambda (_prompt table &rest _)
+                     (setq offered (mapcar #'car table))
+                     nil)))
+          (org-convect-link))
+        (should (member "Honesty  [purpose]" offered))))))
+
+(ert-deftest org-convect-test-a-link-that-does-not-run-up-is-a-finding ()
+  "The one shape the model has no reading for.  A rung above exists to shape
+what is under it, so one in service of something at or below its own altitude
+is a sentence with its subject and object swapped."
+  (org-convect-test--with-ladder "\
+* Honesty
+:PROPERTIES:
+:CONVECT_HORIZON: purpose
+:CONVECT_SERVES: engineering
+:END:
+Rules out staying quiet.
+
+* engineering
+:PROPERTIES:
+:CONVECT_HORIZON: area
+:END:
+Reviews come back the same day.
+"
+    (let ((findings (org-convect-findings (org-convect-scan))))
+      (should (memq 'misaimed-serves
+                    (org-convect-test--kinds findings "Honesty")))
+      ;; and it says which altitude it landed on
+      (should (string-match-p
+               "engineering \\[area\\]"
+               (plist-get (seq-find (lambda (f)
+                                      (eq (plist-get f :kind) 'misaimed-serves))
+                                    findings)
+                          :detail))))))
+
+(ert-deftest org-convect-test-a-downward-link-does-not-count-as-being-served ()
+  "\"Nothing below points at it\" has to mean below.  A link running the other
+way is broken rather than an answer, and letting it count would silence the
+gap it is sitting on top of."
+  (org-convect-test--with-ladder "\
+* A team that runs itself
+:PROPERTIES:
+:CONVECT_HORIZON: vision
+:END:
+Releases go out without me.
+
+* Two reviewers, unprompted
+:PROPERTIES:
+:CONVECT_HORIZON: goal
+:CONVECT_BY: [2030-06-30]
+:END:
+Reached when two in a row go out unasked.
+"
+    (with-current-buffer (find-file-noselect (car org-convect-files))
+      (goto-char (point-min))
+      (re-search-forward "^\\* A team that runs itself")
+      (org-entry-put nil "CONVECT_SERVES" "Two reviewers, unprompted")
+      (save-buffer))
+    (let ((kinds (org-convect-test--kinds
+                  (org-convect-findings (org-convect-scan))
+                  "Two reviewers, unprompted")))
+      (should (memq 'unserved-rung kinds)))))
+
+(ert-deftest org-convect-test-a-candidate-carries-its-altitude ()
+  "Two rungs can be worded alike, and which one you meant is the difference
+between a principle and the goal that serves it."
+  (should (equal "Honesty  [purpose]"
+                 (org-convect--candidate '(:name "Honesty" :horizon purpose))))
+  ;; and what comes back is the name, not the label it was shown under
+  (let ((table '(("Honesty  [purpose]" . "Honesty"))))
+    (should (equal "Honesty" (org-convect--chosen "Honesty  [purpose]" table)))
+    ;; typed freely, it comes back unchanged: a link may be written before the
+    ;; rung it points at exists
+    (should (equal "Not yet written" (org-convect--chosen "Not yet written" table)))))
+
+(ert-deftest org-convect-test-relink-offers-altitudes-too ()
+  "The same ambiguity, in the command that repairs the link rather than the one
+that writes it."
+  (org-convect-test--with-ladder "\
+* Honesty
+:PROPERTIES:
+:CONVECT_HORIZON: purpose
+:END:
+Rules out staying quiet.
+
+* engineering
+:PROPERTIES:
+:CONVECT_HORIZON: area
+:CONVECT_SERVES: Honestly
+:END:
+Reviews come back the same day.
+"
+    (with-current-buffer (find-file-noselect (car org-convect-files))
+      (goto-char (point-min))
+      (re-search-forward "^\\* engineering")
+      (let (offered)
+        (cl-letf (((symbol-function 'completing-read)
+                   (lambda (prompt table &rest _)
+                     (if (string-match-p "Repoint which" prompt)
+                         "Honestly  (not in the file)"
+                       (setq offered (mapcar #'car table))
+                       "Honesty  [purpose]"))))
+          (org-convect-relink))
+        (should (member "Honesty  [purpose]" offered))
+        ;; and the property holds the name, not the label
+        (should (equal "Honesty" (org-entry-get nil "CONVECT_SERVES")))))))
+
+(ert-deftest org-convect-test-linking-down-ignores-a-name-with-no-rung ()
+  "The downward half writes onto another rung, and a name typed freely has no
+rung to write onto.  It used to look one up by name and hand on the marker of
+whatever came back, which for nothing is nil -- and `org-with-point-at' takes
+nil as \"here\", so the property went silently into whatever entry point
+happened to be on.  Nothing is the only correct thing to write."
+  (org-convect-test--with-ladder "\
+* Honesty
+:PROPERTIES:
+:CONVECT_HORIZON: purpose
+:END:
+Rules out staying quiet.
+
+* engineering
+:PROPERTIES:
+:CONVECT_HORIZON: area
+:END:
+Reviews come back the same day.
+"
+    (let ((before (with-temp-buffer
+                    (insert-file-contents (car org-convect-files))
+                    (buffer-string))))
+      (with-current-buffer (find-file-noselect (car org-convect-files))
+        (goto-char (point-min))
+        (re-search-forward "^\\* Honesty")
+        (cl-letf (((symbol-function 'completing-read-multiple)
+                   (lambda (&rest _) (list "no such rung"))))
+          (org-convect-link t)))
+      ;; the whole file, not only the rung that was offered: the failure this
+      ;; guards writes somewhere else entirely
+      (should (equal before (with-temp-buffer
+                              (insert-file-contents (car org-convect-files))
+                              (buffer-string)))))))
+
 (ert-deftest org-convect-test-relink-repoints-a-broken-link ()
   "Neither of the other two can do this.  `org-convect-link' adds a name beside
 the broken one and `org-convect-reword' renames a rung rather than the link

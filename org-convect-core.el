@@ -484,6 +484,12 @@ Each is (:kind :name :horizon :marker :detail).  The kinds:
                     invisible to every other question if it were dropped
   duplicate-name    two rungs share a name, so pointing at it means nothing
   unresolved-serves `CONVECT_SERVES' names something that is not there
+  misaimed-serves   `CONVECT_SERVES' names a rung that is not above this one.
+                    Nothing the commands can produce -- they offer only what
+                    sits above -- so it is a link written by hand.  GTD puts no
+                    ceiling on how far up a rung may point, and an area serving
+                    a purpose directly is ordinary; what has no reading is a
+                    rung in service of something at or below its own altitude
   unserved-rung     a rung above the areas that nothing points at.  The one
                     direction worth asking: an upper rung is there to shape
                     what is under it, and one shaping nothing is either not in
@@ -525,8 +531,21 @@ answer into a defect, so the ladder is only ever read upward."
             (finding 'duplicate-name
                      (format "%d entries" (length (gethash name index)))))
           (dolist (target (plist-get entry :serves))
-            (unless (gethash target index)
-              (finding 'unresolved-serves target)))
+            (let ((found (gethash target index)))
+              (cond
+               ((null found) (finding 'unresolved-serves target))
+               ;; Both ends have to stand on a rung this package knows before
+               ;; their altitudes can be compared, and an unknown one is
+               ;; already reported on its own account.
+               ((and (org-convect-horizon-p horizon)
+                     (not (seq-some
+                           (lambda (e)
+                             (memq (plist-get e :horizon)
+                                   (org-convect-above horizon)))
+                           found)))
+                (finding 'misaimed-serves
+                         (format "%s [%s]" target
+                                 (plist-get (car found) :horizon)))))))
           (when (plist-get entry :bare)
             (finding 'bare-rung nil))
           ;; Whether a long heading is a name or a stray sentence cannot be
@@ -567,8 +586,15 @@ answer into a defect, so the ladder is only ever read upward."
             (name (plist-get entry :name)))
         (when (and (org-convect-horizon-p horizon)
                    (not (eq horizon 'area))
-                   (not (seq-some (lambda (e) (member name (plist-get e :serves)))
-                                  entries))
+                   ;; from below, which is what the finding says.  A link
+                   ;; running the other way is broken rather than an answer,
+                   ;; and letting it count would silence a real gap.
+                   (not (seq-some
+                         (lambda (e)
+                           (and (member name (plist-get e :serves))
+                                (memq horizon (org-convect-above
+                                               (plist-get e :horizon)))))
+                         entries))
                    (not (run-hook-with-args-until-success
                          'org-convect-in-use-functions entry)))
           (push (list :kind 'unserved-rung :name name :horizon horizon
@@ -629,6 +655,23 @@ fix."
 
 ;;;; Input
 
+(defun org-convect--candidate (entry)
+  "ENTRY as a completion candidate: its name, and the rung it stands on.
+
+The name alone is not enough where it matters most.  Picking what something is
+in service of is a choice between altitudes as much as between names -- two
+rungs can be worded alike, and which one you meant is the difference between a
+principle and the goal that serves it."
+  (format "%s  [%s]" (plist-get entry :name) (plist-get entry :horizon)))
+
+(defun org-convect--chosen (pick table)
+  "The name PICK stands for in TABLE, or PICK itself when it stands for nothing.
+
+The prompts that use TABLE do not require a match, because a link may be
+written before the rung it points at exists and refusing that would make the
+order of writing matter.  What is typed freely comes back unchanged."
+  (or (cdr (assoc pick table)) pick))
+
 (defun org-convect-read-entry (prompt &optional entries horizons)
   "Read one horizon entry with completion and return its plist.
 
@@ -648,11 +691,7 @@ so recording something about the rung already on screen takes no typing."
                                         (equal (plist-get e :name)
                                                (plist-get here :name)))
                                       entries)))
-         (table (mapcar (lambda (e)
-                          (cons (format "%s  [%s]"
-                                        (plist-get e :name)
-                                        (plist-get e :horizon))
-                                e))
+         (table (mapcar (lambda (e) (cons (org-convect--candidate e) e))
                         entries)))
     (unless table
       (user-error "No horizon entries yet -- see `org-convect-open'"))
@@ -1288,28 +1327,36 @@ is the end where you know the answer."
                        (lambda (e) (memq horizon (org-convect-above
                                                   (plist-get e :horizon))))
                        entries))
+               (table (mapcar (lambda (e) (cons (org-convect--candidate e) e))
+                              below))
                (chosen (and below
                             (completing-read-multiple
-                             (format "Rungs served by %s: " name)
-                             (mapcar (lambda (e) (plist-get e :name)) below)))))
+                             (format "Rungs served by %s: " name) table)))
+               (written 0))
           (unless below (user-error "Nothing sits below a %s" horizon))
           (dolist (pick (seq-remove #'string-empty-p chosen))
-            (let ((entry (seq-find (lambda (e) (equal (plist-get e :name) pick))
-                                   below)))
-              (org-convect--add-serves (plist-get entry :marker) name)))
-          (message "%s is now served by %d rung%s" name (length chosen)
-                   (if (= 1 (length chosen)) "" "s")))
+            ;; only what the table knows: this end writes onto another rung,
+            ;; and a name typed freely has no rung to write onto
+            (when-let ((entry (cdr (assoc pick table))))
+              (org-convect--add-serves (plist-get entry :marker) name)
+              (cl-incf written)))
+          (message "%s is now served by %d rung%s" name written
+                   (if (= 1 written) "" "s")))
       (let* ((above (seq-filter (lambda (e)
                                   (memq (plist-get e :horizon)
                                         (org-convect-above horizon)))
                                 entries))
+             (table (mapcar (lambda (e)
+                              (cons (org-convect--candidate e)
+                                    (plist-get e :name)))
+                            above))
              (chosen (and above
                           (completing-read-multiple
-                           (format "%s is in service of: " name)
-                           (mapcar (lambda (e) (plist-get e :name)) above)))))
+                           (format "%s is in service of: " name) table))))
         (unless above (user-error "Nothing sits above a %s" horizon))
         (dolist (pick (seq-remove #'string-empty-p chosen))
-          (org-convect--add-serves (plist-get here :marker) pick))
+          (org-convect--add-serves (plist-get here :marker)
+                                   (org-convect--chosen pick table)))
         (message "%s now serves %d rung%s" name (length chosen)
                  (if (= 1 (length chosen)) "" "s"))))))
 
@@ -1346,16 +1393,19 @@ the honest repair when the thing it named is gone."
            (old (cdr (assoc (completing-read "Repoint which link: " table nil t
                                              nil nil (car (or broken (car table))))
                             table)))
-           (above (mapcar (lambda (e) (plist-get e :name))
+           (above (mapcar (lambda (e) (cons (org-convect--candidate e)
+                                            (plist-get e :name)))
                           (seq-filter
                            (lambda (e)
                              (memq (plist-get e :horizon)
                                    (org-convect-above (plist-get here :horizon))))
                            entries)))
            (new (string-trim
-                 (completing-read
-                  (format "\"%s\" now points at (empty drops it): " old)
-                  above nil nil))))
+                 (org-convect--chosen
+                  (completing-read
+                   (format "\"%s\" now points at (empty drops it): " old)
+                   above nil nil)
+                  above))))
       (org-with-point-at (plist-get here :marker)
         (let ((kept (seq-uniq
                      (seq-remove #'string-empty-p
@@ -1785,6 +1835,10 @@ should point at it, and writes the link onto each")
     (unresolved-serves "Points above at something that is not there"
      "M-x org-convect-relink, standing on the rung: it offers the links this
 one carries and asks what to point at instead, or drops it for an empty answer")
+    (misaimed-serves "Points at something that is not above it"
+     "M-x org-convect-relink offers only what sits above, so repointing it is a
+matter of picking one.  Written by hand, most likely -- the commands cannot
+offer a rung below")
     (duplicate-name "Shares its name with another rung"
      "two rungs answering to one name, so a link cannot say which it meant.
 M-x org-convect-reword one of them")
