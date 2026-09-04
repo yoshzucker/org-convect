@@ -324,9 +324,16 @@ standard, become a project, or are dropped — they carry no state of their own,
 because anything that stuck ends up written into the standard and two records
 of one thing is one too many.
 
-Notes go in the =:LOGBOOK:= drawer, and that is not a preference: a rung's body
-*is* its standard, so a note written in the open becomes part of what the rung
-claims to be.
+Notes are written where Org writes them: in the body, after the drawers, each
+one appended below the last — =org-log-state-notes-insert-after-drawers= and
+=org-log-states-order-reversed= between them.  So =C-c C-z= on a rung and
+~org-convect-note~ land in the same place in the same order, and neither has to
+know the other exists.
+
+A rung's body is also its *standard*, so ~org-convect--body~ leaves notes out.
+It has to anyway: a note written by =C-c C-z= arrives there whatever this
+package does.  A note's text is the indented lines under its first line, which
+is the one boundary that can be told from the prose beside it.
 
 ** Which rung gets asked for next
 
@@ -601,6 +608,16 @@ links the tree could not draw — is left.
 | =z=   | write the conclusion and call it reviewed |
 | =t=   | follow the links, or the altitudes |
 | =r=   | redraw |
+
+The board says all four at its foot, and names the ladder's other commands
+under them.  A view whose whole point is that you come back to it every month
+is a view you will have forgotten the keys to — and a command nobody can find
+is a command that is not there.
+
+Only these three are taken from Org.  Keys are worth taking where the board is
+the natural place to press them; the rest are things you reach for a few times
+a year, where a key you have to remember costs more than a name you can read
+off the page.
 
 =RET= is Org's own, acting on the marker each row carries.  The other three are
 this package's, and two of them are taking a key back for a reason.
