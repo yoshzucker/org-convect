@@ -334,11 +334,41 @@ everything before it was read by definition, which is what reviewing it was."
       (should (string-match-p "the standard, which is the body" (buffer-string)))
       (should-not (string-match-p "written against it" (buffer-string))))))
 
-(ert-deftest org-convect-test-a-note-lands-where-the-standard-is-not ()
-  "A rung's body is its standard, and `org-convect--body' takes everything
-between the drawers and the next heading.  A note written in the open becomes
-part of what the rung claims to be, and the board reads it out as though
-somebody had written it there."
+(ert-deftest org-convect-test-a-note-is-not-part-of-the-standard ()
+  "A rung's body is its standard, and a note is prose that lands in the body --
+by \\[org-add-note] under the usual settings whatever this package does.  So
+the body has to leave notes out wherever they were put, or a passing thought is
+read back on the board as something the rung claims to be.
+
+Its text is the indented lines under its first line.  Reading to the next
+`- ' instead swallowed whatever plain text followed, which here is the
+standard itself."
+  (org-convect-test--with-ladder "\
+* thing
+:PROPERTIES:
+:CONVECT_HORIZON: area
+:END:
+the standard
+- and the second line of it
+"
+    (with-current-buffer (find-file-noselect (car org-convect-files))
+      (goto-char (point-min))
+      (re-search-forward "^\\* thing")
+      (org-convect--note "a passing thought")
+      ;; written in the open, as Org writes one
+      (should-not (string-match-p ":LOGBOOK:" (buffer-string)))
+      (should (string-match-p "^- Note taken on .* \\\\\\\\$" (buffer-string)))
+      ;; and the standard is still exactly the standard
+      (should (equal "the standard\n- and the second line of it"
+                     (org-convect--body)))
+      (should (equal '("a passing thought")
+                     (mapcar (lambda (n) (nth 2 n)) (org-convect--notes)))))))
+
+(ert-deftest org-convect-test-notes-are-appended ()
+  "Read an entry top to bottom in the order things happened -- which is what
+`org-log-states-order-reversed' says when it is nil, and what \\[org-add-note]
+then does.  A package writing them the other way round would interleave two
+orders in one drawer."
   (org-convect-test--with-ladder "\
 * thing
 :PROPERTIES:
@@ -349,9 +379,14 @@ the standard
     (with-current-buffer (find-file-noselect (car org-convect-files))
       (goto-char (point-min))
       (re-search-forward "^\\* thing")
-      (org-convect--note "a passing thought")
-      (should (string-match-p ":LOGBOOK:" (buffer-string)))
-      (should (equal "the standard" (org-convect--body))))))
+      (org-convect--note "first")
+      (org-convect--note "second")
+      (let ((text (buffer-string)))
+        (should (< (string-match "first" text) (string-match "second" text))))
+      ;; and read back newest first, which is by the stamp rather than by
+      ;; where they sit
+      (should (equal '("second" "first")
+                     (mapcar (lambda (n) (nth 2 n)) (org-convect--notes)))))))
 
 (ert-deftest org-convect-test-a-filed-note-is-an-ordinary-note ()
   "`org-convect-note' is not a new kind of record.  What lands is what
@@ -399,6 +434,35 @@ as unlooked-at as before."
       (should (equal (format-time-string "%Y-%m-%d")
                      (format-time-string "%Y-%m-%d" (plist-get rung :reviewed))))
       (should (= 0 (plist-get rung :noted))))))
+
+(ert-deftest org-convect-test-the-board-says-what-can-be-done-to-it ()
+  "A view you come back to every month is a view you will have forgotten the
+keys to.  And a command nobody can find is a command that is not there -- the
+board binds three keys and the rest of the ladder's commands are reachable
+only by name, so it says their names."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (save-window-excursion (org-convect-review nil (org-convect-test--day 2026 9 5)))
+    (with-current-buffer org-convect-review-buffer
+      (let ((text (buffer-string)))
+        ;; every key this package binds here
+        (dolist (key '("RET" "z" "t" "r"))
+          (should (string-match-p (concat "^  .*\\_<" (regexp-quote key) "\\_>")
+                                  text)))
+        ;; and every command it does not
+        (dolist (pair org-convect-review-commands)
+          (should (string-match-p (regexp-quote (car pair)) text))
+          (should (string-match-p (regexp-quote (cdr pair)) text)))
+        ;; each named command exists
+        (dolist (pair org-convect-review-commands)
+          (should (fboundp (intern (concat "org-convect-" (car pair))))))))))
+
+(ert-deftest org-convect-test-the-narrowed-board-says-the-way-back ()
+  "Otherwise the way out of a filtered view is a command you have to remember
+was the same one you got in with."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (save-window-excursion (org-convect-review t (org-convect-test--day 2026 9 5)))
+    (with-current-buffer org-convect-review-buffer
+      (should (string-match-p "shows the whole ladder again" (buffer-string))))))
 
 (ert-deftest org-convect-test-a-review-with-nothing-to-say-is-refused ()
   (org-convect-test--with-ladder org-convect-test--noted

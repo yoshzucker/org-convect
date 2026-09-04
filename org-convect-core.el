@@ -192,6 +192,36 @@ something.  Rewording is not reviewing.")
 writes exactly what this package writes and neither can tell the other's
 notes apart -- which is the point: they are the same thing.")
 
+(defun org-convect--note-re (&optional lead)
+  "What the first line of a note looks like, LEAD's kind or any.
+
+Defined once because three readers depend on agreeing about it exactly.
+`org-convect--notes' collects them, `org-convect--last-reviewed' looks for one
+kind of them, and `org-convect--body' has to leave every one of them out --
+and a body that kept a line the others called a note would read that note back
+as part of the rung's standard."
+  (concat "^[ \t]*- " (if lead (concat (regexp-quote lead) " ") "") ".*?"
+          org-ts-regexp-inactive))
+
+(defun org-convect--note-body (bound)
+  "Move past the note whose first line point is on, stopping at BOUND.
+
+Returns the region the note's text occupies, as (START . END).
+
+A note's text is the indented lines under its first line.  That is the shape
+Org writes, and it is the only one that can be told apart from the prose beside
+it: reading to the next `- \=' instead swallows whatever plain text follows,
+which in a rung\='s body is its standard.
+
+Three readers walk over notes and all three use this, because a note that ended
+in one place for `org-convect--notes\=' and another for `org-convect--body\='
+would be a line belonging to both or to neither."
+  (forward-line 1)
+  (let ((start (point)))
+    (while (and (< (point) bound) (looking-at "^[ \t]+[^ \t\n]"))
+      (forward-line 1))
+    (cons start (point))))
+
 (defun org-convect--note-lead-p (lead)
   "Non-nil when the note the last search matched opens with LEAD."
   (save-excursion
@@ -221,10 +251,8 @@ is a child, and recording one is not the same act as reviewing the principle."
       (org-end-of-meta-data)
       (when (looking-at org-property-drawer-re)
         (goto-char (match-end 0)))
-      (while (re-search-forward
-              (concat "^[ \t]*- " (regexp-quote org-convect-review-lead)
-                      " .*?" org-ts-regexp-inactive)
-              bound t)
+      (while (re-search-forward (org-convect--note-re org-convect-review-lead)
+                                bound t)
         (let ((time (org-time-string-to-time (match-string 1))))
           (when (or (null newest) (time-less-p newest time))
             (setq newest time))))
@@ -262,19 +290,27 @@ substring happens to be read."
                         (save-excursion (outline-next-heading) (point))))
           parts)
       (org-convect--after-meta bound)
-      ;; Every drawer, not only the ones that lead.  Org puts LOGBOOK before
-      ;; the body and so does this package, but a drawer is legal anywhere
-      ;; under a heading -- and one met after the prose used to be read out on
+      ;; Every drawer, not only the ones that lead: a drawer is legal anywhere
+      ;; under a heading, and one met after the prose used to be read out on
       ;; the board as though somebody had written it into the standard.
+      ;;
+      ;; And every note, because a note is prose and lands in the body.  Where
+      ;; it lands is Org's own setting and the answer people give it differs;
+      ;; a rung's body has a job either way, so the notes come out of it
+      ;; wherever they were put.  A note's continuation lines are indented, so
+      ;; they leave with it.
       (while (< (point) bound)
-        (if (looking-at org-drawer-regexp)
-            (if (re-search-forward "^[ \t]*:END:[ \t]*$" bound t)
-                (forward-line 1)
-              (goto-char bound))
-          (push (buffer-substring-no-properties
-                 (point) (min (line-end-position) bound))
-                parts)
-          (forward-line 1)))
+        (cond ((looking-at org-drawer-regexp)
+               (if (re-search-forward "^[ \t]*:END:[ \t]*$" bound t)
+                   (forward-line 1)
+                 (goto-char bound)))
+              ((looking-at (org-convect--note-re))
+               (org-convect--note-body bound))
+              (t
+               (push (buffer-substring-no-properties
+                      (point) (min (line-end-position) bound))
+                     parts)
+               (forward-line 1))))
       (string-trim (string-join (nreverse parts) "\n")))))
 
 (defun org-convect--after-meta (bound)
@@ -1925,33 +1961,26 @@ make them addressable when the whole point of a note is that it is not."
       (org-end-of-meta-data)
       (when (looking-at org-property-drawer-re)
         (goto-char (match-end 0)))
-      (while (re-search-forward
-              (concat "^[ \t]*- .*?" org-ts-regexp-inactive) bound t)
+      (while (re-search-forward (org-convect--note-re) bound t)
         (let* (;; First, before anything else looks at a string.  The lead is
                ;; the one thing here that can only be read from the match, and
                ;; both of the bindings below destroy it -- finding where the
                ;; note ends searches, and `org-time-string-to-time' parses.
                (declared (org-convect--note-lead-p org-convect-review-lead))
                (time (org-time-string-to-time (match-string 1)))
-               (start (progn (forward-line 1) (point)))
-               ;; the next note, or the end of the drawer holding them
-               (end (save-excursion
-                      (if (re-search-forward "^[ \t]*\\(- \\|:END:[ \t]*$\\)\\|\\'"
-                                             bound t)
-                          (match-beginning 0)
-                        bound)))
+               (region (org-convect--note-body bound))
                (text (string-trim (buffer-substring-no-properties
-                                   start (min end bound)))))
+                                   (car region) (min (cdr region) bound)))))
           (push (list time
                       (cond (declared 'reviewed)
                             ((string-match-p "\\`Reworded from" text) 'reworded)
                             (t 'noted))
                       text)
                 notes)))
-      ;; By the stamp, not by where they sit.  Notes are written at the top of
-      ;; the drawer, so document order is one way round and Org's own
-      ;; `\\[org-add-note]' can put them the other -- the stamp is what the
-      ;; record claims, so it is what decides.
+      ;; By the stamp rather than by where they sit.  They are appended, so
+      ;; document order is oldest first and reading it backwards would be
+      ;; right only for as long as that holds -- the stamp is what the record
+      ;; claims, so it is what decides.
       (sort notes (lambda (a b) (time-less-p (car b) (car a)))))))
 
 (defun org-convect-history (entry)
@@ -1983,20 +2012,23 @@ to whatever was logged last.  A note this package writes should land somewhere
 it can predict.  The shape is Org's own, so it reads as any other note and
 `org-convect--last-reviewed' finds its timestamp either way.
 
-Into the LOGBOOK, and that is not a preference.  A rung's body is its standard,
-and `org-convect--body' takes everything between the drawers and the next
-heading -- so a note written in the open becomes part of what the rung claims
-to be, read out on the review board as though somebody had written it there.
-The drawer is what keeps the record and the claim apart."
+Where Org would put it: after the drawers, and after any note already there.
+A note is a sentence somebody wrote and is meant to be read on opening the
+file, which is what `org-log-state-notes-insert-after-drawers' and
+`org-log-states-order-reversed' say between them -- so \\[org-add-note] on a
+rung and this land in the same place, in the same order, and neither has to
+know the other exists.
+
+That the body is also the rung's standard is handled where it has to be:
+`org-convect--body' leaves notes out.  It has to anyway, since a note written
+by \\[org-add-note] arrives there whatever this function does."
   (org-back-to-heading t)
-  (org-end-of-meta-data)
-  (when (looking-at org-property-drawer-re)
-    (goto-char (match-end 0)))
+  (let ((bound (save-excursion (outline-next-heading) (point))))
+    (org-convect--after-meta bound)
+    ;; past the notes already there, so this one is the newest and last
+    (while (and (< (point) bound) (looking-at (org-convect--note-re)))
+      (org-convect--note-body bound)))
   (unless (bolp) (insert "\n"))
-  (if (looking-at "^[ \t]*:LOGBOOK:[ \t]*$")
-      (forward-line 1)
-    (save-excursion (insert ":LOGBOOK:\n:END:\n"))
-    (forward-line 1))
   (insert (format "- %s %s \\\\\n  %s\n"
                   (or lead org-convect-note-lead)
                   (format-time-string (org-time-stamp-format t t))
@@ -2852,11 +2884,7 @@ follows the links instead of the altitudes."
                     (org-convect--review-insert entry "  " "" column now called
                                                 entries scan)))
                 (insert "\n")))))
-        (insert (format "  z  write the conclusion here   RET  go to it   %s\n"
-                        (if threaded "t  by altitude   r  redraw"
-                          "t  follow the links   r  redraw")))
-        (when (not only-wanting)
-          (insert "  C-u M-x org-convect-review  shows only what wants looking at\n"))
+        (insert (org-convect--review-legend threaded only-wanting))
         (use-local-map org-convect-review-mode-map)
         (setq org-convect--review-threaded threaded
               org-convect--review-args (list only-wanting now)
@@ -2895,6 +2923,42 @@ changed."
   ;; NOW is dropped: redrawing means asking again, and asking again at the
   ;; moment the board was first opened would be asking the old question.
   (org-convect-review (car org-convect--review-args)))
+
+(defconst org-convect-review-commands
+  '(("note" . "write against a rung from anywhere")
+    ("lineage-show" . "one thread of the ladder")
+    ("history-show" . "what has happened to this rung")
+    ("link" . "what it is in service of  (C-u: what serves it)")
+    ("relink" . "repoint or drop one of its links")
+    ("set-date" . "when a goal is meant to be true")
+    ("reword" . "rename it, and follow the references")
+    ("doctor" . "what the ladder is missing"))
+  "The commands worth naming at the foot of the board, and what each is for.
+
+Named rather than bound.  Keys are worth taking from Org only where the board
+is the natural place to press them, and that is three keys -- the rest are
+things you reach for a few times a year, where the cost of a key you have to
+remember is higher than the cost of typing a name.  Naming them is what stops
+that being the same as hiding them.")
+
+(defun org-convect--review-legend (threaded only-wanting)
+  "The foot of the board: the keys it binds, then the commands it does not.
+
+A view whose whole point is that you come back to it every month is a view you
+will have forgotten the keys to.  So it says them, and it says what else there
+is -- a command nobody can find is a command that is not there."
+  (concat
+   "\n"
+   (format "  RET  go to it     z  review it     %s     r  redraw\n"
+           (if threaded "t  by altitude" "t  follow the links"))
+   (if only-wanting
+       "  M-x org-convect-review  shows the whole ladder again\n"
+     "  C-u M-x org-convect-review  shows only what wants looking at\n")
+   "\n  M-x org-convect-...\n"
+   (mapconcat (lambda (pair)
+                (format "    %-14s %s" (car pair) (cdr pair)))
+              org-convect-review-commands "\n")
+   "\n"))
 
 (defun org-convect--review-rows (entries only-wanting wanted)
   "The descent's rows, narrowed to what WANTED keeps when ONLY-WANTING.
