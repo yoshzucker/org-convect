@@ -324,11 +324,32 @@ standard, become a project, or are dropped — they carry no state of their own,
 because anything that stuck ends up written into the standard and two records
 of one thing is one too many.
 
-Notes are written where Org writes them: in the body, after the drawers, each
-one appended below the last — =org-log-state-notes-insert-after-drawers= and
-=org-log-states-order-reversed= between them.  So =C-c C-z= on a rung and
-~org-convect-note~ land in the same place in the same order, and neither has to
-know the other exists.
+Notes are written in the body, *below* the standard, newest first:
+
+#+begin_src org
+,** self.health
+   :PROPERTIES:
+   :CONVECT_HORIZON: area
+   :END:
+   習慣的に運動している
+   睡眠時間を削っていない
+   - Reviewed on [2026-09-04 Fri] \\
+     基準は満たせている。ジムの頻度だけ落ちている
+   - Note taken on [2026-09-02 Wed] \\
+     寝不足のときだけ家事が回らない
+#+end_src
+
+Below, because a rung's body is what the rung *is* — the standard the monthly
+look is against — and a file where you read a month of passing thoughts before
+reaching it has buried the thing it is about.  Org has no setting for that: it
+puts a note after the drawers, which on a rung is above the standard.  So this
+is the one place the package writes somewhere Org would not, and =C-c C-z=
+pressed on a rung still writes at the top.  Both are found either way.
+
+Newest first, matching =org-log-states-order-reversed= — and where stamps tie,
+by the order the file has them.  Six thoughts filed out of an inbox in one
+minute all carry the same stamp, and a sort with nothing to fall back on hands
+them back in whatever order the walk happened to build.
 
 A rung's body is also its *standard*, so ~org-convect--body~ leaves notes out.
 It has to anyway: a note written by =C-c C-z= arrives there whatever this

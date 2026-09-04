@@ -364,11 +364,41 @@ the standard
       (should (equal '("a passing thought")
                      (mapcar (lambda (n) (nth 2 n)) (org-convect--notes)))))))
 
-(ert-deftest org-convect-test-notes-are-appended ()
-  "Read an entry top to bottom in the order things happened -- which is what
-`org-log-states-order-reversed' says when it is nil, and what \\[org-add-note]
-then does.  A package writing them the other way round would interleave two
-orders in one drawer."
+(ert-deftest org-convect-test-the-standard-stays-above-the-notes ()
+  "A rung's body is what the rung *is*, and a file where you read a month of
+passing thoughts before reaching it has buried the thing it is about.
+
+Org has no setting for this -- it puts a note after the drawers, which on a
+rung is above the standard -- so this is the one place the package writes
+somewhere Org would not."
+  (org-convect-test--with-ladder "\
+* thing
+:PROPERTIES:
+:CONVECT_HORIZON: area
+:END:
+the standard
+- and the second line of it
+"
+    (with-current-buffer (find-file-noselect (car org-convect-files))
+      (goto-char (point-min))
+      (re-search-forward "^\\* thing")
+      (org-convect--note "first")
+      (org-convect--note "second")
+      (let ((text (buffer-string)))
+        (should (< (string-match "the standard" text)
+                   (string-match "first" text)))
+        (should (< (string-match "and the second line of it" text)
+                   (string-match "first" text))))
+      ;; and the standard is still only the standard
+      (should (equal "the standard\n- and the second line of it"
+                     (org-convect--body))))))
+
+(ert-deftest org-convect-test-the-newest-note-is-on-top ()
+  "In the file and in every view of it, so there is one order to learn.
+
+Ties are what makes this worth pinning: six thoughts filed out of an inbox in
+one minute all carry the same stamp, and a sort with nothing to fall back on
+hands them back in whichever order the walk happened to build them."
   (org-convect-test--with-ladder "\
 * thing
 :PROPERTIES:
@@ -381,11 +411,13 @@ the standard
       (re-search-forward "^\\* thing")
       (org-convect--note "first")
       (org-convect--note "second")
+      (org-convect--note "third")
+      ;; the file
       (let ((text (buffer-string)))
-        (should (< (string-match "first" text) (string-match "second" text))))
-      ;; and read back newest first, which is by the stamp rather than by
-      ;; where they sit
-      (should (equal '("second" "first")
+        (should (< (string-match "third" text) (string-match "second" text)))
+        (should (< (string-match "second" text) (string-match "first" text))))
+      ;; and the reading of it, whose stamps here are all the same minute
+      (should (equal '("third" "second" "first")
                      (mapcar (lambda (n) (nth 2 n)) (org-convect--notes)))))))
 
 (ert-deftest org-convect-test-a-filed-note-is-an-ordinary-note ()
