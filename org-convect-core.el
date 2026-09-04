@@ -1977,11 +1977,13 @@ make them addressable when the whole point of a note is that it is not."
                             (t 'noted))
                       text)
                 notes)))
-      ;; By the stamp rather than by where they sit.  They are appended, so
-      ;; document order is oldest first and reading it backwards would be
-      ;; right only for as long as that holds -- the stamp is what the record
-      ;; claims, so it is what decides.
-      (sort notes (lambda (a b) (time-less-p (car b) (car a)))))))
+      ;; By the stamp, because that is what the record claims -- and where
+      ;; stamps tie, by the order the file has them, which is newest first.
+      ;; Six thoughts filed out of an inbox in one minute all carry the same
+      ;; stamp, and a sort with nothing to fall back on would hand them back
+      ;; in whichever order the walk happened to build.  `sort' is stable, so
+      ;; the fallback is whatever order it is given: document order.
+      (sort (nreverse notes) (lambda (a b) (time-less-p (car b) (car a)))))))
 
 (defun org-convect-history (entry)
   "Everything that has happened to ENTRY, newest first, as (TIME KIND TEXT).
@@ -2012,22 +2014,33 @@ to whatever was logged last.  A note this package writes should land somewhere
 it can predict.  The shape is Org's own, so it reads as any other note and
 `org-convect--last-reviewed' finds its timestamp either way.
 
-Where Org would put it: after the drawers, and after any note already there.
-A note is a sentence somebody wrote and is meant to be read on opening the
-file, which is what `org-log-state-notes-insert-after-drawers' and
-`org-log-states-order-reversed' say between them -- so \\[org-add-note] on a
-rung and this land in the same place, in the same order, and neither has to
-know the other exists.
+Below the standard, and above the notes already there.
 
-That the body is also the rung's standard is handled where it has to be:
-`org-convect--body' leaves notes out.  It has to anyway, since a note written
-by \\[org-add-note] arrives there whatever this function does."
+Below, because a rung's body is what the rung *is* -- the standard the monthly
+look is against -- and a file where you read a month of passing thoughts before
+reaching it has buried the thing it is about.  Org has no setting for this: it
+puts a note after the drawers, which on a rung is above the standard.  So this
+is the one place the package writes somewhere Org would not, and it is worth
+knowing that \\[org-add-note] pressed on a rung still writes at the top.
+Both are found either way -- `org-convect--notes' reads the whole entry and
+`org-convect--body' leaves every note out of it, wherever it sits.
+
+Above the others, because the newest is the one worth reading first, which is
+`org-log-states-order-reversed' set the way this configuration sets it."
   (org-back-to-heading t)
   (let ((bound (save-excursion (outline-next-heading) (point))))
     (org-convect--after-meta bound)
-    ;; past the notes already there, so this one is the newest and last
-    (while (and (< (point) bound) (looking-at (org-convect--note-re)))
-      (org-convect--note-body bound)))
+    ;; Where the trailing run of notes begins, or the end of the entry when
+    ;; there is none.  A blank line does not break the run: a note followed by
+    ;; the blank before the next heading is still the run.
+    (let (run)
+      (while (< (point) bound)
+        (cond ((looking-at (org-convect--note-re))
+               (unless run (setq run (point)))
+               (org-convect--note-body bound))
+              ((looking-at "^[ \t]*$") (forward-line 1))
+              (t (setq run nil) (forward-line 1))))
+      (goto-char (or run bound))))
   (unless (bolp) (insert "\n"))
   (insert (format "- %s %s \\\\\n  %s\n"
                   (or lead org-convect-note-lead)
