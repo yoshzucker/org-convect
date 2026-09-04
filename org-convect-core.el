@@ -174,14 +174,43 @@ signal instead; see `org-convect-act-drift' for one."
                    (mapcar #'string-trim
                            (split-string value org-convect-serves-separator t)))))
 
-(defun org-convect--last-reviewed ()
-  "Newest inactive timestamp written on the entry at point, or nil.
+(defconst org-convect-review-lead "Reviewed on"
+  "What opens a note that says the rung was reviewed.
 
-A review is a note (`org-add-note', \\[org-add-note]): \"what happened to this
-subject\", which is exactly what a note is for and exactly what a headline is
-not.  Depending on `org-log-into-drawer' the note lands in a LOGBOOK drawer or
-as a plain list item under the heading; both carry the timestamp, so both are
-read the same way here.
+The one mark in the file, and it is on the *review* rather than on everything
+else.  Having looked at a rung is something you declare, not a side effect of
+having written on it -- so an ordinary note costs nothing, and
+\\[org-add-note] can be used on a rung as freely as anywhere else in Org.
+
+The other way round was the original and it was a trap.  Any inactive stamp in
+the entry counted as a look, so a passing thought silenced the rung's review
+for a whole cadence, and `org-convect-reword' postponed a review by renaming
+something.  Rewording is not reviewing.")
+
+(defconst org-convect-note-lead "Note taken on"
+  "What opens an ordinary note.  Org's own wording, so `\\[org-add-note]'
+writes exactly what this package writes and neither can tell the other's
+notes apart -- which is the point: they are the same thing.")
+
+(defun org-convect--note-lead-p (lead)
+  "Non-nil when the note the last search matched opens with LEAD."
+  (save-excursion
+    (goto-char (match-beginning 0))
+    (looking-at-p (concat "^[ \t]*- " (regexp-quote lead) " "))))
+
+(defun org-convect--last-reviewed ()
+  "When the entry at point was last *declared* reviewed, or nil.
+
+A review is a note (`org-add-note', \\[org-add-note]) opening with
+`org-convect-review-lead': \"what happened to this subject\", which is exactly
+what a note is for and exactly what a headline is not.  Depending on
+`org-log-into-drawer' the note lands in a LOGBOOK drawer or as a plain list
+item under the heading; both carry the timestamp, so both are read the same
+way here.
+
+Only that note counts.  Everything else written on a rung -- a thought filed
+against it, a rename, a stamp inside a sentence -- is a thing you wrote, not a
+look you took, and none of it moves the clock.
 
 Only the entry's *own* text counts.  A choice point recorded under a principle
 is a child, and recording one is not the same act as reviewing the principle."
@@ -192,11 +221,28 @@ is a child, and recording one is not the same act as reviewing the principle."
       (org-end-of-meta-data)
       (when (looking-at org-property-drawer-re)
         (goto-char (match-end 0)))
-      (while (re-search-forward org-ts-regexp-inactive bound t)
+      (while (re-search-forward
+              (concat "^[ \t]*- " (regexp-quote org-convect-review-lead)
+                      " .*?" org-ts-regexp-inactive)
+              bound t)
         (let ((time (org-time-string-to-time (match-string 1))))
           (when (or (null newest) (time-less-p newest time))
             (setq newest time))))
       newest)))
+
+(defun org-convect--noted-since (when)
+  "How many ordinary notes the entry at point carries newer than WHEN.
+
+What has been written against a rung and not yet read.  Counted here rather
+than by the board, because the scan is already standing on the entry and a
+second walk to count three lines would be a second walk of every file.
+
+Everything before the last review has been read by definition -- that is what
+reviewing it was."
+  (seq-count (lambda (note)
+               (and (eq (nth 1 note) 'noted)
+                    (or (null when) (time-less-p when (car note)))))
+             (org-convect--notes)))
 
 (defun org-convect--body ()
   "The prose the entry at point carries itself.
@@ -213,9 +259,23 @@ forwards, so the answer stays \"nothing\" instead of depending on which way a
 substring happens to be read."
   (save-excursion
     (let ((bound (progn (org-back-to-heading t)
-                        (save-excursion (outline-next-heading) (point)))))
+                        (save-excursion (outline-next-heading) (point))))
+          parts)
       (org-convect--after-meta bound)
-      (string-trim (buffer-substring-no-properties (min (point) bound) bound)))))
+      ;; Every drawer, not only the ones that lead.  Org puts LOGBOOK before
+      ;; the body and so does this package, but a drawer is legal anywhere
+      ;; under a heading -- and one met after the prose used to be read out on
+      ;; the board as though somebody had written it into the standard.
+      (while (< (point) bound)
+        (if (looking-at org-drawer-regexp)
+            (if (re-search-forward "^[ \t]*:END:[ \t]*$" bound t)
+                (forward-line 1)
+              (goto-char bound))
+          (push (buffer-substring-no-properties
+                 (point) (min (line-end-position) bound))
+                parts)
+          (forward-line 1)))
+      (string-trim (string-join (nreverse parts) "\n")))))
 
 (defun org-convect--after-meta (bound)
   "Move past the heading's planning line and every drawer, stopping at BOUND.
@@ -255,6 +315,7 @@ ladder rather than locating it is meant to prevent."
                           (and stamp (ignore-errors
                                        (org-time-string-to-time stamp))))
               :reviewed (org-convect--last-reviewed)
+              :noted    (org-convect--noted-since (org-convect--last-reviewed))
               :bare     (string-empty-p (org-convect--body))
               :created  (let ((stamp (org-entry-get nil "CREATED")))
                           (and stamp (ignore-errors
@@ -1846,12 +1907,17 @@ what was written about it is in its notes, what actually happened is not.")
 (defun org-convect--notes ()
   "Notes on the entry at point, as (TIME KIND TEXT), newest first.
 
-A note this package wrote when a rung was reworded says so in its first line,
-which is how the two kinds are told apart.  That is text matching and it can
-be fooled by someone writing the same words by hand -- but the words are
-machine-written, the failure is a mislabelled row, and the alternative is
-giving notes a property, which would make them addressable when the whole
-point of a note is that it is not."
+Three kinds, told apart two different ways.  A review opens with
+`org-convect-review-lead', which is checked on the line the stamp is on --
+`org-convect--last-reviewed' reads that same line, and a mark it could not see
+would be a mark that failed at the one job it has.  A rewording says so in the
+note's first line instead, since it is an ordinary note in every other way.
+Anything else is `noted'.
+
+Both are text matching and both can be fooled by someone writing the same
+words by hand -- but the words are machine-written, the failure is a
+mislabelled row, and the alternative is giving notes a property, which would
+make them addressable when the whole point of a note is that it is not."
   (save-excursion
     (org-back-to-heading t)
     (let ((bound (save-excursion (outline-next-heading) (point)))
@@ -1861,19 +1927,32 @@ point of a note is that it is not."
         (goto-char (match-end 0)))
       (while (re-search-forward
               (concat "^[ \t]*- .*?" org-ts-regexp-inactive) bound t)
-        (let* ((time (org-time-string-to-time (match-string 1)))
+        (let* (;; First, before anything else looks at a string.  The lead is
+               ;; the one thing here that can only be read from the match, and
+               ;; both of the bindings below destroy it -- finding where the
+               ;; note ends searches, and `org-time-string-to-time' parses.
+               (declared (org-convect--note-lead-p org-convect-review-lead))
+               (time (org-time-string-to-time (match-string 1)))
                (start (progn (forward-line 1) (point)))
+               ;; the next note, or the end of the drawer holding them
                (end (save-excursion
-                      (if (re-search-forward "^[ \t]*- \\|\\'" bound t)
+                      (if (re-search-forward "^[ \t]*\\(- \\|:END:[ \t]*$\\)\\|\\'"
+                                             bound t)
                           (match-beginning 0)
                         bound)))
                (text (string-trim (buffer-substring-no-properties
                                    start (min end bound)))))
           (push (list time
-                      (if (string-match-p "\\`Reworded from" text) 'reworded 'reviewed)
+                      (cond (declared 'reviewed)
+                            ((string-match-p "\\`Reworded from" text) 'reworded)
+                            (t 'noted))
                       text)
                 notes)))
-      notes)))
+      ;; By the stamp, not by where they sit.  Notes are written at the top of
+      ;; the drawer, so document order is one way round and Org's own
+      ;; `\\[org-add-note]' can put them the other -- the stamp is what the
+      ;; record claims, so it is what decides.
+      (sort notes (lambda (a b) (time-less-p (car b) (car a)))))))
 
 (defun org-convect-history (entry)
   "Everything that has happened to ENTRY, newest first, as (TIME KIND TEXT).
@@ -1891,22 +1970,98 @@ read side by side to see an order."
 
 ;;;; Changing a rung
 
-(defun org-convect--note (text)
-  "Write TEXT as a dated note on the entry at point.
+(defun org-convect--note (text &optional lead)
+  "Write TEXT as a dated note on the entry at point, opening with LEAD.
+
+LEAD defaults to `org-convect-note-lead', which is Org's own wording -- so a
+note written here and a note written by \\[org-add-note] are the same thing,
+and nothing can tell them apart because there is nothing to tell.
 
 Written straight rather than through `org-add-log-setup': that machinery sends
 the note wherever `org-log-into-drawer' happens to point, and its value belongs
 to whatever was logged last.  A note this package writes should land somewhere
 it can predict.  The shape is Org's own, so it reads as any other note and
-`org-convect--last-reviewed' finds its timestamp either way."
+`org-convect--last-reviewed' finds its timestamp either way.
+
+Into the LOGBOOK, and that is not a preference.  A rung's body is its standard,
+and `org-convect--body' takes everything between the drawers and the next
+heading -- so a note written in the open becomes part of what the rung claims
+to be, read out on the review board as though somebody had written it there.
+The drawer is what keeps the record and the claim apart."
   (org-back-to-heading t)
   (org-end-of-meta-data)
   (when (looking-at org-property-drawer-re)
     (goto-char (match-end 0)))
   (unless (bolp) (insert "\n"))
-  (insert (format "- Note taken on %s \\\\\n  %s\n"
+  (if (looking-at "^[ \t]*:LOGBOOK:[ \t]*$")
+      (forward-line 1)
+    (save-excursion (insert ":LOGBOOK:\n:END:\n"))
+    (forward-line 1))
+  (insert (format "- %s %s \\\\\n  %s\n"
+                  (or lead org-convect-note-lead)
                   (format-time-string (org-time-stamp-format t t))
                   text)))
+
+;;;###autoload
+(defun org-convect-reviewed (&optional conclusion)
+  "Write CONCLUSION onto the rung at point and call it reviewed.
+
+The only thing that moves the rung's clock.  Having looked at something is a
+claim you make, not a residue of having typed near it -- so an ordinary note
+costs nothing and this one says what it is.
+
+Works on the rung at point in a file, on the row behind a board line, or on
+one read by name."
+  (interactive)
+  (let* ((rung (or (org-convect--rung-at-point)
+                   (org-convect-read-entry "Reviewed which rung: ")))
+         (text (or conclusion
+                   (read-string (format "Reviewed \"%s\" -- what did you conclude: "
+                                        (plist-get rung :name))))))
+    (when (string-empty-p (string-trim text))
+      (user-error "A review with nothing to say is not a review"))
+    (org-with-point-at (plist-get rung :marker)
+      (org-convect--note (string-trim text) org-convect-review-lead)
+      (save-buffer))
+    (message "Reviewed %s" (plist-get rung :name))))
+
+;;;###autoload
+(defun org-convect-note (&optional text)
+  "Write TEXT as an ordinary note on a rung read by name.
+
+Not a new kind of record.  What lands is what \\[org-add-note] writes and
+nothing can tell the two apart, because there is nothing to tell -- this is
+the same note, reachable from somewhere other than the rung.
+
+That is the whole of it, and it is the point: what gets noticed about a rung
+is noticed while doing something else.  Filing it should not mean going to
+find the ladder first, and it must not count as having reviewed anything.
+
+The text offered is the region, or the heading you are standing on when that
+heading is not itself a rung -- which is what an item caught in the inbox is."
+  (interactive)
+  (let* ((default (org-convect--note-default))
+         (rung (org-convect-read-entry "Note about which rung: "))
+         (text (or text (read-string "Note: " default))))
+    (when (string-empty-p (string-trim text))
+      (user-error "Nothing to note"))
+    (org-with-point-at (plist-get rung :marker)
+      (org-convect--note (string-trim text))
+      (save-buffer))
+    (message "Noted against %s" (plist-get rung :name))))
+
+(defun org-convect--note-default ()
+  "What to offer as the text of a note, or nil.
+
+The region if there is one; otherwise the heading at point when it is not a
+rung, since a rung's own heading is never what you meant to say about it."
+  (cond ((use-region-p)
+         (string-trim (buffer-substring-no-properties
+                       (region-beginning) (region-end))))
+        ((and (derived-mode-p 'org-mode)
+              (ignore-errors (org-at-heading-p))
+              (not (org-entry-get nil "CONVECT_HORIZON")))
+         (org-get-heading t t t t))))
 
 (defun org-convect--rename-references (old new)
   "Point every `CONVECT_SERVES\\=' naming OLD at NEW instead, in every file.
@@ -2371,9 +2526,14 @@ words is the same fact twice, so they are left out and only the links the tree
 could not draw are named."
   (let* ((near (org-convect-neighbourhood entries entry))
          (hours (cdr (assoc (plist-get entry :name) (plist-get scan :rows))))
+         (noted (or (plist-get entry :noted) 0))
          (terms (append
                  (and hours (list (format "%s clocked"
                                           (org-duration-from-minutes hours))))
+                 ;; Written against it and not yet read.  Without this the
+                 ;; notes are write-only: nothing on the page would ever say
+                 ;; there was something waiting to be looked at.
+                 (and (> noted 0) (list (format "%d noted" noted)))
                  (unless threaded
                    (append
                     (and (car near)
@@ -2473,15 +2633,21 @@ them without redrawing from the files."
     (set-keymap-parent map org-agenda-mode-map)
     (define-key map (kbd "t") #'org-convect-review-thread)
     (define-key map (kbd "r") #'org-convect-review-redraw)
+    (define-key map (kbd "z") #'org-convect-reviewed)
     map)
   "Keys the board adds to the agenda's own.
 
 `t' is `org-agenda-todo' underneath, and taking it is a repair rather than a
 displacement: a rung deliberately carries no TODO keyword, so pressing it on
 one of these rows would *give* it one and make the ladder look like a task
-list.  `r' is redrawing, which the board needs more than most views do --
-`\\[org-agenda-add-note]' writes a note that changes what the board says about
-the rung you are standing on.
+list.  `r' is redrawing, which the board needs more than most views do -- the
+key beside it writes a note that changes what the board says about the rung
+you are standing on.
+
+`z' is `org-agenda-add-note', which writes an ordinary note, and an ordinary
+note is no longer a review.  Reviewing is done on this board, so this is where
+the key that says so belongs -- and a conclusion written here would otherwise
+leave the rung looking exactly as unlooked-at as before.
 
 `g' is left alone.  It opens the motions for a great many people, and a
 command on it would take the prefix and everything under it away here alone.")
