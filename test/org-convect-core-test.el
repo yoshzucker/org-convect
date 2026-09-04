@@ -41,9 +41,9 @@
 :CONVECT_SERVES: A team that runs itself
 :ACT_DOMAIN: work
 :END:
-- Note taken on [2026-08-01 Sat] \\\\
+- Reviewed on [2026-08-01 Sat] \\\\
   still mine
-- Note taken on [2026-08-20 Thu] \\\\
+- Reviewed on [2026-08-20 Thu] \\\\
   still mine, and quieter
 
 *** a task that happens to live here
@@ -55,7 +55,7 @@ is not the same as being one.
 :CONVECT_HORIZON: area
 :END:
 :LOGBOOK:
-- Note taken on [2026-08-18 Tue] \\\\
+- Reviewed on [2026-08-18 Tue] \\\\
   the vendor list is current
 :END:
 
@@ -263,6 +263,148 @@ have two parents at all."
 :END:
 "
     (should-not (plist-get (car (org-convect-scan)) :reviewed))))
+
+;;;; What counts as having looked
+
+(defconst org-convect-test--noted "\
+* self.health
+:PROPERTIES:
+:CONVECT_HORIZON: area
+:CREATED: [2026-01-01 Thu]
+:END:
+the standard, which is the body
+:LOGBOOK:
+- Note taken on [2026-09-02 Wed 09:00] \\\\
+  written against it, after the review
+- Reviewed on [2026-08-15 Sat 09:00] \\\\
+  looked at it and concluded this
+- Note taken on [2026-08-01 Sat 09:00] \\\\
+  written against it, before the review
+:END:
+"
+  "A rung carrying both kinds of note, with a review between them.")
+
+(ert-deftest org-convect-test-an-ordinary-note-is-not-a-review ()
+  "The mark is on the review, not on everything else -- so \\[org-add-note] can
+be used on a rung as freely as anywhere else in Org.
+
+The other way round was the original and it was a trap: any inactive stamp in
+the entry counted as a look, so a passing thought silenced the rung for a whole
+cadence."
+  (org-convect-test--with-ladder org-convect-test--noted
+    (let ((rung (car (org-convect-scan))))
+      ;; the newest note is the 09-02 one, and it is not what answers
+      (should (equal "2026-08-15"
+                     (format-time-string "%Y-%m-%d" (plist-get rung :reviewed)))))))
+
+(ert-deftest org-convect-test-rewording-is-not-reviewing ()
+  "A rename postponing the next review by a month would be the tool deciding
+the rung had been thought about."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (with-current-buffer (find-file-noselect (car org-convect-files))
+      (goto-char (point-min))
+      (re-search-forward "^\\*\\* Honesty")
+      (org-convect-reword "Saying the number" "too broad to act on"))
+    (let ((rung (org-convect-test--entry (org-convect-scan) "Saying the number")))
+      (should-not (plist-get rung :reviewed))
+      (should (equal '(reworded) (mapcar #'cadr (org-convect-history rung)))))))
+
+(ert-deftest org-convect-test-a-stamp-in-the-prose-is-not-a-review ()
+  "Somebody writing a date into the standard is describing something, not
+recording that they came back and looked."
+  (org-convect-test--with-ladder "\
+* thing
+:PROPERTIES:
+:CONVECT_HORIZON: area
+:END:
+the licence runs out on [2026-08-15 Sat] and has to be renewed
+"
+    (should-not (plist-get (car (org-convect-scan)) :reviewed))))
+
+(ert-deftest org-convect-test-the-board-counts-what-has-not-been-read ()
+  "Without it the notes are write-only: nothing on the page would ever say
+there was something waiting.  Only what is newer than the last review counts --
+everything before it was read by definition, which is what reviewing it was."
+  (org-convect-test--with-ladder org-convect-test--noted
+    (should (= 1 (plist-get (car (org-convect-scan)) :noted)))
+    (save-window-excursion (org-convect-review nil (org-convect-test--day 2026 9 5)))
+    (with-current-buffer org-convect-review-buffer
+      (should (string-match-p "1 noted" (buffer-string)))
+      ;; and the standard is still the standard
+      (should (string-match-p "the standard, which is the body" (buffer-string)))
+      (should-not (string-match-p "written against it" (buffer-string))))))
+
+(ert-deftest org-convect-test-a-note-lands-where-the-standard-is-not ()
+  "A rung's body is its standard, and `org-convect--body' takes everything
+between the drawers and the next heading.  A note written in the open becomes
+part of what the rung claims to be, and the board reads it out as though
+somebody had written it there."
+  (org-convect-test--with-ladder "\
+* thing
+:PROPERTIES:
+:CONVECT_HORIZON: area
+:END:
+the standard
+"
+    (with-current-buffer (find-file-noselect (car org-convect-files))
+      (goto-char (point-min))
+      (re-search-forward "^\\* thing")
+      (org-convect--note "a passing thought")
+      (should (string-match-p ":LOGBOOK:" (buffer-string)))
+      (should (equal "the standard" (org-convect--body))))))
+
+(ert-deftest org-convect-test-a-filed-note-is-an-ordinary-note ()
+  "`org-convect-note' is not a new kind of record.  What lands is what
+\\[org-add-note] writes and nothing can tell the two apart, because there is
+nothing to tell -- it is the same note, reachable from somewhere other than the
+rung.  Which is the point: what gets noticed about a rung is noticed while
+doing something else."
+  (org-convect-test--with-ladder org-convect-test--ready
+    (let ((rung (org-convect-test--entry (org-convect-scan) "admin")))
+      ;; standing on a *different* rung, to pin that the command asks rather
+      ;; than taking whatever is under point.  Deciding which rung it is about
+      ;; is the whole of what this command does.
+      (with-current-buffer (find-file-noselect (car org-convect-files))
+        (goto-char (point-min))
+        (re-search-forward "^\\*\\* engineering")
+        (cl-letf (((symbol-function 'org-convect-read-entry) (lambda (&rest _) rung)))
+          (org-convect-note "filed from somewhere else"))
+        (should (equal "reviews come back the same day" (org-convect--body))))
+      (let* ((notes (org-with-point-at (plist-get rung :marker) (org-convect--notes)))
+             (filed (seq-find (lambda (n) (equal (nth 2 n) "filed from somewhere else"))
+                              notes)))
+        (should filed)
+        (should (equal 'noted (nth 1 filed))))
+      ;; and it did not count as a look
+      (should (equal "2026-08-30"
+                     (format-time-string
+                      "%Y-%m-%d"
+                      (plist-get (org-convect-test--entry (org-convect-scan) "admin")
+                                 :reviewed)))))))
+
+(ert-deftest org-convect-test-reviewing-is-declared-from-the-board ()
+  "Reviewing is done on the board, so that is where the key that says so
+belongs.  `z' is `org-agenda-add-note' underneath, which writes an ordinary
+note -- and a conclusion written with it would leave the rung looking exactly
+as unlooked-at as before."
+  (org-convect-test--with-ladder org-convect-test--noted
+    (save-window-excursion (org-convect-review nil (org-convect-test--day 2026 9 5)))
+    (with-current-buffer org-convect-review-buffer
+      (should (eq (key-binding (kbd "z")) 'org-convect-reviewed))
+      (goto-char (point-min))
+      (should (re-search-forward "^  self.health" nil t))
+      (beginning-of-line)
+      (org-convect-reviewed "looked again"))
+    (let ((rung (car (org-convect-scan))))
+      (should (equal (format-time-string "%Y-%m-%d")
+                     (format-time-string "%Y-%m-%d" (plist-get rung :reviewed))))
+      (should (= 0 (plist-get rung :noted))))))
+
+(ert-deftest org-convect-test-a-review-with-nothing-to-say-is-refused ()
+  (org-convect-test--with-ladder org-convect-test--noted
+    (let ((rung (car (org-convect-scan))))
+      (cl-letf (((symbol-function 'org-convect--rung-at-point) (lambda () rung)))
+        (should-error (org-convect-reviewed "   ") :type 'user-error)))))
 
 ;;;; Cadence, and the two rungs that have none
 
@@ -2257,7 +2399,7 @@ reviews come back the same day
 :CREATED: [2026-08-30 Sun]
 :END:
 the expenses are filed by the tenth
-- Note taken on [2026-08-30 Sun 10:00] \\\\
+- Reviewed on [2026-08-30 Sun 10:00] \\\\
   still mine
 * Goals and Objectives
 ** a team that runs itself
@@ -2926,7 +3068,7 @@ a column."
 (ert-deftest org-convect-test-history-tells-a-reword-from-a-conclusion ()
   (org-convect-test--with-ladder org-convect-test--ready
     (let ((entry (org-convect-test--entry (org-convect-scan) "admin")))
-      ;; the fixture's admin carries an ordinary note
+      ;; the fixture's admin carries a declared review
       (should (equal (mapcar #'cadr (org-convect-history entry)) '(reviewed))))))
 
 (ert-deftest org-convect-test-history-is-newest-first ()
@@ -2976,9 +3118,12 @@ that it changed and why, next to the rung where the next review will read it."
       (let ((body (buffer-string)))
         (should (string-match-p "Reworded from \"Honesty\"" body))
         (should (string-match-p "honesty was too broad to act on" body))))
-    ;; and the note counts as having looked at it
-    (should (plist-get (org-convect-test--entry (org-convect-scan) "Saying the number")
-                       :reviewed))))
+    ;; and it does *not* count as having looked at the rung.  Rewording is
+    ;; not reviewing, and a rename that postponed the next review by a month
+    ;; would be the tool quietly deciding it had been thought about.
+    (should-not (plist-get (org-convect-test--entry (org-convect-scan)
+                                                    "Saying the number")
+                           :reviewed))))
 
 (ert-deftest org-convect-test-reword-reaches-into-other-files ()
   "The ladder may be spread over several files, and a reference in one of them

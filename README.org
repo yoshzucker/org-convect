@@ -270,11 +270,63 @@ its own later?/
 | a choice point (its properties are a row in a column view) | headline |
 | what happened to a rung this month | note   |
 
-So *reviewing a rung is pressing =C-c C-z= on it and writing what you
-concluded.*  Nothing new to learn.  The newest inactive timestamp in the
-entry's own text is what ~org-convect-overdue-p~ reads — children excluded,
-because recording a choice point under a principle is not the same act as
-reviewing the principle.
+Notes are all one shape.  What they are *for* differs, and only one of them
+means you came back and looked:
+
+| Written | Kind | Moves the clock |
+|---+---+---|
+| =- Reviewed on [ts]= | ~reviewed~ | *yes, and nothing else does* |
+| =- Note taken on [ts]= | ~noted~ | no |
+| the same, opening /Reworded from/ | ~reworded~ | no |
+| a child heading with =ACT_MOVE= | ~choice~ | no |
+
+*So =C-c C-z= on a rung is free.*  Write against a rung as often as you like;
+none of it claims you reviewed anything.  Declaring that is =z= on the review
+board, or ~M-x org-convect-reviewed~.
+
+It used to be the other way round, and it was a trap: any inactive stamp in the
+entry counted as a look, so a passing thought silenced a rung for a whole
+cadence and ~org-convect-reword~ postponed a review by renaming something.
+Rewording is not reviewing.
+
+Children are excluded either way, because recording a choice point under a
+principle is not the same act as reviewing the principle.
+
+#+begin_quote
+Having looked at something is a claim you make, not a residue of having typed
+near it.
+#+end_quote
+
+*Notes never appear on the board.*  What they do there is move the status —
+=due= or the date it comes due — and say how many are still unread.  The stream
+with its kinds is ~org-convect-history-show~.
+
+*** Writing against a rung from somewhere else
+
+~M-x org-convect-note~ asks which rung and writes an ordinary note on it.  Not
+a new kind of record: what lands is exactly what =C-c C-z= writes and nothing
+can tell the two apart, because there is nothing to tell.
+
+Only the way in differs, and that is the point.  What gets noticed about a rung
+is noticed while doing something else — in the inbox, mid-week, nowhere near
+the ladder.  Filing it should not mean going to find the ladder first.
+
+The board then says how many have arrived since you last looked:
+
+#+begin_example
+  self.health                    due 2026-10-04
+    the standard, in the body
+    ↳ 3:20 clocked · 2 noted
+#+end_example
+
+Which is what makes them get read.  At the review they either change the
+standard, become a project, or are dropped — they carry no state of their own,
+because anything that stuck ends up written into the standard and two records
+of one thing is one too many.
+
+Notes go in the =:LOGBOOK:= drawer, and that is not a preference: a rung's body
+*is* its standard, so a note written in the open becomes part of what the rung
+claims to be.
 
 ** Which rung gets asked for next
 
@@ -546,18 +598,22 @@ links the tree could not draw — is left.
 ** Keys
 
 | =RET= | go to the rung |
-| =z=   | write the conclusion onto it |
+| =z=   | write the conclusion and call it reviewed |
 | =t=   | follow the links, or the altitudes |
 | =r=   | redraw |
 
-Only =t= and =r= are bound by this package; the rest is Org's own, acting on
-the marker each row carries.
+=RET= is Org's own, acting on the marker each row carries.  The other three are
+this package's, and two of them are taking a key back for a reason.
 
-=t= is =org-agenda-todo= underneath, and taking it is a repair rather than a
-displacement: a rung deliberately carries [[*Goals carry no TODO state][no TODO keyword]], so pressing it on
-one of these rows would *give* it one.  =g= is left alone — it opens the
-motions for a great many people, and a command on it would take the prefix and
-everything under it away here alone.
+=t= is =org-agenda-todo= underneath: a rung deliberately carries [[*Goals carry no TODO state][no TODO
+keyword]], so pressing it on one of these rows would *give* it one.  =z= is
+=org-agenda-add-note=, which writes an ordinary note — and an ordinary note is
+[[*Reviews are notes, rungs are headlines][no longer a review]], so a conclusion written with it would leave the rung
+looking exactly as unlooked-at as before.  Reviewing happens on this board, so
+this is where the key that says so belongs.
+
+=g= is left alone — it opens the motions for a great many people, and a command
+on it would take the prefix and everything under it away here alone.
 
 * Planning a project
 
