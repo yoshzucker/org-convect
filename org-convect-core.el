@@ -1016,7 +1016,8 @@ so recording something about the rung already on screen takes no typing."
      :prompt "Principle or purpose"
      :hint   "what you hold to even when holding to it costs something"
      :heading "What you hold to even when holding to it costs something, or
-why any of this matters.  Not a state to arrive at, and not a routine."
+why any of this matters.  Not a state to arrive at, and not a standard kept up
+month by month -- both of those belong further down."
      :body   "Under it, in plain lines, what it rules out: the behaviour you
 would refuse even at a cost.  That is the boundary whichever way the heading
 itself reads, and one with nothing it forbids is a slogan."
@@ -1025,11 +1026,15 @@ itself reads, and one with nothing it forbids is a slogan."
      nearly over.  Rules out: repeating a figure I have not checked
      because someone senior said it first."
      :bad    "  ** I eat well and sleep enough
-     Rules out: eating badly.  Rules out: not sleeping enough.
+     Rules out: skipping lunch when the day is full.  Rules out:
+     working past midnight to finish something.
 
-  Wrong because the heading is a routine.  It describes an ordinary
-  week, so the only thing it can rule out is that week not happening,
-  and nothing there answers on the evening you are asked out."
+  Wrong in the heading, not the body.  Those two lines do answer on
+  the evening you are asked out, which is a principle doing its work.
+  But \"eats well, sleeps enough\" is something you would notice at
+  the end of a month, so the heading is the sentence an area keeps up
+  and the file now carries it at two altitudes.  Name what the body
+  already says: what the body will not be traded for."
      :review "Am I still behaving like this?  These do not go out of date, so
 the question is whether it is being kept, and where it was not.  No schedule:
 read them when direction or motivation has gone."
