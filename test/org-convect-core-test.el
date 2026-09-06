@@ -764,7 +764,7 @@ the thing is true."
     (should (org-convect-test--says heading "The tense decides nothing"))
     ;; the example that shows it: present tense, and still a goal
     (should (org-convect-test--says bad "on-call rota is handed over"))
-    (should (org-convect-test--says bad "Written as already true"))
+    (should (org-convect-test--says bad "The pager is not mine"))
     ;; and what does decide, once, at the head of the file
     (should (org-convect-test--says preamble "Once it is true, is it over?"))))
 
@@ -789,8 +789,8 @@ anything when two accountabilities pull against each other."
   (let ((heading (org-convect-guide 'purpose :heading))
         (bad (org-convect-guide 'purpose :bad))
         (preamble (org-convect--preamble)))
-    (should (org-convect-test--says heading "Never a routine"))
-    (should (org-convect-test--says bad "A routine"))
+    (should (org-convect-test--says heading "not a routine"))
+    (should (org-convect-test--says bad "the heading is a routine"))
     (should (org-convect-test--says bad "eat well"))
     ;; and the question that catches it, once, at the head of the file
     (should (org-convect-test--says preamble "pull against each other"))))
@@ -827,9 +827,15 @@ came out."
   "The rung carries two things and they are worded differently.  Told only
 about the boundaries, a reader writes no purpose; told only about the purpose,
 a reader writes a slogan with nothing it forbids."
-  (let ((heading (org-convect-guide 'purpose :heading)))
-    (should (org-convect-test--says heading "What you refuse even at a cost"))
-    (should (org-convect-test--says heading "why any of this matters"))))
+  (let ((heading (org-convect-guide 'purpose :heading))
+        (body (org-convect-guide 'purpose :body)))
+    ;; the half that is a why, said in the heading
+    (should (org-convect-test--says heading "why any of this matters"))
+    ;; the half that is a boundary, said where the boundary is written -- and
+    ;; not as a claim about the heading, which may read either way
+    (should (org-convect-test--says body "what it rules out"))
+    (should (org-convect-test--says
+             body "whichever way the heading itself reads"))))
 
 (ert-deftest org-convect-test-the-standards-test-has-a-clock-in-it ()
   "Abstract wording is what produced purpose statements where standards go, so
@@ -1496,6 +1502,32 @@ the expenses are filed by the tenth
                        (org-convect-findings (org-convect-scan)
                                              (org-convect-test--day 2026 9 5))
                        "admin")))))
+
+(ert-deftest org-convect-test-the-two-examples-are-written-the-same-way ()
+  "A good one and a bad one are only comparable if they are written the same
+way: a heading, and under it a body in the form the guidance has just asked
+for.  A bad one that is a heading followed by a critique shows a shape nobody
+would ever have typed, and leaves out the thing being taught -- which words
+were wrong.  The diagnosis belongs after the example, not in place of it."
+  (dolist (horizon (mapcar #'car org-convect-horizons))
+    (let ((good (org-convect-guide horizon :good))
+          (bad (org-convect-guide horizon :bad)))
+      (dolist (example (list good bad))
+        ;; a heading, indented so it is a picture of one rather than one
+        (should (string-match-p "\\`  \\*\\* " example))
+        ;; and a body under it
+        (should (string-match-p "\n     [^ \n]" example)))
+      ;; the bad one says why, after the example and set off from it
+      (should (string-match-p "\n\n  Wrong because" bad))
+      (should-not (string-match-p "Wrong because" good)))))
+
+(ert-deftest org-convect-test-every-heading-field-names-its-exclusion ()
+  "Each rung is told what its heading is and then, in the same shape, what it
+is not -- so a reader comparing two drawers is comparing two sentences of the
+same form rather than inferring which clause was the exclusion."
+  (dolist (horizon (mapcar #'car org-convect-horizons))
+    (should (string-match-p "\\.[ \n]+Not "
+                            (org-convect-guide horizon :heading)))))
 
 (ert-deftest org-convect-test-every-rung-says-what-it-is-not ()
   "Telling the rungs apart is the thing people get wrong, so each one carries

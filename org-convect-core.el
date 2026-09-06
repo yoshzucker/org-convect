@@ -1015,17 +1015,21 @@ so recording something about the rung already on screen takes no typing."
   '((purpose
      :prompt "Principle or purpose"
      :hint   "what you hold to even when holding to it costs something"
-     :heading "What you refuse even at a cost, or why any of this matters.
-Never a routine and never a state -- both of those belong further down."
-     :body   "In plain lines, what it rules out.  One with nothing it forbids
-is a slogan."
+     :heading "What you hold to even when holding to it costs something, or
+why any of this matters.  Not a state to arrive at, and not a routine."
+     :body   "Under it, in plain lines, what it rules out: the behaviour you
+would refuse even at a cost.  That is the boundary whichever way the heading
+itself reads, and one with nothing it forbids is a slogan."
      :good   "  ** I do not let a number stand that I know is wrong
      Rules out: staying quiet in a review because the meeting is
      nearly over.  Rules out: repeating a figure I have not checked
      because someone senior said it first."
      :bad    "  ** I eat well and sleep enough
-     A routine: true of an ordinary week, silent on the evening you
-     are asked out, and already what an area keeps up."
+     Rules out: eating badly.  Rules out: not sleeping enough.
+
+  Wrong because the heading is a routine.  It describes an ordinary
+  week, so the only thing it can rule out is that week not happening,
+  and nothing there answers on the evening you are asked out."
      :review "Am I still behaving like this?  These do not go out of date, so
 the question is whether it is being kept, and where it was not.  No schedule:
 read them when direction or motivation has gone."
@@ -1035,38 +1039,43 @@ than a lower rung, so one with choice points under it counts as in use
 whatever the links say.
 
 Add one with M-x org-convect-add, or write several as child headings here,
-mark them, and run M-x org-convect-declare.")
+mark them, and run M-x org-convect-declare."
+    )
     (vision
      :prompt "Vision"
      :hint   "what it is like once it has worked, some years out"
      :heading "A handle for the picture, short enough to point at from a goal.
-Nothing with a date on it.  The tense decides nothing, though: any outcome
-reads as already true once it is reached."
-     :body   "The picture, as though it were already the case: what is
-different, who notices, how an ordinary day goes.  The one rung whose body is
-meant to run long."
+Not anything that is over once it is true.  The tense decides nothing: any
+outcome reads as already the case once it is reached."
+     :body   "Under it, the picture, written as though it were already the
+case: what is different, who notices, how an ordinary day goes.  The one rung
+whose body is meant to run long."
      :good   "  ** The team ships without me in the room
      A release goes out on a Thursday and I hear about it afterwards.
      The review that catches the bad number is somebody else's, and it
      catches it.  Nobody waits to be told it is safe to say so."
      :bad    "  ** The on-call rota is handed over
-     Written as already true and still one rung down: there is a day
-     it is done, and the next one is somebody else's standing
-     responsibility."
+     The pager is not mine.  Somebody else carries it, and the
+     handover notes are written.
+
+  Wrong because there is a day it is done.  From the morning after,
+  the rota is a standing responsibility rather than anything left to
+  work toward."
      :review "Is this still the picture, and has anything moved toward it this
 year?  One nothing has moved toward is not being worked from.  No schedule:
 rewrite it when the picture stops fitting."
      :note   "Add one with M-x org-convect-add, then write the picture
-underneath it.")
+underneath it."
+    )
     (goal
      :prompt "Goal or objective"
      :hint   "what has to become different, and roughly when"
      :dated  t
-     :heading "What has to become different, in a year or two.  Nothing you
-cannot judge: if you cannot say what counts as having reached it, it belongs
-one rung up."
-     :body   "In plain lines, how you would know it had happened.  Nothing
-else -- no label, no date in the text.
+     :heading "What has to become different, in a year or two.  Not anything
+you cannot judge: if you cannot say what counts as having reached it, it
+belongs one rung up."
+     :body   "Under it, in plain lines, how you would know it had happened.
+Nothing else -- no label, no date in the text.
 
 There are fewer of these than there are areas and they cut across them, so
 most areas have no goal at all.  Read the areas for pressure, not for
@@ -1075,7 +1084,11 @@ material."
      Reached when: two releases in a row go out with a review I did
      not ask anyone for."
      :bad    "  ** Stay fit
-     Nothing about it finishes, so it is held to a standard instead."
+     Reached when: I am fit.
+
+  Wrong because nothing about it finishes, so the body can only say
+  the heading over again.  There is no day it is reached, which makes
+  it something held to a standard instead."
      :review "Reached, still reachable, or no longer a goal?  All three are
 answers; leaving it sitting there is not.  Yearly, with a look each quarter."
      :note   "`CONVECT_BY' is the target: when it is meant to be true.  The
@@ -1086,16 +1099,17 @@ does not buy two years of quiet.
 Links only ever run upward: `CONVECT_SERVES' sits on the lower rung and names
 the higher one.  Standing here, C-u M-x org-convect-link writes it onto the
 areas you pick.  Add one with M-x org-convect-add and set the date with M-x
-org-convect-set-date.")
+org-convect-set-date."
+    )
     (area
      :prompt "Area"
      :hint   "copy it off your job description, or off who does what at home"
-     :heading "The role or the function you are answerable for, never the
-thing it concerns.  \"Children\" is not one -- there is no way to keep children
-to a standard.  \"Parent\" is.  Do not invent these: copy them off your job
-description, the organisation chart, and who does what at home."
-     :body   "In plain lines, the standard -- things you would notice, not why
-it matters:
+     :heading "The role or the function you are answerable for.  Not the thing
+it concerns: \"Children\" is not one, because there is no way to keep children
+to a standard, and \"Parent\" is.  Copy these off your job description, the
+organisation chart, and who does what at home rather than inventing them."
+     :body   "Under it, in plain lines, the standard -- things you would
+notice, not why it matters:
 
   If this had slipped this month, what would I see?
 
@@ -1107,7 +1121,11 @@ clock in it."
      Kept up means: reviews come back the same day; no branch is older
      than a week; the build is green when I leave."
      :bad    "  ** Ship the migration
-     It finishes, so it belongs in the task system rather than here."
+     Kept up means: the migration has shipped.
+
+  Wrong because it finishes.  After the day it ships there is no
+  month in which it could have slipped, so the question above has
+  nothing left to ask."
      :review "Is the standard being met -- and is this still yours to keep up?
 GTD asks the second out loud: could it be delegated or dropped?  A standard
 met perfectly is still worth losing if it was never yours.  Monthly, and
@@ -1120,7 +1138,8 @@ Nothing here needs to point upward and most never will.  Only the other
 direction is asked about: a goal nothing serves.
 
 Write the names as child headings under this one, mark them, and run M-x
-org-convect-declare.  For a single one, M-x org-convect-add."))
+org-convect-declare.  For a single one, M-x org-convect-add."
+    ))
   "What each horizon is, how to find your own, and what to write under it.
 
 Used in two places and written once: the `:GUIDE' drawers in a fresh file are
