@@ -1015,288 +1015,157 @@ so recording something about the rung already on screen takes no typing."
   '((purpose
      :prompt "Principle or purpose"
      :hint   "what you hold to even when holding to it costs something"
-     :what   "Why any of this matters, and the standards you keep whatever the
-outcome.  These never finish and are never scored.
+     :what   "Why any of this matters, and what you refuse even when refusing
+costs you something.  Never ends.  Never scored."
+     :find   "Ask what you would refuse even at a cost.  That question is
+easier than asking what the work is for, and it is half the answer."
+     :write  "One heading per principle; under it, in plain lines, what it
+rules out.  One with nothing it forbids is a slogan.
 
-GTD names this rung twice over, and the two halves are worded differently.
-The purpose half is what the work is finally for, said plainly.  The
-principles half is what you would insist on anyway, and it comes out as
-boundaries -- the prompt for it is to finish the sentence \"I would give
-others totally free rein to do this as long as they ...\".  Both belong here,
-and neither has to be phrased like the other.
-
-This is the rung you consult when a choice is hard: an invitation on a night
-you meant to sleep, a favour asked in the hour you keep for someone.  Nothing
-lower can settle that, because each of the rungs below speaks only for its own
-accountability and the difficulty is precisely that two of them disagree."
-     :find   "Ask what the work is finally for.  Then, separately, ask what you
-would refuse to do even when refusing costs you something.  The second question
-is usually the easier one, and it is half the answer."
-     :write  "One heading per principle -- not a numbered list under this one.
-A principle is pointed at by name, reviewed on its own and has choice points
-recorded under it, and none of that can happen to a line in a list.
-
-Under each heading, in ordinary prose, what it rules out: the behaviour you
-would refuse even at a cost.  A principle with nothing it forbids is a slogan,
-and nothing can be measured against it.
-
-The heading names the stance, or the why.  Not a routine: \"I eat well and
-sleep enough\" describes an ordinary week, and an ordinary week is not when
-this is needed -- it is also, word for word, the kind of sentence the rung
-furthest down keeps up, so writing it here says the same thing twice.
-
-Which is a fault of the sentence, not of the subject.  The same material is
-meant to appear at several rungs: the same child is a way of behaving here, a
-picture further up, and something answered for further down, and each of those
-is doing a job the others cannot.  What must not repeat is the job.  So the
-question to ask of two entries that look alike is not whether they are about
-the same thing -- they should be -- but whether they would be read at the same
-moment and for the same purpose.
-
-Whether the heading reads as a refusal or as something held to is not the
-test.  A refusal is only the shortest way to be sure of the second question
-below, because a refusal cannot be a state."
+The heading names the stance, or the why -- never a routine, never a state.
+The same subject may stand on several rungs: what must not repeat is the job,
+not the subject."
      :shape  "  ** I do not let a number stand that I know is wrong
      Rules out: staying quiet in a review because the meeting is
      nearly over.  Rules out: repeating a figure I have not checked
      because someone senior said it first."
-     :test   "Four questions, and the last one decides.
-
-Does it finish?  A principle never does.  Is it something you do, or something
-that is?  A principle is something you do.  If the reason for it turned out to
-be wrong, would you still hold to it?  If yes it belongs here; if no it is an
-instrument, and instruments live lower down.
-
-Having a reason does not make it an instrument -- a principle with no reason is
-merely arbitrary.  The test is whether the reason is load-bearing.
-
-And: does it settle anything?  Put it where two of the things you are
-answerable for pull against each other and see whether it answers.  Something
-that arbitrates between them can only be here, since each of them speaks for
-itself alone.  A sentence that settles nothing at that moment is describing a
-good week rather than governing a hard one, and the first three questions will
-happily pass it."
+     :test   "Put it where two of the things you are answerable for pull
+against each other -- a late meeting on the evening you keep for someone.
+Does it answer?  Only this rung can: each of the others speaks
+for one accountability alone.  One that settles nothing there describes a good
+week rather than governing a hard one."
      :examples "Yes: \"I do not let a number stand that I know is wrong.\"  It
-never finishes, it is a way of behaving, and it holds even when speaking up
-costs something.
+answers, in the meeting, at a cost.
 
-No: \"Become the person the team trusts.\"  That is a state to arrive at rather
-than a way of behaving, which makes it a vision.
+No: \"Become the person the team trusts.\"  A state to arrive at.
 
-No, less obviously: \"I eat well, exercise regularly and sleep enough.\"  Every
-word of it is something done and none of it finishes, so it passes the early
-questions.  It settles nothing on the night you are asked out, though, and it
-is what the rung furthest down is already keeping up.  The principle inside it
-is the refusal: not trading the body for whatever is busy this week.  That one
-answers, and it answers for the evening, the overtime and the missed meal
-alike."
+No: \"I eat well and sleep enough.\"  A routine: true of an ordinary week,
+silent on the evening you are asked out."
      :when   "No schedule.  Read these when direction or motivation has gone."
-     :review "Am I still behaving like this?  A principle does not go out of
-date, so asking whether it is current asks nothing -- the question that carries
-is whether it is being kept, and where it was not."
-     :note   "Choice points are usually recorded under these, because a value
-in ACT is a way of behaving and so is a principle.  They are not confined to
-them: an area can be the honest answer when the pull was away from a
-responsibility rather than from a value.
-
-A rung with choice points under it counts as in use even when nothing in the
-ladder points at it.  What a principle produces is conduct, not a lower rung,
-so the ladder is the wrong place to look for its output."
+     :review "Am I still behaving like this?  These do not go out of date, so
+the question is whether it is being kept, and where it was not."
+     :note   "Choice points are usually recorded under these: a value in ACT is
+a way of behaving, and so is a principle.  What one
+produces is conduct rather than a lower rung, so one with choice points under
+it counts as in use whatever the links say."
      :do     "Add one with M-x org-convect-add, or write several as child
 headings here, mark them, and run M-x org-convect-declare.  Then open each and
 write what it rules out.")
     (vision
      :prompt "Vision"
-     :hint   "the finished state, written as though already true"
+     :hint   "what it is like once it has worked, some years out"
      :what   "What it is like once it has worked.  Some years out, and concrete
-enough to picture rather than agree with."
-     :find   "Describe the finished state as though it were already the case.
-What is different, who notices, how an ordinary day goes."
-     :write  "A heading, then the picture under it.  The heading is only a
-handle -- something short enough to point at from a goal -- and the body is
-where the picture goes.  This is the one rung whose body is meant to run long,
-but it still needs the heading, because loose prose under the section is not a
-rung and nothing can be said about it."
+enough to picture rather than to agree with."
+     :find   "Describe it as though it were already the case.  What is
+different, who notices, how an ordinary day goes."
+     :write  "A heading as a handle -- short enough to point at -- and the
+picture underneath it.  This is the one rung whose body is meant to run long."
      :shape  "  ** The team ships without me in the room
      A release goes out on a Thursday and I hear about it afterwards.
      The review that catches the bad number is somebody else's, and it
      catches it.  Nobody waits to be told it is safe to say so."
-     :test   "Once it is true, what happens the day after?
+     :test   "Once it is true, what happens the day after?  Nothing: it is a
+condition you go on living in, and the rung below spends itself instead.
 
-Nothing, for a vision: it is a condition you go on living in, and there is no
-morning you wake up finished with it.  The rung below spends itself instead --
-met, it comes off the ladder, and what survives it is a standard whoever is
-answerable for it keeps up.
+The tense decides nothing, though it is how the picture gets written -- any
+outcome reads as already true once it is reached."
+     :examples "Yes: \"A day goes by and nobody needed me in the room.\"  Every
+such day is another one of them.
 
-Present tense decides nothing here, although it is how the picture gets
-written.  Any outcome can be put that way once it is reached: \"the rota is
-handed over\" is the same commitment as \"hand the rota over by March\", and
-only one of those wordings looks like a picture.  So ask about the day after
-rather than about the tense."
-     :examples "Yes: \"A day goes by and nobody needed me in the room.\"  There
-is no day after it on which it is over -- every such day is another one of
-them.
-
-No: \"The on-call rota is handed over.\"  Written as though already true, so
-the wording gives nothing away, and it is still a goal: there is a day it is
-done, and from the next one the rota is somebody\='s standing responsibility
-rather than anything left to work toward.  Probably one that serves the vision
-above it."
+No: \"The on-call rota is handed over.\"  Written as already true and still one
+rung down: there is a day it is done, and the next one is somebody else's
+standing responsibility."
      :when   "No schedule.  Rewrite it when the picture stops fitting."
-     :review "Is this still the picture, and has anything actually moved toward
-it this year?  A vision nothing has moved toward is either not held or not
-being worked from."
+     :review "Is this still the picture, and has anything moved toward it this
+year?  One nothing has moved toward is not being worked from."
      :do     "Add one with M-x org-convect-add, then write the picture
 underneath it.")
     (goal
+     :prompt "Goal or objective"
+     :hint   "what has to become different, and roughly when"
      :dated  t
-     :prompt "Goal"
-     :hint   "an outcome you could tell you had reached, a year or two out"
-     :what   "What has to become true within a year or two for the vision to be
-on its way.  Unlike the rungs above it, a goal finishes."
-     :find   "Name an outcome you could tell you had reached, and roughly when.
-If you cannot say what would count as having reached it, it is still a vision.
+     :what   "What has to become different within a year or two.  The one rung
+that finishes."
+     :find   "Read the areas for pressure, not for material.  There are fewer
+of these than there are areas and they cut across them, so most areas have no
+goal at all -- going down the list looking for one each is how this level
+usually goes wrong.
 
-There are fewer of these than there are areas, and they cut across them.  Do
-not go down the list of areas looking for one each -- that is the commonest
-way this level goes wrong.  One goal usually touches several areas, and most
-areas have no goal at all at any given moment.
-
-A goal appears when something has to become *different*: a standard has to
-rise, or something is in the way of meeting one, or a thing that does not exist
-yet is wanted.  So read the areas for pressure rather than for material.
-
-The goals themselves usually come from somewhere else, and usually they are
-already written down: this year's objectives, a plan someone is holding you to,
-the thing you told your family you would do.  Copy them, the way the areas were
-copied."
-     :write  "Under each one, as plain lines, how you would know it had
-happened.  Nothing else -- no label, no date in the text.  A goal you cannot
-judge is a vision that has been given a date."
+Yours are written down somewhere already: this year's objectives, a plan
+someone is holding you to, the thing you told your family you would do."
+     :write  "Under it, as plain lines, how you would know it had happened.
+Nothing else -- no label, no date in the text."
      :shape  "  ** Two other people review releases, unprompted
      Reached when: two releases in a row go out with a review I did not
      ask anyone for."
-     :test   "Can you say what would count as having reached it, and roughly
-when?
+     :test   "Can you say what counts as having reached it, and roughly when?
+If not, it belongs one rung up.
 
-If you cannot say what counts, it is still a vision.  If it never finishes at
-all, it is an area you maintain or a principle you hold.
+Then: what is spent the day after?  Met, it comes off the ladder, and whatever
+must go on being true is a standard for whoever is answerable.  If nothing is
+spent, what is written is a condition rather than a change."
+     :examples "Yes: \"Vo2max of 55 by the end of the year.\"  A number and a
+date, and on the day it is true you are done.
 
-Then the same question from the day after.  Something is spent when a goal is
-met: it comes off the ladder, and whatever has to go on being true from then
-on is a standard for whoever is answerable for it -- which is how a goal ends
-its life, handed down rather than deleted.  If nothing is spent, if the day
-after looks like the day before, what is written is a condition rather than a
-change, and a condition at this size is a vision."
-     :examples "Yes: \"Vo2max of 55 by the end of the year.\"  There is a
-number and a date, and on the day it is true you are done.
-
-No: \"Stay fit.\"  Nothing about that finishes, which makes it an area."
+No: \"Stay fit.\"  Nothing about it finishes, so it is held to a standard
+instead."
      :when   "Yearly, with a look each quarter."
      :review "Reached, still reachable, or no longer a goal?  All three are
 answers; leaving it sitting there is not."
-     :note   "The date a goal is for and the date it is next looked at are two
-different dates, and only the first of them is a property.
+     :note   "`CONVECT_BY' is the target: when it is meant to be true.  The
+quarterly look is separate -- an interval counted from the last note on the
+entry -- so looking at one postpones the next look, and a target two years out
+does not buy two years of quiet.
 
-`CONVECT_BY' is the goal's own target: when it is meant to be true.  It is a
-property so that it can be read rather than noticed; M-x org-convect-set-date
-writes it, or answer the prompt when adding one.  A goal still sitting there
-after that date has been reached, abandoned, or was never a goal, and the
-review says so.
-
-The quarterly look is an interval rather than a date -- 90 days, in
-`org-convect-review-cadence' -- counted from the last note written on the
-entry, or from the day it was written when there is none.  So looking at a
-goal is what postpones the next look at it, and a target two years out does
-not buy two years of quiet.
-
-Links only ever run upward.  The property is `CONVECT_SERVES', it sits on the
-lower rung and names the higher one, and there is none pointing the other way:
-two directions would be two answers that could disagree, and nothing would say
-which was right.  Writing it is not confined to the lower end, though --
-standing on the goal, where you know which areas it changes, C-u M-x
-org-convect-link writes it onto the areas you pick."
+Links only ever run upward: `CONVECT_SERVES' sits on the lower rung and names
+the higher one.  Standing here, C-u M-x org-convect-link writes it onto the
+areas you pick."
      :do     "Add one with M-x org-convect-add, or write several as child
-headings here, mark them, and run M-x org-convect-declare.  Then, on each:
-write how you would know it had happened, set the date with M-x
-org-convect-set-date, and point the areas it changes at it with C-u M-x
-org-convect-link.")
+headings here, mark them, and run M-x org-convect-declare.  Then write how you
+would know, set the date with M-x org-convect-set-date, and point the areas it
+changes at it with C-u M-x org-convect-link.")
     (area
      :prompt "Area"
      :hint   "copy it off your job description, or off who does what at home"
-     :what   "Something you are answerable for that never finishes.  It is held
-to a standard rather than completed, and letting one slip is how things quietly
-stop working.
+     :what   "Something you are answerable for that never finishes, held to a
+standard rather than completed.
 
 Name the role or the function, never the thing it concerns.  \"Children\" is
-not an area -- there is no way to keep children to a standard.  \"Parent\" is:
-there is a way you mean to do it, and you can tell when you are not.  The test
-is whether the words \"kept up\" attach to it at all.  At work the organisation
-chart has usually named the functions already, so they read like functions
-(procurement, engineering); at home nobody has named anything, so you have to
-say what you are answerable for, and they read like roles."
+not one -- there is no way to keep children to a standard.  \"Parent\" is."
      :find   "Do not invent these.  Copy them off your job description, the
-organisation chart, and who does what at home.  Most of yours are already
-written down somewhere, and reading them off is faster and more honest than
-thinking them up."
-     :write  "Under each one, as plain lines, the standard: what \"kept up\"
-means here.  The test has a clock in it, and asking it that way is what keeps
-the answer at this altitude --
+organisation chart, and who does what at home."
+     :write  "Under it, as plain lines, the standard -- things you would
+notice, not why it matters:
 
   If this had slipped this month, what would I see?
 
-Answer with things you would notice, not with why the area matters.  For a
-parent: there is time with them alone each week; the bedtime conversation
-still happens; they tell me about their day unprompted; I have not shouted.
-For a codebase: reviews come back the same day; no branch is older than a
-week; the build is green when I leave.
-
-If what comes out instead is why it matters, or a picture of how it turns out
-years from now, that is not a bad answer -- it is a good answer to a different
-rung.  Move it up to Purpose or Vision and ask the question again with the
-clock in it.  Being asked for a standard and producing a purpose is the most
-common thing that happens here.
-
-A standard is evidence, and evidence is read afterwards.  It says whether the
-month was kept, which is a different job from telling you what to do at eight
-on a Tuesday -- \"no branch older than a week\" has nothing to say about the
-call that just came in, and is not meant to.  So the standard belongs here and
-is worth writing: without one the monthly look has nothing to be a look at."
+Evidence, and evidence is read afterwards: it says whether the month was kept,
+not what to do at eight on a Tuesday.  If what comes out is why it matters, or
+a picture years from now, move it up to Purpose or Vision and ask again with
+the clock in it."
      :shape  "  ** engineering
      Kept up means: reviews come back the same day; no branch is older
      than a week; the build is green when I leave."
-     :test   "Does it finish?  It must not.  Do the words \"kept up\" attach to
-it?  They must.  Are you answerable for it?  You must be.
+     :test   "Do the words \"kept up\" attach to it, and are you answerable for
+it?  Both must hold, and if it finishes it belongs one rung up.
 
-If it finishes it is a goal or a project.  If it is a way of behaving rather
-than a thing held to a standard, it is a principle.
-
-The quick way to tell, when a sentence could be either: a standard speaks for
-one accountability, so it cannot settle a quarrel between two.  If yours says
-which of them gives way tonight, it is a principle, whichever heading it was
-written under."
+A standard speaks for one accountability, so it cannot settle a quarrel between two: a sentence saying
+which of them gives way tonight is a principle, whichever heading it sits
+under."
      :examples "Yes: \"engineering\", kept up meaning reviews come back the same
 day and no branch is older than a week.
 
-No: \"Ship the migration.\"  It finishes, so it is a project -- it belongs in
-the task system rather than here."
+No: \"Ship the migration.\"  It finishes, so it belongs in the task system."
      :when   "Monthly, and whenever the job or the household changes."
      :review "Is the standard being met -- and is this still yours to keep up?
-GTD asks the second out loud: should you be answerable for this at all, and
-could it be delegated or dropped?  A standard that is being met perfectly is
-still worth losing if it was never yours."
-     :note   "An area's name is what a task carries in `CONVECT_AREA', which is
-how the clock reports against it.  The property is read with inheritance, so
-marking a project marks everything under it -- but a task filed straight into
-a date tree has no project to inherit from and carries its own.
+GTD asks the second out loud: could it be delegated or dropped?  A standard
+met perfectly is still worth losing if it was never yours."
+     :note   "The name is what a task carries in `CONVECT_AREA', read with
+inheritance, so marking a project marks everything under it.  Deliberately not
+CATEGORY: that slot is Org's and other packages read it.
 
-Deliberately not CATEGORY.  That slot is Org's, every entry already has one,
-and other packages read it for their own purposes; taking it would mean
-telling you what your own categories have to say.
-
-Nothing here needs to point at a goal.  Most areas never will -- keeping the
-engines running is what they are for, and a chore is a real accountability.
-Only the other direction is ever asked about: a goal nothing serves."
+Nothing here needs to point upward and most never will.  Only the other
+direction is asked about: a goal nothing serves."
      :do     "Write the names as child headings under this one -- one line
 each, no properties -- then mark them and run M-x org-convect-declare.  Then
 open each and write its standard.  For a single one, M-x org-convect-add."))
@@ -1333,9 +1202,7 @@ descriptions are not the David Allen Company's text."
     (:find     "Where to find yours")
     (:write    "What goes underneath")
     (:shape    "One written out"
-               "The heading and the body, which is all anybody types.  The
-properties are the commands' work, and are left out so that nothing in the
-example looks like something to copy by hand.")
+               "Heading and body; the properties are the commands' work.")
     (:test     "The test")
     (:examples "Telling them apart")
     (:when     "How often")
@@ -1543,17 +1410,36 @@ has to be stored twice."
 
 Comment lines rather than prose: they are addressed to whoever opens the file
 and are not part of what the file records, and `#\\=' is how Org says so."
-  (concat "# Read down: purpose shapes the vision, the vision the goals,\n"
-          "# the goals the areas.  Write up: start from what you already\n"
-          "# carry.  A rung with nothing in it yet is normal.\n"
-          "#\n"
-          "# Add one with M-x org-convect-add.  Write or paste several under a\n"
-          "# section and mark them with M-x org-convect-declare.  Open a :GUIDE:\n"
-          "# drawer with TAB, and delete it once it is in the way; M-x\n"
-          "# org-convect-refresh-guides puts the current wording back.\n"
-          "#\n"
-          "# M-x org-convect-doctor shows what is still blank.  A heading with\n"
-          "# an empty body looks exactly like a heading, so the file cannot.\n"))
+  (concat
+   "# Four rungs.  What each one answers, and what it is not:\n"
+   "#\n"
+   "#   purpose  what I refuse, even at a cost   not a routine, not a state\n"
+   "#   vision   what it looks like once it      not anything with a date\n"
+   "#            has worked\n"
+   "#   goal     what has to change, by when     not anything you cannot judge\n"
+   "#   area     what I am answerable for,       not a thing, and not a rule\n"
+   "#            and how it is kept up           for tonight\n"
+   "#\n"
+   "# Two questions settle nearly everything:\n"
+   "#\n"
+   "#   Once it is true, is it over?  Only a goal is -- and what it leaves\n"
+   "#   behind is a standard on an area.\n"
+   "#\n"
+   "#   Put it where two of your responsibilities pull against each other.\n"
+   "#   Does it answer?  Only a purpose does; the rest speak for one\n"
+   "#   accountability alone.\n"
+   "#\n"
+   "# Read down: purpose shapes the vision, the vision the goals, the goals\n"
+   "# the areas.  Write up: start from what you already carry.  A rung with\n"
+   "# nothing in it yet is normal, and the same subject belongs on several.\n"
+   "#\n"
+   "# Add one with M-x org-convect-add.  Write or paste several under a\n"
+   "# section and mark them with M-x org-convect-declare.  Open a :GUIDE:\n"
+   "# drawer with TAB, and delete it once it is in the way; M-x\n"
+   "# org-convect-refresh-guides puts the current wording back.\n"
+   "#\n"
+   "# M-x org-convect-doctor shows what is still blank.  A heading with\n"
+   "# an empty body looks exactly like a heading, so the file cannot.\n"))
 
 (defun org-convect--build-skeleton ()
   "The frame written into a fresh horizons file.
