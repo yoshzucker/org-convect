@@ -702,9 +702,9 @@ refuses to work because a level below is half-done."
 looking for a goal each.  There are fewer goals than areas and they cut across
 them, and the guidance has to say so where the mistake is made."
   (let ((guidance (org-convect-guide 'goal :find)))
-    (should (string-match-p "fewer of these than there are areas" guidance))
-    (should (string-match-p "cut across" guidance))
-    (should (string-match-p "no goal at all" guidance))))
+    (should (org-convect-test--says guidance "fewer of these than there are areas"))
+    (should (org-convect-test--says guidance "cut across"))
+    (should (org-convect-test--says guidance "no goal at all"))))
 
 (ert-deftest org-convect-test-an-area-with-no-goal-is-never-a-finding ()
   "An area is maintained, not achieved.  Pointing upward is optional and its
@@ -731,6 +731,23 @@ about."
        (string-match-p (mapconcat #'regexp-quote (split-string phrase) "[ \t\n]+")
                        text)))
 
+(ert-deftest org-convect-test-the-head-of-the-file-tells-the-rungs-apart ()
+  "Four drawers each describing one rung leave the reader to hold four
+descriptions at once and infer the differences, which is the writer\='s work.
+The differences go in one place, at the head of the file, where they are read
+without opening anything: what each rung answers, what it is not, and the two
+questions that decide almost every case."
+  (let ((preamble (org-convect--preamble)))
+    (dolist (horizon (mapcar #'car org-convect-horizons))
+      (should (org-convect-test--says preamble (symbol-name horizon))))
+    ;; each one paired with what it is not
+    (should (= (length (mapcar #'car org-convect-horizons))
+               (cl-count-if (lambda (l) (string-match-p "not " l))
+                            (split-string preamble "\n"))))
+    ;; and the two that decide
+    (should (org-convect-test--says preamble "Once it is true, is it over?"))
+    (should (org-convect-test--says preamble "pull against each other"))))
+
 (ert-deftest org-convect-test-the-tense-does-not-tell-a-vision-from-a-goal ()
   "The test that read well and decided nothing.
 
@@ -742,10 +759,10 @@ the thing is true."
   (let ((test (org-convect-guide 'vision :test))
         (examples (org-convect-guide 'vision :examples)))
     (should (org-convect-test--says test "the day after"))
-    (should (org-convect-test--says test "Present tense decides nothing"))
+    (should (org-convect-test--says test "The tense decides nothing"))
     ;; and the example that shows it: present tense, and still a goal
     (should (org-convect-test--says examples "is handed over"))
-    (should (org-convect-test--says examples "gives nothing away"))))
+    (should (org-convect-test--says examples "Written as already true"))))
 
 (ert-deftest org-convect-test-a-goal-is-handed-down-when-it-is-met ()
   "Where a goal goes when it is reached, said on the goal\='s own rung.
@@ -768,9 +785,9 @@ anything when two accountabilities pull against each other."
   (let ((test (org-convect-guide 'purpose :test))
         (write (org-convect-guide 'purpose :write))
         (examples (org-convect-guide 'purpose :examples)))
-    (should (org-convect-test--says test "settle"))
     (should (org-convect-test--says test "pull against each other"))
-    (should (org-convect-test--says test "arbitrates"))
+    (should (org-convect-test--says test "settles nothing"))
+    (should (org-convect-test--says test "speaks for one accountability alone"))
     ;; and the shape it is told not to write
     (should (org-convect-test--says write "routine"))
     (should (org-convect-test--says examples "eat well"))))
@@ -783,20 +800,19 @@ reader deletes the principle about their child because there is an area for
 being a parent.  The ladder is built for the same material to appear at
 several altitudes; what must not repeat is the job the sentence does."
   (let ((guidance (org-convect-guide 'purpose :write)))
-    (should (org-convect-test--says guidance "fault of the sentence, not of the subject"))
-    (should (org-convect-test--says guidance "What must not repeat is the job"))
-    (should (org-convect-test--says guidance "read at the same moment"))))
+    (should (org-convect-test--says guidance "may stand on several rungs"))
+    (should (org-convect-test--says guidance "What must not repeat is the job, not the subject"))))
 
 (ert-deftest org-convect-test-only-one-rung-settles-a-quarrel ()
   "Said from both ends, because it is the line between the two rungs that is
 hardest to hold: a standard speaks for one accountability and cannot arbitrate
 between two, and the rung that can is the one above.  A reader arriving at
 either heading has to be able to tell which they are writing."
-  (let ((purpose (org-convect-guide 'purpose :what))
+  (let ((purpose (org-convect-guide 'purpose :test))
         (area (org-convect-guide 'area :test)))
-    (should (org-convect-test--says purpose "speaks only for its own accountability"))
+    (should (org-convect-test--says purpose "speaks for one accountability alone"))
     (should (org-convect-test--says area "cannot settle a quarrel between two"))
-    (should (org-convect-test--says area "it is a principle"))))
+    (should (org-convect-test--says area "gives way tonight is a principle"))))
 
 (ert-deftest org-convect-test-the-guidance-says-a-standard-is-read-afterwards ()
   "The other half of the same distinction: a standard is evidence looked back
@@ -811,17 +827,18 @@ came out."
   "The rung carries two things and they are worded differently.  Told only
 about the boundaries, a reader writes no purpose; told only about the purpose,
 a reader writes a slogan with nothing it forbids."
-  (let ((guidance (org-convect-guide 'purpose :what)))
-    (should (org-convect-test--says guidance "purpose half"))
-    (should (org-convect-test--says guidance "principles half"))
-    (should (org-convect-test--says guidance "totally free rein"))))
+  (let ((what (org-convect-guide 'purpose :what))
+        (write (org-convect-guide 'purpose :write)))
+    (should (org-convect-test--says what "Why any of this matters"))
+    (should (org-convect-test--says what "what you refuse"))
+    (should (org-convect-test--says write "the stance, or the why"))))
 
 (ert-deftest org-convect-test-the-standards-test-has-a-clock-in-it ()
   "Abstract wording is what produced purpose statements where standards go, so
 the question is asked with a month in it and answered with an example."
   (let ((guidance (org-convect-guide 'area :write)))
-    (should (string-match-p "slipped this month" guidance))
-    (should (string-match-p "Move it up to Purpose or Vision" guidance))))
+    (should (org-convect-test--says guidance "slipped this month"))
+    (should (org-convect-test--says guidance "move it up to Purpose or Vision"))))
 
 ;;;; Where the time went
 
@@ -1018,7 +1035,7 @@ an indented property drawer in an example is enough."
 the areas guidance is two thoughts (what a rung is, and role-not-object) and
 they do not read as one."
   (should (string-match-p "\n\n" (org-convect--fill "one.\n\nother.")))
-  (should (string-match-p "quietly stop working\\.\n\nName the role"
+  (should (string-match-p "rather than completed\\.\n\nName the role"
                           (org-convect--guide-drawer 'area))))
 
 (ert-deftest org-convect-test-an-indented-question-stays-indented ()
