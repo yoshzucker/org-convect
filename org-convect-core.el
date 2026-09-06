@@ -1121,17 +1121,27 @@ rung and nothing can be said about it."
      A release goes out on a Thursday and I hear about it afterwards.
      The review that catches the bad number is somebody else's, and it
      catches it.  Nobody waits to be told it is safe to say so."
-     :test   "Can you write it in the present tense, as though it were already
-the case?  A vision reads that way and a goal does not.
+     :test   "Once it is true, what happens the day after?
 
-And does it stop when you get there?  A vision is approached rather than
-finished.  If it has a date and a test for having arrived, you have written a
-goal."
-     :examples "Yes: \"A day goes by and nobody needed me in the room.\"  A
-state, describable as though already true, with no date attached.
+Nothing, for a vision: it is a condition you go on living in, and there is no
+morning you wake up finished with it.  The rung below spends itself instead --
+met, it comes off the ladder, and what survives it is a standard whoever is
+answerable for it keeps up.
 
-No: \"Hand the on-call rota over by March.\"  Dated and completable, so it is a
-goal -- and probably one that serves the vision above it."
+Present tense decides nothing here, although it is how the picture gets
+written.  Any outcome can be put that way once it is reached: \"the rota is
+handed over\" is the same commitment as \"hand the rota over by March\", and
+only one of those wordings looks like a picture.  So ask about the day after
+rather than about the tense."
+     :examples "Yes: \"A day goes by and nobody needed me in the room.\"  There
+is no day after it on which it is over -- every such day is another one of
+them.
+
+No: \"The on-call rota is handed over.\"  Written as though already true, so
+the wording gives nothing away, and it is still a goal: there is a day it is
+done, and from the next one the rota is somebody\='s standing responsibility
+rather than anything left to work toward.  Probably one that serves the vision
+above it."
      :when   "No schedule.  Rewrite it when the picture stops fitting."
      :review "Is this still the picture, and has anything actually moved toward
 it this year?  A vision nothing has moved toward is either not held or not
@@ -1170,7 +1180,14 @@ judge is a vision that has been given a date."
 when?
 
 If you cannot say what counts, it is still a vision.  If it never finishes at
-all, it is an area you maintain or a principle you hold."
+all, it is an area you maintain or a principle you hold.
+
+Then the same question from the day after.  Something is spent when a goal is
+met: it comes off the ladder, and whatever has to go on being true from then
+on is a standard for whoever is answerable for it -- which is how a goal ends
+its life, handed down rather than deleted.  If nothing is spent, if the day
+after looks like the day before, what is written is a condition rather than a
+change, and a condition at this size is a vision."
      :examples "Yes: \"Vo2max of 55 by the end of the year.\"  There is a
 number and a date, and on the day it is true you are done.
 
