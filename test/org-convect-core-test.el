@@ -731,6 +731,32 @@ about."
        (string-match-p (mapconcat #'regexp-quote (split-string phrase) "[ \t\n]+")
                        text)))
 
+(ert-deftest org-convect-test-the-tense-does-not-tell-a-vision-from-a-goal ()
+  "The test that read well and decided nothing.
+
+\"Present tense means vision\" fails on the first goal anybody writes as a
+state -- \"the money is there\", \"the evenings are mine\" -- and it fails in
+the direction that costs most, because it says the goal is a vision and a
+vision is never asked for a date.  What separates them is what happens once
+the thing is true."
+  (let ((test (org-convect-guide 'vision :test))
+        (examples (org-convect-guide 'vision :examples)))
+    (should (org-convect-test--says test "the day after"))
+    (should (org-convect-test--says test "Present tense decides nothing"))
+    ;; and the example that shows it: present tense, and still a goal
+    (should (org-convect-test--says examples "is handed over"))
+    (should (org-convect-test--says examples "gives nothing away"))))
+
+(ert-deftest org-convect-test-a-goal-is-handed-down-when-it-is-met ()
+  "Where a goal goes when it is reached, said on the goal\='s own rung.
+
+Without it a reader has two rungs that both describe states and no account of
+why one of them carries a date.  A goal is a change; what the change leaves
+behind is somebody\='s standard, which is also why most areas have no goal."
+  (let ((guidance (org-convect-guide 'goal :test)))
+    (should (org-convect-test--says guidance "comes off the ladder"))
+    (should (org-convect-test--says guidance "a condition rather than a change"))))
+
 (ert-deftest org-convect-test-a-routine-is-not-a-principle ()
   "The failure the first three questions let through.
 
