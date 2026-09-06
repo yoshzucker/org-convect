@@ -778,20 +778,25 @@ behind is somebody\='s standard, which is also why most areas have no goal."
     (should (org-convect-test--says preamble "Only a goal is"))
     (should (org-convect-test--says preamble "a standard on an area"))))
 
-(ert-deftest org-convect-test-a-routine-is-not-a-principle ()
-  "The failure the first three questions let through.
+(ert-deftest org-convect-test-a-standard-in-the-heading-is-not-a-principle ()
+  "The failure that is easiest to state wrongly.
 
-\"I eat well, exercise regularly and sleep enough\" never finishes and is
-something done, so it passes them -- and it is word for word the shape a
-standard takes one rung down, which is how the same commitment comes to be
-written twice.  What catches it is asking whether the sentence settles
-anything when two accountabilities pull against each other."
+\"I eat well and sleep enough\" is not wrong because it fails to decide -- with
+a real body under it, it decides the evening you are asked out perfectly well.
+It is wrong because the heading is the sentence an area keeps up, so the same
+commitment ends up written at two altitudes and neither says which one you are
+consulting.  The fault is in the heading and the diagnosis has to say so, or
+the example teaches a rule that is false."
   (let ((heading (org-convect-guide 'purpose :heading))
         (bad (org-convect-guide 'purpose :bad))
         (preamble (org-convect--preamble)))
-    (should (org-convect-test--says heading "not a routine"))
-    (should (org-convect-test--says bad "the heading is a routine"))
-    (should (org-convect-test--says bad "eat well"))
+    (should (org-convect-test--says heading "not a standard kept up"))
+    (should (org-convect-test--says bad "Wrong in the heading, not the body"))
+    (should (org-convect-test--says bad "at two altitudes"))
+    ;; the body of the bad one must be a real body, not a tautology of its
+    ;; heading: the whole point is that this half of it is right
+    (should (org-convect-test--says bad "skipping lunch when the day is full"))
+    (should-not (org-convect-test--says bad "Rules out: eating badly"))
     ;; and the question that catches it, once, at the head of the file
     (should (org-convect-test--says preamble "pull against each other"))))
 
@@ -1518,8 +1523,8 @@ were wrong.  The diagnosis belongs after the example, not in place of it."
         ;; and a body under it
         (should (string-match-p "\n     [^ \n]" example)))
       ;; the bad one says why, after the example and set off from it
-      (should (string-match-p "\n\n  Wrong because" bad))
-      (should-not (string-match-p "Wrong because" good)))))
+      (should (string-match-p "\n\n  Wrong " bad))
+      (should-not (string-match-p "Wrong " good)))))
 
 (ert-deftest org-convect-test-every-heading-field-names-its-exclusion ()
   "Each rung is told what its heading is and then, in the same shape, what it
