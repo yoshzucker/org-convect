@@ -1016,7 +1016,19 @@ so recording something about the rung already on screen takes no typing."
      :prompt "Principle or purpose"
      :hint   "what you hold to even when holding to it costs something"
      :what   "Why any of this matters, and the standards you keep whatever the
-outcome.  These never finish and are never scored."
+outcome.  These never finish and are never scored.
+
+GTD names this rung twice over, and the two halves are worded differently.
+The purpose half is what the work is finally for, said plainly.  The
+principles half is what you would insist on anyway, and it comes out as
+boundaries -- the prompt for it is to finish the sentence \"I would give
+others totally free rein to do this as long as they ...\".  Both belong here,
+and neither has to be phrased like the other.
+
+This is the rung you consult when a choice is hard: an invitation on a night
+you meant to sleep, a favour asked in the hour you keep for someone.  Nothing
+lower can settle that, because each of the rungs below speaks only for its own
+accountability and the difficulty is precisely that two of them disagree."
      :find   "Ask what the work is finally for.  Then, separately, ask what you
 would refuse to do even when refusing costs you something.  The second question
 is usually the easier one, and it is half the answer."
@@ -1026,26 +1038,50 @@ recorded under it, and none of that can happen to a line in a list.
 
 Under each heading, in ordinary prose, what it rules out: the behaviour you
 would refuse even at a cost.  A principle with nothing it forbids is a slogan,
-and nothing can be measured against it."
+and nothing can be measured against it.
+
+The heading names the stance, or the why.  Not a routine: \"I eat well and
+sleep enough\" describes an ordinary week, and an ordinary week is not when
+this is needed -- it is also, word for word, the kind of sentence the rung
+furthest down keeps up, so writing it here says the same thing twice.
+
+Whether the heading reads as a refusal or as something held to is not the
+test.  A refusal is only the shortest way to be sure of the second question
+below, because a refusal cannot be a state."
      :shape  "  ** I do not let a number stand that I know is wrong
      Rules out: staying quiet in a review because the meeting is
      nearly over.  Rules out: repeating a figure I have not checked
      because someone senior said it first."
-     :test   "Three questions, and the third is the one that decides.
+     :test   "Four questions, and the last one decides.
 
 Does it finish?  A principle never does.  Is it something you do, or something
-that is?  A principle is something you do.  And: if the reason for it turned
-out to be wrong, would you still hold to it?  If yes it belongs here; if no it
-is an instrument, and instruments live lower down.
+that is?  A principle is something you do.  If the reason for it turned out to
+be wrong, would you still hold to it?  If yes it belongs here; if no it is an
+instrument, and instruments live lower down.
 
 Having a reason does not make it an instrument -- a principle with no reason is
-merely arbitrary.  The test is whether the reason is load-bearing."
+merely arbitrary.  The test is whether the reason is load-bearing.
+
+And: does it settle anything?  Put it where two of the things you are
+answerable for pull against each other and see whether it answers.  Something
+that arbitrates between them can only be here, since each of them speaks for
+itself alone.  A sentence that settles nothing at that moment is describing a
+good week rather than governing a hard one, and the first three questions will
+happily pass it."
      :examples "Yes: \"I do not let a number stand that I know is wrong.\"  It
 never finishes, it is a way of behaving, and it holds even when speaking up
 costs something.
 
 No: \"Become the person the team trusts.\"  That is a state to arrive at rather
-than a way of behaving, which makes it a vision."
+than a way of behaving, which makes it a vision.
+
+No, less obviously: \"I eat well, exercise regularly and sleep enough.\"  Every
+word of it is something done and none of it finishes, so it passes the early
+questions.  It settles nothing on the night you are asked out, though, and it
+is what the rung furthest down is already keeping up.  The principle inside it
+is the refusal: not trading the body for whatever is busy this week.  That one
+answers, and it answers for the evening, the overtime and the missed meal
+alike."
      :when   "No schedule.  Read these when direction or motivation has gone."
      :review "Am I still behaving like this?  A principle does not go out of
 date, so asking whether it is current asks nothing -- the question that carries
@@ -1194,7 +1230,13 @@ If what comes out instead is why it matters, or a picture of how it turns out
 years from now, that is not a bad answer -- it is a good answer to a different
 rung.  Move it up to Purpose or Vision and ask the question again with the
 clock in it.  Being asked for a standard and producing a purpose is the most
-common thing that happens here."
+common thing that happens here.
+
+A standard is evidence, and evidence is read afterwards.  It says whether the
+month was kept, which is a different job from telling you what to do at eight
+on a Tuesday -- \"no branch older than a week\" has nothing to say about the
+call that just came in, and is not meant to.  So the standard belongs here and
+is worth writing: without one the monthly look has nothing to be a look at."
      :shape  "  ** engineering
      Kept up means: reviews come back the same day; no branch is older
      than a week; the build is green when I leave."
@@ -1202,7 +1244,12 @@ common thing that happens here."
 it?  They must.  Are you answerable for it?  You must be.
 
 If it finishes it is a goal or a project.  If it is a way of behaving rather
-than a thing held to a standard, it is a principle."
+than a thing held to a standard, it is a principle.
+
+The quick way to tell, when a sentence could be either: a standard speaks for
+one accountability, so it cannot settle a quarrel between two.  If yours says
+which of them gives way tonight, it is a principle, whichever heading it was
+written under."
      :examples "Yes: \"engineering\", kept up meaning reviews come back the same
 day and no branch is older than a week.
 
