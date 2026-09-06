@@ -721,6 +721,63 @@ there is time with them alone each week; I have not shouted
     (should-not (org-convect-findings (org-convect-scan)
                                       (org-convect-test--day 2026 9 5)))))
 
+(defun org-convect-test--says (text phrase)
+  "Non-nil when TEXT contains PHRASE, whatever it was wrapped at.
+
+Guidance is prose, hard-wrapped, and a plain substring silently stops matching
+the day a paragraph is reflowed -- which is a change to nothing the test cared
+about."
+  (and text
+       (string-match-p (mapconcat #'regexp-quote (split-string phrase) "[ \t\n]+")
+                       text)))
+
+(ert-deftest org-convect-test-a-routine-is-not-a-principle ()
+  "The failure the first three questions let through.
+
+\"I eat well, exercise regularly and sleep enough\" never finishes and is
+something done, so it passes them -- and it is word for word the shape a
+standard takes one rung down, which is how the same commitment comes to be
+written twice.  What catches it is asking whether the sentence settles
+anything when two accountabilities pull against each other."
+  (let ((test (org-convect-guide 'purpose :test))
+        (write (org-convect-guide 'purpose :write))
+        (examples (org-convect-guide 'purpose :examples)))
+    (should (org-convect-test--says test "settle"))
+    (should (org-convect-test--says test "pull against each other"))
+    (should (org-convect-test--says test "arbitrates"))
+    ;; and the shape it is told not to write
+    (should (org-convect-test--says write "routine"))
+    (should (org-convect-test--says examples "eat well"))))
+
+(ert-deftest org-convect-test-only-one-rung-settles-a-quarrel ()
+  "Said from both ends, because it is the line between the two rungs that is
+hardest to hold: a standard speaks for one accountability and cannot arbitrate
+between two, and the rung that can is the one above.  A reader arriving at
+either heading has to be able to tell which they are writing."
+  (let ((purpose (org-convect-guide 'purpose :what))
+        (area (org-convect-guide 'area :test)))
+    (should (org-convect-test--says purpose "speaks only for its own accountability"))
+    (should (org-convect-test--says area "cannot settle a quarrel between two"))
+    (should (org-convect-test--says area "it is a principle"))))
+
+(ert-deftest org-convect-test-the-guidance-says-a-standard-is-read-afterwards ()
+  "The other half of the same distinction: a standard is evidence looked back
+on over a month, not a rule applied in the moment.  Without that, being told
+to write a standard reads as being told to write a rule, and rules are what
+came out."
+  (let ((guidance (org-convect-guide 'area :write)))
+    (should (org-convect-test--says guidance "evidence"))
+    (should (org-convect-test--says guidance "evidence is read afterwards"))))
+
+(ert-deftest org-convect-test-both-halves-of-the-rung-are-named ()
+  "The rung carries two things and they are worded differently.  Told only
+about the boundaries, a reader writes no purpose; told only about the purpose,
+a reader writes a slogan with nothing it forbids."
+  (let ((guidance (org-convect-guide 'purpose :what)))
+    (should (org-convect-test--says guidance "purpose half"))
+    (should (org-convect-test--says guidance "principles half"))
+    (should (org-convect-test--says guidance "totally free rein"))))
+
 (ert-deftest org-convect-test-the-standards-test-has-a-clock-in-it ()
   "Abstract wording is what produced purpose statements where standards go, so
 the question is asked with a month in it and answered with an example."
