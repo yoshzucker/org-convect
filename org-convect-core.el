@@ -1045,6 +1045,14 @@ sleep enough\" describes an ordinary week, and an ordinary week is not when
 this is needed -- it is also, word for word, the kind of sentence the rung
 furthest down keeps up, so writing it here says the same thing twice.
 
+Which is a fault of the sentence, not of the subject.  The same material is
+meant to appear at several rungs: the same child is a way of behaving here, a
+picture further up, and something answered for further down, and each of those
+is doing a job the others cannot.  What must not repeat is the job.  So the
+question to ask of two entries that look alike is not whether they are about
+the same thing -- they should be -- but whether they would be read at the same
+moment and for the same purpose.
+
 Whether the heading reads as a refusal or as something held to is not the
 test.  A refusal is only the shortest way to be sure of the second question
 below, because a refusal cannot be a state."
