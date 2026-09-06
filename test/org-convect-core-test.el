@@ -749,6 +749,18 @@ anything when two accountabilities pull against each other."
     (should (org-convect-test--says write "routine"))
     (should (org-convect-test--says examples "eat well"))))
 
+(ert-deftest org-convect-test-the-same-subject-may-stand-on-several-rungs ()
+  "The over-correction the routine warning invites.
+
+Told that a heading repeating what the rung below keeps up is a fault, a
+reader deletes the principle about their child because there is an area for
+being a parent.  The ladder is built for the same material to appear at
+several altitudes; what must not repeat is the job the sentence does."
+  (let ((guidance (org-convect-guide 'purpose :write)))
+    (should (org-convect-test--says guidance "fault of the sentence, not of the subject"))
+    (should (org-convect-test--says guidance "What must not repeat is the job"))
+    (should (org-convect-test--says guidance "read at the same moment"))))
+
 (ert-deftest org-convect-test-only-one-rung-settles-a-quarrel ()
   "Said from both ends, because it is the line between the two rungs that is
 hardest to hold: a standard speaks for one accountability and cannot arbitrate
