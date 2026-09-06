@@ -54,6 +54,10 @@
 (require 'eldoc)
 (require 'seq)
 (require 'cl-lib)
+;; Not for the function, which is autoloaded, but for the variable: binding
+;; `crm-separator' before crm.el is loaded binds it lexically and the split
+;; goes on using whatever the configuration set.
+(require 'crm)
 
 (defgroup org-convect nil
   "The Horizons of Focus above the project level."
@@ -928,13 +932,54 @@ rungs can be worded alike, and which one you meant is the difference between a
 principle and the goal that serves it."
   (format "%s  [%s]" (plist-get entry :name) (plist-get entry :horizon)))
 
+(defun org-convect--annotation-regexp ()
+  "Match the bracketed horizon a candidate carries, at the end of a string."
+  (concat "[ \t]*\\["
+          (regexp-opt (mapcar (lambda (h) (symbol-name (car h)))
+                              org-convect-horizons))
+          "\\][ \t]*\\'"))
+
+(defun org-convect--strip-annotation (pick)
+  "PICK without the bracketed horizon shown beside it.
+
+Only a known horizon is taken off, so a rung actually named with a bracket
+keeps it."
+  (string-trim (replace-regexp-in-string (org-convect--annotation-regexp)
+                                         "" pick)))
+
 (defun org-convect--chosen (pick table)
   "The name PICK stands for in TABLE, or PICK itself when it stands for nothing.
 
 The prompts that use TABLE do not require a match, because a link may be
 written before the rung it points at exists and refusing that would make the
-order of writing matter.  What is typed freely comes back unchanged."
-  (or (cdr (assoc pick table)) pick))
+order of writing matter.  What is typed freely comes back unchanged, less the
+altitude it was shown under: the bracket is there for the eye choosing between
+two rungs worded alike, and writing it into the file would make a link that
+points at nothing."
+  (or (cdr (assoc pick table))
+      (org-convect--strip-annotation pick)))
+
+(defun org-convect--read-picks (prompt table)
+  "Read several answers to PROMPT against TABLE.
+
+Splits on `org-convect-serves-separator' -- the same punctuation the property
+itself uses -- rather than on whatever `crm-separator' happens to be.  Both
+halves of a candidate hold spaces: a rung is named in a phrase somebody typed,
+and the candidate carries the altitude beside it.  Against a configuration
+that separates on whitespace, one pick came back as two and the altitude was
+written into `CONVECT_SERVES\=' as though it were a rung of its own.
+
+Answers that are nothing but an altitude are dropped rather than resolved:
+there is no rung by that name, and a file already holding one wants it gone
+rather than confirmed."
+  (let* ((crm-separator (concat "[ \t]*"
+                                (regexp-quote org-convect-serves-separator)
+                                "[ \t]*"))
+         (picks (mapcar #'string-trim (completing-read-multiple prompt table))))
+    (seq-remove (lambda (p)
+                  (or (string-empty-p p)
+                      (string-empty-p (org-convect--strip-annotation p))))
+                picks)))
 
 (defun org-convect-read-entry (prompt &optional entries horizons)
   "Read one horizon entry with completion and return its plist.
@@ -1607,11 +1652,13 @@ is the end where you know the answer."
                (table (mapcar (lambda (e) (cons (org-convect--candidate e) e))
                               below))
                (chosen (and below
-                            (completing-read-multiple
-                             (format "Rungs served by %s: " name) table)))
+                            (org-convect--read-picks
+                             (format "Rungs served by %s (%s-separated): "
+                                     name org-convect-serves-separator)
+                             table)))
                (written 0))
           (unless below (user-error "Nothing sits below a %s" horizon))
-          (dolist (pick (seq-remove #'string-empty-p chosen))
+          (dolist (pick chosen)
             ;; only what the table knows: this end writes onto another rung,
             ;; and a name typed freely has no rung to write onto
             (when-let ((entry (cdr (assoc pick table))))
@@ -1628,10 +1675,12 @@ is the end where you know the answer."
                                     (plist-get e :name)))
                             above))
              (chosen (and above
-                          (completing-read-multiple
-                           (format "%s is in service of: " name) table))))
+                          (org-convect--read-picks
+                           (format "%s is in service of (%s-separated): "
+                                   name org-convect-serves-separator)
+                           table))))
         (unless above (user-error "Nothing sits above a %s" horizon))
-        (dolist (pick (seq-remove #'string-empty-p chosen))
+        (dolist (pick chosen)
           (org-convect--add-serves (plist-get here :marker)
                                    (org-convect--chosen pick table)))
         (message "%s now serves %d rung%s" name (length chosen)
@@ -1743,10 +1792,10 @@ order feel like a mistake, which it is not."
                                    (org-convect-above horizon)))
                            entries)))
     (when above
-      (seq-remove #'string-empty-p
-                  (completing-read-multiple
-                   "In service of (optional, comma-separated): "
-                   (mapcar (lambda (e) (plist-get e :name)) above))))))
+      (org-convect--read-picks
+       (format "In service of (optional, %s-separated): "
+               org-convect-serves-separator)
+       (mapcar (lambda (e) (plist-get e :name)) above)))))
 
 (defun org-convect--goto-insertion-point (horizon)
   "Move point where a new HORIZON entry belongs; return the level to write.

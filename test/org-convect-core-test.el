@@ -1720,6 +1720,71 @@ between a principle and the goal that serves it."
     ;; rung it points at exists
     (should (equal "Not yet written" (org-convect--chosen "Not yet written" table)))))
 
+(ert-deftest org-convect-test-a-pick-is-split-on-the-ladders-own-punctuation ()
+  "A whitespace `crm-separator\=' must not cut a candidate in half.
+
+Both halves of a candidate hold spaces -- the name is a phrase somebody typed,
+and the altitude is shown beside it -- so a configuration that separates on
+whitespace turned one answer into two and wrote the bracket into the file as
+though it were a rung."
+  (let ((crm-separator "[ \t]+")          ; the setting that exposed this
+        (seen nil))
+    (cl-letf (((symbol-function 'completing-read-multiple)
+               (lambda (_prompt _table &rest _)
+                 (setq seen crm-separator)
+                 ;; crm.el splits the typed string; do here what it would do
+                 (split-string "Honesty  [purpose]; 気分よく過ごす  [purpose]"
+                               crm-separator t))))
+      (let ((picks (org-convect--read-picks
+                    "p: " '(("Honesty  [purpose]" . "Honesty")))))
+        ;; the separator in force inside the prompt is the ladder's own
+        (should (string-match-p ";" seen))
+        (should-not (string-match-p "\\`\\[ \\\\t\\]\\+\\'" seen))
+        (should (equal picks '("Honesty  [purpose]" "気分よく過ごす  [purpose]")))))))
+
+(ert-deftest org-convect-test-an-altitude-alone-is-not-a-rung ()
+  "The half a bad split left behind is dropped, not written."
+  (cl-letf (((symbol-function 'completing-read-multiple)
+             (lambda (&rest _) '("Honesty  [purpose]" "[purpose]" "  " ""))))
+    (should (equal (org-convect--read-picks "p: " nil)
+                   '("Honesty  [purpose]")))))
+
+(ert-deftest org-convect-test-a-free-answer-loses-its-altitude ()
+  "A pick the table does not know is still a name, not a name and a label."
+  (let ((table '(("Honesty  [purpose]" . "Honesty"))))
+    ;; known: resolved through the table, as before
+    (should (equal "Honesty" (org-convect--chosen "Honesty  [purpose]" table)))
+    ;; half-completed against a table that has since changed
+    (should (equal "気分よく過ごす"
+                   (org-convect--chosen "気分よく過ごす  [purpose]" table)))
+    ;; a bracket that is not an altitude belongs to the name
+    (should (equal "Release [beta]"
+                   (org-convect--chosen "Release [beta]" table)))))
+
+(ert-deftest org-convect-test-link-writes-the-name-without-the-altitude ()
+  "End to end: what lands in `CONVECT_SERVES\=' is a rung, and only a rung."
+  (org-convect-test--with-ladder "\
+* Honesty
+:PROPERTIES:
+:CONVECT_HORIZON: purpose
+:END:
+* engineering
+:PROPERTIES:
+:CONVECT_HORIZON: area
+:END:
+"
+    (with-current-buffer (find-file-noselect (car org-convect-files))
+      (goto-char (point-min))
+      (re-search-forward "^\\* engineering")
+      (let ((crm-separator "[ \t]+"))
+        (cl-letf (((symbol-function 'completing-read-multiple)
+                   (lambda (_prompt _table &rest _)
+                     (split-string "Honesty  [purpose]" crm-separator t))))
+          (org-convect-link)))
+      (goto-char (point-min))
+      (re-search-forward "^\\* engineering")
+      (should (equal "Honesty" (org-entry-get nil "CONVECT_SERVES"))))))
+
 (ert-deftest org-convect-test-relink-offers-altitudes-too ()
   "The same ambiguity, in the command that repairs the link rather than the one
 that writes it."
