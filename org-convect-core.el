@@ -1015,103 +1015,69 @@ so recording something about the rung already on screen takes no typing."
   '((purpose
      :prompt "Principle or purpose"
      :hint   "what you hold to even when holding to it costs something"
-     :what   "Why any of this matters, and what you refuse even when refusing
-costs you something.  Never ends.  Never scored."
-     :find   "Ask what you would refuse even at a cost.  That question is
-easier than asking what the work is for, and it is half the answer."
-     :write  "One heading per principle; under it, in plain lines, what it
-rules out.  One with nothing it forbids is a slogan.
-
-The heading names the stance, or the why -- never a routine, never a state.
-The same subject may stand on several rungs: what must not repeat is the job,
-not the subject."
-     :shape  "  ** I do not let a number stand that I know is wrong
+     :heading "What you refuse even at a cost, or why any of this matters.
+Never a routine and never a state -- both of those belong further down."
+     :body   "In plain lines, what it rules out.  One with nothing it forbids
+is a slogan."
+     :good   "  ** I do not let a number stand that I know is wrong
      Rules out: staying quiet in a review because the meeting is
      nearly over.  Rules out: repeating a figure I have not checked
      because someone senior said it first."
-     :test   "Put it where two of the things you are answerable for pull
-against each other -- a late meeting on the evening you keep for someone.
-Does it answer?  Only this rung can: each of the others speaks
-for one accountability alone.  One that settles nothing there describes a good
-week rather than governing a hard one."
-     :examples "Yes: \"I do not let a number stand that I know is wrong.\"  It
-answers, in the meeting, at a cost.
-
-No: \"Become the person the team trusts.\"  A state to arrive at.
-
-No: \"I eat well and sleep enough.\"  A routine: true of an ordinary week,
-silent on the evening you are asked out."
-     :when   "No schedule.  Read these when direction or motivation has gone."
+     :bad    "  ** I eat well and sleep enough
+     A routine: true of an ordinary week, silent on the evening you
+     are asked out, and already what an area keeps up."
      :review "Am I still behaving like this?  These do not go out of date, so
-the question is whether it is being kept, and where it was not."
+the question is whether it is being kept, and where it was not.  No schedule:
+read them when direction or motivation has gone."
      :note   "Choice points are usually recorded under these: a value in ACT is
-a way of behaving, and so is a principle.  What one
-produces is conduct rather than a lower rung, so one with choice points under
-it counts as in use whatever the links say."
-     :do     "Add one with M-x org-convect-add, or write several as child
-headings here, mark them, and run M-x org-convect-declare.  Then open each and
-write what it rules out.")
+a way of behaving, and so is a principle.  What one produces is conduct rather
+than a lower rung, so one with choice points under it counts as in use
+whatever the links say.
+
+Add one with M-x org-convect-add, or write several as child headings here,
+mark them, and run M-x org-convect-declare.")
     (vision
      :prompt "Vision"
      :hint   "what it is like once it has worked, some years out"
-     :what   "What it is like once it has worked.  Some years out, and concrete
-enough to picture rather than to agree with."
-     :find   "Describe it as though it were already the case.  What is
-different, who notices, how an ordinary day goes."
-     :write  "A heading as a handle -- short enough to point at -- and the
-picture underneath it.  This is the one rung whose body is meant to run long."
-     :shape  "  ** The team ships without me in the room
+     :heading "A handle for the picture, short enough to point at from a goal.
+Nothing with a date on it.  The tense decides nothing, though: any outcome
+reads as already true once it is reached."
+     :body   "The picture, as though it were already the case: what is
+different, who notices, how an ordinary day goes.  The one rung whose body is
+meant to run long."
+     :good   "  ** The team ships without me in the room
      A release goes out on a Thursday and I hear about it afterwards.
      The review that catches the bad number is somebody else's, and it
      catches it.  Nobody waits to be told it is safe to say so."
-     :test   "Once it is true, what happens the day after?  Nothing: it is a
-condition you go on living in, and the rung below spends itself instead.
-
-The tense decides nothing, though it is how the picture gets written -- any
-outcome reads as already true once it is reached."
-     :examples "Yes: \"A day goes by and nobody needed me in the room.\"  Every
-such day is another one of them.
-
-No: \"The on-call rota is handed over.\"  Written as already true and still one
-rung down: there is a day it is done, and the next one is somebody else's
-standing responsibility."
-     :when   "No schedule.  Rewrite it when the picture stops fitting."
+     :bad    "  ** The on-call rota is handed over
+     Written as already true and still one rung down: there is a day
+     it is done, and the next one is somebody else's standing
+     responsibility."
      :review "Is this still the picture, and has anything moved toward it this
-year?  One nothing has moved toward is not being worked from."
-     :do     "Add one with M-x org-convect-add, then write the picture
+year?  One nothing has moved toward is not being worked from.  No schedule:
+rewrite it when the picture stops fitting."
+     :note   "Add one with M-x org-convect-add, then write the picture
 underneath it.")
     (goal
      :prompt "Goal or objective"
      :hint   "what has to become different, and roughly when"
      :dated  t
-     :what   "What has to become different within a year or two.  The one rung
-that finishes."
-     :find   "Read the areas for pressure, not for material.  There are fewer
-of these than there are areas and they cut across them, so most areas have no
-goal at all -- going down the list looking for one each is how this level
-usually goes wrong.
+     :heading "What has to become different, in a year or two.  Nothing you
+cannot judge: if you cannot say what counts as having reached it, it belongs
+one rung up."
+     :body   "In plain lines, how you would know it had happened.  Nothing
+else -- no label, no date in the text.
 
-Yours are written down somewhere already: this year's objectives, a plan
-someone is holding you to, the thing you told your family you would do."
-     :write  "Under it, as plain lines, how you would know it had happened.
-Nothing else -- no label, no date in the text."
-     :shape  "  ** Two other people review releases, unprompted
-     Reached when: two releases in a row go out with a review I did not
-     ask anyone for."
-     :test   "Can you say what counts as having reached it, and roughly when?
-If not, it belongs one rung up.
-
-Then: what is spent the day after?  Met, it comes off the ladder, and whatever
-must go on being true is a standard for whoever is answerable.  If nothing is
-spent, what is written is a condition rather than a change."
-     :examples "Yes: \"Vo2max of 55 by the end of the year.\"  A number and a
-date, and on the day it is true you are done.
-
-No: \"Stay fit.\"  Nothing about it finishes, so it is held to a standard
-instead."
-     :when   "Yearly, with a look each quarter."
+There are fewer of these than there are areas and they cut across them, so
+most areas have no goal at all.  Read the areas for pressure, not for
+material."
+     :good   "  ** Two other people review releases, unprompted
+     Reached when: two releases in a row go out with a review I did
+     not ask anyone for."
+     :bad    "  ** Stay fit
+     Nothing about it finishes, so it is held to a standard instead."
      :review "Reached, still reachable, or no longer a goal?  All three are
-answers; leaving it sitting there is not."
+answers; leaving it sitting there is not.  Yearly, with a look each quarter."
      :note   "`CONVECT_BY' is the target: when it is meant to be true.  The
 quarterly look is separate -- an interval counted from the last note on the
 entry -- so looking at one postpones the next look, and a target two years out
@@ -1119,56 +1085,42 @@ does not buy two years of quiet.
 
 Links only ever run upward: `CONVECT_SERVES' sits on the lower rung and names
 the higher one.  Standing here, C-u M-x org-convect-link writes it onto the
-areas you pick."
-     :do     "Add one with M-x org-convect-add, or write several as child
-headings here, mark them, and run M-x org-convect-declare.  Then write how you
-would know, set the date with M-x org-convect-set-date, and point the areas it
-changes at it with C-u M-x org-convect-link.")
+areas you pick.  Add one with M-x org-convect-add and set the date with M-x
+org-convect-set-date.")
     (area
      :prompt "Area"
      :hint   "copy it off your job description, or off who does what at home"
-     :what   "Something you are answerable for that never finishes, held to a
-standard rather than completed.
-
-Name the role or the function, never the thing it concerns.  \"Children\" is
-not one -- there is no way to keep children to a standard.  \"Parent\" is."
-     :find   "Do not invent these.  Copy them off your job description, the
-organisation chart, and who does what at home."
-     :write  "Under it, as plain lines, the standard -- things you would
-notice, not why it matters:
+     :heading "The role or the function you are answerable for, never the
+thing it concerns.  \"Children\" is not one -- there is no way to keep children
+to a standard.  \"Parent\" is.  Do not invent these: copy them off your job
+description, the organisation chart, and who does what at home."
+     :body   "In plain lines, the standard -- things you would notice, not why
+it matters:
 
   If this had slipped this month, what would I see?
 
-Evidence, and evidence is read afterwards: it says whether the month was kept,
-not what to do at eight on a Tuesday.  If what comes out is why it matters, or
-a picture years from now, move it up to Purpose or Vision and ask again with
-the clock in it."
-     :shape  "  ** engineering
+Evidence, and evidence is read afterwards: whether the month was kept, not
+what to do at eight on a Tuesday.  If what comes out is why it matters, or a
+picture years from now, move it up to Purpose or Vision and ask again with the
+clock in it."
+     :good   "  ** engineering
      Kept up means: reviews come back the same day; no branch is older
      than a week; the build is green when I leave."
-     :test   "Do the words \"kept up\" attach to it, and are you answerable for
-it?  Both must hold, and if it finishes it belongs one rung up.
-
-A standard speaks for one accountability, so it cannot settle a quarrel between two: a sentence saying
-which of them gives way tonight is a principle, whichever heading it sits
-under."
-     :examples "Yes: \"engineering\", kept up meaning reviews come back the same
-day and no branch is older than a week.
-
-No: \"Ship the migration.\"  It finishes, so it belongs in the task system."
-     :when   "Monthly, and whenever the job or the household changes."
+     :bad    "  ** Ship the migration
+     It finishes, so it belongs in the task system rather than here."
      :review "Is the standard being met -- and is this still yours to keep up?
 GTD asks the second out loud: could it be delegated or dropped?  A standard
-met perfectly is still worth losing if it was never yours."
+met perfectly is still worth losing if it was never yours.  Monthly, and
+whenever the job or the household changes."
      :note   "The name is what a task carries in `CONVECT_AREA', read with
 inheritance, so marking a project marks everything under it.  Deliberately not
 CATEGORY: that slot is Org's and other packages read it.
 
 Nothing here needs to point upward and most never will.  Only the other
-direction is asked about: a goal nothing serves."
-     :do     "Write the names as child headings under this one -- one line
-each, no properties -- then mark them and run M-x org-convect-declare.  Then
-open each and write its standard.  For a single one, M-x org-convect-add."))
+direction is asked about: a goal nothing serves.
+
+Write the names as child headings under this one, mark them, and run M-x
+org-convect-declare.  For a single one, M-x org-convect-add."))
   "What each horizon is, how to find your own, and what to write under it.
 
 Used in two places and written once: the `:GUIDE' drawers in a fresh file are
@@ -1198,17 +1150,12 @@ descriptions are not the David Allen Company's text."
   :group 'org-convect)
 
 (defconst org-convect-guide-fields
-  '((:what     "What this is")
-    (:find     "Where to find yours")
-    (:write    "What goes underneath")
-    (:shape    "One written out"
-               "Heading and body; the properties are the commands' work.")
-    (:test     "The test")
-    (:examples "Telling them apart")
-    (:when     "How often")
+  '((:heading  "How the heading is written")
+    (:body     "How the body is written")
+    (:good     "A good one")
+    (:bad      "A bad one")
     (:review   "What to ask when you come back")
-    (:note     "How the file works")
-    (:do       "What to type"))
+    (:note     "How the file works"))
   "The parts of a guide drawer in reading order, as (FIELD LABEL [GLOSS]).
 
 The labels are the point.  Nine fields answering nine different questions used
@@ -1231,7 +1178,7 @@ labelled for it.
 GLOSS is wording that belongs to the field itself rather than to any one
 horizon, and so has nowhere in `org-convect-horizon-guide' to live.")
 
-(defconst org-convect-guide-verbatim-fields '(:shape)
+(defconst org-convect-guide-verbatim-fields '(:good :bad)
   "Guide fields whose line breaks are the content and must not be refilled.
 
 An example of a rung is Org text, and Org text reflowed to 72 columns is no
@@ -1268,11 +1215,11 @@ example into prose would be running prose into the example."
           (org-convect--fill (concat lead "  " text)))))))
 
 (defun org-convect--one-line (horizon &optional field)
-  "The first sentence of HORIZON's FIELD (default `:what').
+  "The first sentence of HORIZON's FIELD (default `:heading').
 
 Short enough for a completion annotation or the echo area, which is where a
 command has to teach if it is going to teach at all."
-  (let ((what (or (org-convect-guide horizon (or field :what)) "")))
+  (let ((what (or (org-convect-guide horizon (or field :heading)) "")))
     (replace-regexp-in-string
      "\n" " " (if (string-match "\\`\\([^.]*\\.\\)" what) (match-string 1 what) what))))
 
@@ -1933,7 +1880,7 @@ marking, and the rest is worth answering per rung rather than in bulk."
     (message "Declared %d rung%s%s%s" declared (if (= declared 1) "" "s")
              (if (zerop skipped) "" (format " (%d already were)" skipped))
              (if (and (= 1 (length marked)) (> declared 0))
-                 (concat ".  Now: " (org-convect--one-line (car marked) :write))
+                 (concat ".  Now: " (org-convect--one-line (car marked) :body))
                ""))
     declared))
 
@@ -2466,7 +2413,7 @@ second road and simply returns."
                       (org-convect-horizon-p (intern horizon))
                       (format "%s -- %s"
                               (org-convect-horizon-name (intern horizon))
-                              (org-convect--one-line (intern horizon) :write)))))))))
+                              (org-convect--one-line (intern horizon) :body)))))))))
       said)))
 
 (defun org-convect-eldoc-setup ()
