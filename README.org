@@ -623,6 +623,26 @@ belongs to the line above/.  In a descent the tree already says what a rung
 serves and what answers to it, so those drop out and only =also serves= — the
 links the tree could not draw — is left.
 
+** What the page emphasises
+
+The rung's name is the only thing on a row that is the subject. Everything
+else — what is due, what it serves, what has been clocked against it — is said
+*about* the name, so the name is the only part that carries weight, and the
+rest steps back by one level each.
+
+The guidance steps back furthest. It says how to read what is written under
+it, which is what a comment is, so ~org-convect-guide-face~ inherits
+~font-lock-comment-face~ and takes whatever step a theme keeps for comments.
+None of these faces name a colour: a theme that has decided how quiet a
+comment is has already decided this.
+
+The same holds in the file. Org gives a drawer's *body* no face of its own, so
+guidance written into a =:GUIDE:= drawer comes out in the buffer's own ink —
+and at level two, /brighter/ than the heading above it, since a theme dims the
+heading and cannot dim text it knows nothing about. The page then argues for
+its own instructions. ~org-convect-quiet-guides~ fontifies those drawer bodies
+as guidance; set it to nil to leave them alone.
+
 ** Keys
 
 | =RET= | go to the rung |
