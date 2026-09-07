@@ -1013,129 +1013,380 @@ so recording something about the rung already on screen takes no typing."
 
 (defcustom org-convect-horizon-guide
   '((purpose
-     :prompt "Principle or purpose"
-     :hint   "what you hold to even when holding to it costs something"
-     :heading "What you hold to even when holding to it costs something, or
-why any of this matters.  Not a state to arrive at, and not a standard kept up
-month by month -- both of those belong further down."
-     :body   "Under it, in plain lines, what it rules out: the behaviour you
-would refuse even at a cost.  That is the boundary whichever way the heading
-itself reads, and one with nothing it forbids is a slogan."
-     :good   "  ** I do not let a number stand that I know is wrong
-     Rules out: staying quiet in a review because the meeting is
-     nearly over.  Rules out: repeating a figure I have not checked
-     because someone senior said it first."
-     :bad    "  ** I eat well and sleep enough
-     Rules out: skipping lunch when the day is full.  Rules out:
-     working past midnight to finish something.
+     :prompt (:en "Principle or purpose" :ja "目的")
+     :hint   (:en "what you hold to even when holding to it costs something"
+              :ja "代償を払ってでも保つもの")
+     :why
+     (:en "This decides what the areas below really are.  It answers why you
+exist, and what matters to you whatever the situation.  Every vision, goal,
+area, project and next action is born on this rung and returns to it.  The
+rung is named Purpose and Principles because one heading carries a purpose and
+its body carries the principles."
+      :ja "これは、H2 が並べた領域が本当は何なのかを決める、究極の意図です。
+自分はなぜ存在するのか、状況がどうであれ本当に大切なものは何か、という問いに
+答えます。H4 も H3 も H2 も H1 も今の一手も、すべてこの段から生まれ、すべて
+この段へ向かいます。段の名前が Purpose and Principles であるとおり、一つの
+見出しが目的を持ち、その本文が原則を持ちます。")
+     :write
+     (:en "The heading says in one sentence what you are doing this for.  It
+ends in a verb that never finishes: to be something, to keep something, to
+support something, to deliver something.  The subject is you, so it goes
+unwritten.  The body says what you do in the light of that purpose, situation
+by situation.  A standard runs in one of two directions, what you refuse and
+what you always do, and both belong here.  Words of degree such as \"not too
+much\" stay out.  A standard held against an ultimate intention, stated as a
+degree, lets you grant yourself an exception on the spot."
+      :ja "見出しには、何のためにこれをやっているのかを一文で書きます。文は
+「○○である」「○○を保つ」「○○を支える」「○○を届ける」のように、終わらない
+動詞で終わります。主語は自分なので書きません。本文には、その目的に照らして
+自分が何をするかの基準を、場面ごとに書きます。基準には二つの向きがあります。
+拒むことと、必ずすることです。どちらも書けます。「〜しすぎない」のような程度の
+言葉を使いません。究極の意図に照らした基準に程度の話が出てくると、その場で
+自分に例外を許してしまうからです。")
+     :bad
+     (:en "  ** Ship on time ahead of shipping it right
+     Refuse: holding a release back until the spec is met.
 
-  Wrong in the heading, not the body.  Those two lines do answer on
-  the evening you are asked out, which is a principle doing its work.
-  But \"eats well, sleeps enough\" is something you would notice at
-  the end of a month, so the heading is the sentence an area keeps up
-  and the file now carries it at two altitudes.  Name what the body
-  already says: what the body will not be traded for."
-     :review "Am I still behaving like this?  These do not go out of date, so
-the question is whether it is being kept, and where it was not.  No schedule:
-read them when direction or motivation has gone."
-     :note   "Choice points are usually recorded under these: a value in ACT is
-a way of behaving, and so is a principle.  What one produces is conduct rather
+  The heading is a standard.  A heading answers why you exist and what
+  matters whatever the situation, and this sentence answers neither.
+
+  ** Keep the time I spend with my family
+     Refuse: working too much overtime.
+
+  The heading is a purpose.  The body is written in degrees, so it settles
+  nothing in the moment: the night before a deadline becomes an exception
+  you grant yourself."
+      :ja "  ** 納期を、品質よりも優先する
+     拒む: 仕様を満たすまでリリースを止める。
+
+  見出しが基準になっています。見出しに入るのは、「自分はなぜ存在するのか、
+  本当に大切なものは何か」に答える究極の意図です。この文はその答えに
+  なっていません。
+
+  ** 家族と過ごす時間を守る
+     拒む: 残業をしすぎる。
+
+  見出しは目的です。しかし本文が程度の言葉で書かれているので、実際の場面で
+  自分が何をするかが決まりません。「今日は締切前だから許される」と自分で
+  決められてしまいます。")
+     :good
+     (:en "  ** Keep the time I spend with my family
+     Refuse: skipping a dinner I promised, because of a deadline.
+     Refuse: taking a posting away from home without asking them.
+     Always: raise a job offer with them before I look at the terms."
+      :ja "  ** 家族と過ごす時間を守る
+     拒む: 締切を理由に、約束した夕食を抜く。
+     拒む: 単身赴任の打診を、家族に相談せずに引き受ける。
+     必ずする: 転職の話は、条件を見る前に家族に伝える。")
+     :tell
+     (:en "Picture a moment when two of the areas you hold ask for opposite
+things.  If the sentence settles what you do, it sits above those areas: a
+clash inside one rung is only ever settled from a rung above it.  Then ask
+whether you can think of something you would break it for.  If you can, it
+belongs lower down."
+      :ja "自分が抱えている二つの領域のやるべきことがぶつかる場面を思い浮かべ
+ます。その場面で自分の行動が決まるなら、その文は H2 より上の段にあります。
+そのうえで、その文を破ってでも通したいものが思いつくなら、それは H5 では
+ありません。")
+     :review
+     (:en "Am I still behaving like this, and where was I not?  These do not
+go out of date, so asking whether one is current asks nothing.
+
+Read the rung before a large decision, and when you have lost track of what
+you are living and working for.  Its sentences are not rewritten several times
+a year."
+      :ja "自分はいまもこのとおり振る舞っているか。振る舞えなかったのはどこか。
+この段の文は古びないので、いまも有効かを問うても何も出てきません。
+
+大きな決断をする前と、自分がいまの人生と営みを何のために続けているのか
+分からなくなったときに、この段を読み返します。この段の文は、年に何度も
+書き換えるものではありません。")
+     :note
+     (:en "Choice points are usually recorded under these: a value in ACT is a
+way of behaving, and so is a principle.  What one produces is conduct rather
 than a lower rung, so one with choice points under it counts as in use
 whatever the links say.
 
 Add one with M-x org-convect-add, or write several as child headings here,
 mark them, and run M-x org-convect-declare."
-    )
+      :ja "ACT の choice point は、たいていこの段の下に記録されます。ACT の
+価値が振る舞いであり、原則も振る舞いだからです。この段が生むのは下の段では
+なく行いなので、choice point を持つ見出しは、リンクが何も指していなくても
+使われていることになります。
+
+M-x org-convect-add で一つ書けます。子見出しとしていくつか書き、印をつけて
+M-x org-convect-declare を実行することもできます。"))
     (vision
-     :prompt "Vision"
-     :hint   "what it is like once it has worked, some years out"
-     :heading "A handle for the picture, short enough to point at from a goal.
-Not anything that is over once it is true.  The tense decides nothing: any
-outcome reads as already the case once it is reached."
-     :body   "Under it, the picture, written as though it were already the
-case: what is different, who notices, how an ordinary day goes.  The one rung
-whose body is meant to run long."
-     :good   "  ** The team ships without me in the room
-     A release goes out on a Thursday and I hear about it afterwards.
-     The review that catches the bad number is somebody else's, and it
-     catches it.  Nobody waits to be told it is safe to say so."
-     :bad    "  ** The on-call rota is handed over
-     The pager is not mine.  Somebody else carries it, and the
-     handover notes are written.
+     :prompt (:en "Vision" :ja "ビジョン")
+     :hint   (:en "what it is like once it has worked, some years out"
+              :ja "3〜5年後、その領域がどう見えているか")
+     :why
+     (:en "This is how the areas below look three to five years out.  Project
+that far and the frame you think in grows: from inside come career, family,
+money and the quality of a day; from outside come technology, the market and
+competition.  A decision taken on this rung changes, easily, how the work
+looks on every rung under it."
+      :ja "これは、H2 が並べた領域が3〜5年後にどう見えているかです。3〜5年先
+まで投射すると、考える枠そのものが大きくなります。内側からはキャリアや家族や
+家計や暮らしの質への志向が、外側からは技術や市場や競争が、このビジョンを
+動かします。この段でした決断は、下の段で営みがどう見えるかを容易に変えて
+しまいます。")
+     :write
+     (:en "The heading states the picture outright, in one sentence: three to
+five years out, someone or something is doing such and such.  The body holds
+the four things a picture is made of -- the place you can see, the people in
+it, what those people say, and how an ordinary day runs.  The body is written
+as though it were already so."
+      :ja "見出しでは、そのビジョンを一文で言い切ります。形は「3〜5年後、
+○○は△△している」です。本文には、ビジョンを作る四つのものを書きます。見える
+場所、そこにいる人、その人たちが口にすること、ふだんの一日の進み方です。本文は
+すでにそうなったものとして書きます。")
+     :bad
+     (:en "  ** Three years out, the team performs at a high level
+     Revenue has doubled and attrition is down.
 
-  Wrong because there is a day it is done.  From the morning after,
-  the rota is a standing responsibility rather than anything left to
-  work toward."
-     :review "Is this still the picture, and has anything moved toward it this
-year?  One nothing has moved toward is not being worked from.  No schedule:
-rewrite it when the picture stops fitting."
-     :note   "Add one with M-x org-convect-add, then write the picture
-underneath it."
-    )
+  This fits the form.  A high level and a number are none of the three --
+  not seen, not heard, not felt -- so two readers picture two workplaces.
+
+  ** Three years out, the on-call rota has been handed over
+     The handover notes are written and I am no longer paged.
+
+  This fits the form too.  On the day it is handed over the sentence is
+  reached and done with, and what is reached belongs one rung down."
+      :ja "  ** 3〜5年後、チームは高い成果を出している
+     売上は倍になり、離職率は下がっている。
+
+  これは型に合っています。しかし「高い成果」も数字も、見えるもの・聞こえる
+  もの・感じられるもののどれでもありません。読み手によって別々の職場が
+  思い浮かびます。
+
+  ** 3〜5年後、オンコール当番を引き継いである
+     引き継ぎ書が書かれ、私はもう呼び出しを受けていない。
+
+  これも型に合っています。しかし引き継いだ日に、この文は達成されて終わります。
+  終わるものは H3 が持ちます。")
+     :good
+     (:en "  ** Three years out, the team ships without me in the room
+     A release goes out on Thursday morning and I hear about it after.
+     A wrong number is caught in review by somebody who is not me.
+     People say the awkward thing without waiting for my permission."
+      :ja "  ** 3〜5年後、チームは私がいなくてもリリースを出している
+     木曜の朝にリリースが出ている。私はそれを後から知る。
+     数字の誤りは、私ではなく別のメンバーがレビューで見つけている。
+     メンバーはまずいと思ったことを、私の許可を待たずに口に出している。")
+     :tell
+     (:en "Think about the day after the sentence comes true.  If nothing is
+finished that morning, the sentence belongs here.  If the sentence itself is
+finished, it belongs one rung down.  The tense decides nothing, because a
+result already reached reads in the present too."
+      :ja "その文が本当になった翌日を考えます。翌日も何も終わらないなら、それは
+H4 です。翌日にその文自体が終わるなら、それは H3 です。時制では見分けられま
+せん。達成した成果も現在形で書けるからです。")
+     :review
+     (:en "Is this still the picture, and has anything moved toward it this
+year?  One nothing has moved toward is not being worked from.
+
+Read the rung once a year, and again whenever the direction of a life or a job
+has changed."
+      :ja "これはいまも描いている景色か。この一年で、そこへ何か動いたか。何も
+動いていない景色は、そこから仕事をしていない景色です。
+
+年に一度、この段を読み返します。人生や仕事の向きが変わったときにも読み返します。")
+     :note
+     (:en "Add one with M-x org-convect-add, then write the picture underneath
+it."
+      :ja "M-x org-convect-add で一つ書き、その下にビジョンを書きます。"))
     (goal
-     :prompt "Goal or objective"
-     :hint   "what has to become different, and roughly when"
+     :prompt (:en "Goal or objective" :ja "ゴール")
+     :hint   (:en "what has to become different, and roughly when"
+              :ja "1〜2年後、その領域でどうなっていたいか")
      :dated  t
-     :heading "What has to become different, in a year or two.  Not anything
-you cannot judge: if you cannot say what counts as having reached it, it
-belongs one rung up."
-     :body   "Under it, in plain lines, how you would know it had happened.
-Nothing else -- no label, no date in the text.
+     :why
+     (:en "This is the state you want to be living in, one to two years out,
+in each of the areas below.  Writing it adds a further thickness to what your
+work is.  Meeting a goal at work often moves the centre of gravity of the job
+and brings new accountabilities with it.  The same holds in a private life:
+part of it grows heavier and another part grows lighter."
+      :ja "これは、H2 が並べた領域それぞれで、1〜2年後にどんな状態を経験して
+いたいかです。それを書くと、自分の営みの定義に、もう一段の厚みが加わります。
+職務上の目標や目的を果たすには、仕事の重心を移さねばならないことが多く、
+新しい説明責任も生まれます。私生活も同じです。成し遂げたいことや整えておきたい
+ことがおそらくあり、それによって人生と営みの一部は重くなり、別の一部は軽く
+なります。")
+     :write
+     (:en "The heading says in one sentence what becomes true on some day and
+is over there: by such a date, such a thing is so.  The body says only what
+has to have happened for you to call it reached, and carries no date."
+      :ja "見出しには、ある日に真になってそこで終わることを、一文で書きます。
+形は「〈期限〉までに、○○になっている」です。本文には何が起きたら達成と言える
+のかだけを書きます。")
+     :bad
+     (:en "  ** By the end of 2027, the team communicates better
+     Reached when: information travels and misunderstandings are fewer.
 
-There are fewer of these than there are areas and they cut across them, so
-most areas have no goal at all.  Read the areas for pressure, not for
-material."
-     :good   "  ** Two other people review releases, unprompted
-     Reached when: two releases in a row go out with a review I did
-     not ask anyone for."
-     :bad    "  ** Stay fit
-     Reached when: I am fit.
+  This fits the form.  Better and fewer cannot be answered yes or no on any
+  day, so the end of 2027 arrives and nobody can settle whether it happened.
 
-  Wrong because nothing about it finishes, so the body can only say
-  the heading over again.  There is no day it is reached, which makes
-  it something held to a standard instead."
-     :review "Reached, still reachable, or no longer a goal?  All three are
-answers; leaving it sitting there is not.  Yearly, with a look each quarter."
-     :note   "`CONVECT_BY' is the target: when it is meant to be true.  The
-quarterly look is separate -- an interval counted from the last note on the
-entry -- so looking at one postpones the next look, and a target two years out
-does not buy two years of quiet.
+  ** By the end of 2027, savings stand at fifteen million yen
+     Reached when: ten million by the end of 2026, fifteen by the end of 2027.
+
+  The heading belongs here.  The body carries two dates, which makes two
+  goals; the nearer date is not written where a review can find it, so the
+  quarterly look never raises it."
+      :ja "  ** 2027年末までに、チームのコミュニケーションがよくなっている
+     達成: 情報が行き渡り、認識のずれが減っている。
+
+  これは型に合っています。しかし「よくなっている」も「減っている」も、その日に
+  真か偽かを言えません。そのため 2027 年末が来ても、達成したかどうかを誰も
+  決められません。
+
+  ** 2027年末までに、自己資金が1500万円になっている
+     達成: 2026年末に1000万円、2027年末に1500万円。
+
+  見出しは H3 です。本文が期限を二つ持っているので、目標も二つあります。
+  近いほうの期限はこの見出しに登録されないので、四半期のレビューに出てきません。")
+     :good
+     (:en "  ** By the end of 2027, two other people review releases unasked
+     Reached when: two releases in a row go out with a review I asked
+     nobody for."
+      :ja "  ** 2027年末までに、他の二人が頼まれずにリリースをレビューしている
+     達成: 私が誰にも頼まなかったリリースが、2回続けてレビュー付きで出た。")
+     :tell
+     (:en "Look for the day the heading ends on.  A heading with no such day
+does not belong here.  Headings that open with improve, increase or strengthen
+state a direction, and a direction has no day."
+      :ja "その見出しに終わる日があるかを見ます。終わる日のない見出しは、H3 では
+ありません。「改善する」「増やす」「強化する」で始まる見出しは方向性を言って
+いるので、終わる日を持ちません。")
+     :review
+     (:en "Reached, still reachable, or no longer a goal?  All three are
+answers; leaving it sitting there is not.
+
+Set the rung out once a year.  Correct the drift every quarter."
+      :ja "達成したか、まだ届くか、もう目標ではないか。三つとも答えです。
+置いたままにするのだけが答えになりません。
+
+一年に一度、この段を置き直します。四半期ごとに、ずれを直します。")
+     :note
+     (:en "`CONVECT_BY' is the target: when the heading is meant to be true.
+The quarterly look is separate -- an interval counted from the last note on
+the entry -- so looking at one postpones the next look, and a target two years
+out does not buy two years of quiet.
 
 Links only ever run upward: `CONVECT_SERVES' sits on the lower rung and names
 the higher one.  Standing here, C-u M-x org-convect-link writes it onto the
 areas you pick.  Add one with M-x org-convect-add and set the date with M-x
 org-convect-set-date."
-    )
+      :ja "`CONVECT_BY' が目標の期限です。四半期の見直しはこれとは別で、その
+見出しに最後に書かれた記録からの間隔で決まります。ですから一度見ると次の
+見直しが先へ延び、二年先の期限が二年分の静けさを買うわけではありません。
+
+リンクは上へだけ向かいます。`CONVECT_SERVES' は下の段に置かれ、上の段の名前を
+指します。この段に立ったまま C-u M-x org-convect-link を実行すると、選んだ
+領域の側にリンクが書かれます。M-x org-convect-add で一つ書き、M-x
+org-convect-set-date で期限を入れます。"))
     (area
-     :prompt "Area"
-     :hint   "copy it off your job description, or off who does what at home"
-     :heading "The role or the function you are answerable for.  Not the thing
-it concerns: \"Children\" is not one, because there is no way to keep children
-to a standard, and \"Parent\" is.  Copy these off your job description, the
-organisation chart, and who does what at home rather than inventing them."
-     :body   "Under it, in plain lines, the standard -- things you would
-notice, not why it matters:
+     :prompt (:en "Area" :ja "領域")
+     :hint   (:en "copy it off your job description, or off who does what at home"
+              :ja "職務記述書や家庭の分担から写す")
+     :why
+     (:en "These are the core areas of a life and a job, the ones you want
+results in and want to hold to a standard.  You take on projects and actions
+because you hold roles, interests and accountabilities here.  At work,
+planning, developing people and looking after customers each carry at least a
+few unspoken promises.  A private life has the same density: health, family,
+money, the home, time off.  None of them is a thing to finish.  They are used
+as the measure of how you are faring and taking part, and they keep a balance
+between your work and the world.  Reviewing this rung widens, by one step, the
+frame you judge a backlog of projects in.  An area left unattended takes more
+attention later than it deserved.  The three rungs above act on the areas
+listed here."
+      :ja "これは、自分が結果を出したい、水準を保ちたいと思っている、人生と
+営みの中核領域です。プロジェクトや行動を自分で作るのも引き受けるのも、いま
+持っている役割と関心と説明責任があるからです。仕事なら、戦略企画や人材育成や
+顧客対応といった領域が並び、そのそれぞれに、少なくとも暗黙の約束がいくつか
+乗っています。私生活なら、健康や家族や家計や住環境や余暇が入ります。これらは
+「終わらせるもの」ではありません。経験や関わり方を測る基準として使うもので、
+自分の営みと世界の間でバランスを保つためにあります。この段をレビューすると、
+プロジェクトの在庫を評価する枠が一段広くなります。手をかけずにいた領域は、
+あとで必要以上に注意を奪います。上の三段は、ここに並んだ領域に働きかけます。")
+     :write
+     (:en "The heading is the name of a role, a function or an area.  Of the
+four rungs this is the only one whose heading is a name rather than a
+sentence.  The name of a thing you are answerable for goes here; the name of
+the thing itself does not.  Copy the names off a job description, an
+organisation chart, and who does what at home.  The body holds the standard:
+how far the heading has to be met for you to call it well, said in things you
+would see.  When nothing comes, ask yourself what you would see if this had
+gone badly this month, and write the answer the other way round."
+      :ja "見出しには、役割か機能か領域の名前を書きます。四段のうちここだけは、
+文ではなく名前です。対象そのものの名前は書きません。名前は、職務記述書と
+組織図と家庭の分担から写します。本文には水準を書きます。水準とは、その見出しを
+どこまで果たしていれば良しとするかを、目に見える事実で述べたものです。書き出せ
+ないときは、「今月これがうまくいっていなかったら、何が見えるか」と自分に聞くと
+出てきます。出てきた答えを裏返して、うまくいっている側を書きます。")
+     :bad
+     (:en "  ** Customers
+     Kept up means: the relationship is healthy.
 
-  If this had slipped this month, what would I see?
+  Read as the work of keeping customers, the heading is right; read as the
+  people themselves, it is not, and the name alone does not settle which.
+  Healthy is not something you would see either, so a monthly look has
+  nothing to check.
 
-Evidence, and evidence is read afterwards: whether the month was kept, not
-what to do at eight on a Tuesday.  If what comes out is why it matters, or a
-picture years from now, move it up to Purpose or Vision and ask again with the
-clock in it."
-     :good   "  ** engineering
-     Kept up means: reviews come back the same day; no branch is older
-     than a week; the build is green when I leave."
-     :bad    "  ** Ship the migration
-     Kept up means: the migration has shipped.
+  ** engineering
+     Because development running smoothly matters.
 
-  Wrong because it finishes.  After the day it ships there is no
-  month in which it could have slipped, so the question above has
-  nothing left to ask."
-     :review "Is the standard being met -- and is this still yours to keep up?
+  The heading names a function, so it belongs here.  The body gives a
+  reason.  Nothing about the state it is in is written in things you would
+  see, so a monthly look has nothing to check."
+      :ja "  ** 子
+     果たせているとは: 家族との関係が良好である。
+
+  見出しが役割を指すなら正解です。つまり「自分は親の子である」という意味なら
+  正しく、「自分の子供」という対象を指すなら間違いです。本文の「良好である」も、
+  目に見える事実ではありません。何が起きていれば良好なのかが書かれていないので、
+  月ごとのレビューで確かめられません。
+
+  ** engineering
+     開発が滞りなく回っていることが大事だから。
+
+  見出しは機能の名前なので H2 です。しかし本文が理由を書いています。うまく
+  いっている状態が目に見える事実で書かれていないので、月ごとのレビューで
+  確かめるものがありません。")
+     :good
+     (:en "  ** engineering
+     Kept up means: a review request comes back the same day.
+     No branch has sat untouched for more than a week.
+     The build is green when I leave."
+      :ja "  ** engineering
+     果たせているとは: レビュー依頼にその日のうちに返している。
+     1週間以上放置されているブランチがない。
+     退勤時にビルドが通っている。")
+     :tell
+     (:en "Try putting the name into \"the accountability of ...\" or \"the
+standing interest of ...\".  If either reads, the name belongs here.  Parent
+reads as the accountability of a parent.  Time off reads as the standing
+interest of time off."
+      :ja "その名前を「○○という責任領域」か「○○という関心領域」のどちらかに
+当てはめられるなら、それは H2 です。「親」は「親という責任領域」と言えます。
+「余暇」は「余暇という関心領域」と言えます。")
+     :review
+     (:en "Is the standard being met, and is this still yours to keep up?
 GTD asks the second out loud: could it be delegated or dropped?  A standard
-met perfectly is still worth losing if it was never yours.  Monthly, and
-whenever the job or the household changes."
-     :note   "The name is what a task carries in `CONVECT_AREA', read with
+met perfectly is still worth losing if it was never yours.
+
+Read the rung once a month, and again whenever a role has changed -- a move at
+work, the family, somebody's health."
+      :ja "水準は満たされているか。そしてこれは、いまも自分が保つべきものか。
+GTD は二つ目を声に出して問います。誰かに任せられないか、やめられないか。
+完璧に満たされている水準でも、もともと自分のものでなかったなら手放す価値が
+あります。
+
+月に一度、この段を読み返します。役割が変わったとき（異動、家族、健康状態）にも
+読み返します。")
+     :note
+     (:en "The name is what a task carries in `CONVECT_AREA', read with
 inheritance, so marking a project marks everything under it.  Deliberately not
 CATEGORY: that slot is Org's and other packages read it.
 
@@ -1144,7 +1395,15 @@ direction is asked about: a goal nothing serves.
 
 Write the names as child headings under this one, mark them, and run M-x
 org-convect-declare.  For a single one, M-x org-convect-add."
-    ))
+      :ja "この名前が、タスクの `CONVECT_AREA' に入ります。継承つきで読まれる
+ので、プロジェクトに一度つければ、その下のすべてにつきます。CATEGORY を使わない
+のは意図的で、あの枠は Org のものであり、他のパッケージも読むからです。
+
+この段から上を指す必要はなく、多くは指しません。問われるのは反対向きだけで、
+何にも支えられていないゴールが見つかります。
+
+名前をこの見出しの子として並べ、印をつけて M-x org-convect-declare を実行
+します。一つだけなら M-x org-convect-add です。")))
   "What each horizon is, how to find your own, and what to write under it.
 
 Used in two places and written once: the `:GUIDE' drawers in a fresh file are
@@ -1173,29 +1432,87 @@ descriptions are not the David Allen Company's text."
   :type '(alist :key-type symbol :value-type plist)
   :group 'org-convect)
 
+(defcustom org-convect-guide-language 'en
+  "Language the guidance is written in, `en' or `ja'.
+
+The wording is kept in both, side by side, rather than translated on the way
+out: an example that teaches in one language is often not an example at all in
+the other.  See `org-convect-guide-rules'."
+  :type '(choice (const :tag "English" en) (const :tag "Japanese" ja))
+  :group 'org-convect)
+
+(defun org-convect--in-language (value)
+  "VALUE for `org-convect-guide-language'.
+
+A plain string is English.  A plist of languages is looked up, falling back to
+English when the chosen language has nothing to say."
+  (cond
+   ((stringp value) value)
+   ((and (consp value) (keywordp (car value)))
+    (or (plist-get value (intern (concat ":" (symbol-name
+                                              org-convect-guide-language))))
+        (plist-get value :en)))
+   (t value)))
+
+(defconst org-convect-guide-rules
+  '("Every sentence has a subject and a predicate."
+    "The subject is the thing being described: this rung, the heading, the
+body, the sentence at hand.  Nothing is written from the writer's side."
+    "A form is shown only when filling its blanks produces a whole sentence."
+    "A word is defined before it is used as the reason an example is wrong."
+    "A good example carries the weight the rung claims for itself."
+    "A good example obeys its own rung's form, to the letter."
+    "A bad example fits the form and fails on what it says.  Examples that
+miss at the level of grammar teach nothing, because that is not where a
+reader goes wrong.  Each bad example is written out as a heading with a body
+under it, and the reason follows the example rather than replacing it."
+    "The six parts run in one order on every rung: why it is here, how to
+write one, bad ones, a good one, telling it from the others, what to ask on
+coming back.")
+  "How the wording in `org-convect-horizon-guide' is written.
+
+These are about the writing, not about the subject.  Deliberately so: a rule
+phrased in the vocabulary of the guidance would be indistinguishable from the
+guidance, and a reader would not know which of the two they were holding.  So
+they speak only of headings, bodies, examples, rungs and forms.
+
+Rewriting the guidance means reading these first.  They were arrived at by
+getting the guidance wrong several times over, and each one names a way it
+went wrong.
+
+Provenance, for the same reason.  From GTD: that this rung is the source every
+other derives from and returns to, that a clash inside one rung can only be
+settled from a rung above it, and the span of years each rung looks over.
+Added here, because Allen describes what the levels are and not how to word
+them: avoiding words of degree, writing the body as things refused and things
+always done, and the review intervals.  Only the weekly review is Allen\\='s.")
+
 (defconst org-convect-guide-fields
-  '((:heading  "How the heading is written")
-    (:body     "How the body is written")
-    (:good     "A good one")
-    (:bad      "A bad one")
-    (:review   "What to ask when you come back")
-    (:note     "How the file works"))
+  '((:why     (:en "Why this rung is here"      :ja "なんのためにあるか"))
+    (:write   (:en "How to write one"           :ja "書き方の型"))
+    (:bad     (:en "Bad ones"                   :ja "悪い例"))
+    (:good    (:en "Done right"                 :ja "良い例"))
+    (:tell    (:en "Telling it from the others" :ja "判定のコツ"))
+    (:review  (:en "What to ask when you come back" :ja "レビュー"))
+    (:note    (:en "How the file works"         :ja "この段の仕組み")))
   "The parts of a guide drawer in reading order, as (FIELD LABEL [GLOSS]).
 
-The labels are the point.  Nine fields answering nine different questions used
-to arrive as nine paragraphs that looked exactly alike, leaving the reader to
-work out which question each one was answering -- which is the writer's work,
-not the reader's.  Three words at the front of a paragraph do it.
+LABEL and GLOSS take the same shape as any other wording here: a string, or a
+plist of languages.  See `org-convect--in-language'.
 
-The order is a teaching order.  A test is something applied to what you have,
-so it comes after there is something to apply it to: what this is, where to find
-yours, what goes underneath, one written out, and only then the test.
+The labels are the point.  Fields answering different questions used to arrive
+as paragraphs that looked exactly alike, leaving the reader to work out which
+question each one was answering -- which is the writer's work, not the
+reader's.  Three words at the front of a paragraph do it.
 
-The labels also mark a change of register, which is the other thing that made
-these drawers hard to read.  Everything up to `:when' is about the thinking:
-what you are being asked for and how to tell whether you have it.  `:note' is
-about the file -- which property holds what, which command writes it, what the
-package will and will not do.  Mixing the two leaves the reader unable to say
+The order is a teaching order, and rule 8 of `org-convect-guide-rules' fixes
+it.  Why the rung exists comes before how to write one; a bad one comes before
+a good one, because seeing the mistake first is what makes the difference
+visible; telling it from the others comes after there is something to tell
+apart.
+
+`:note' is not one of the six.  Property names and commands are about the file
+rather than about the rung, and mixing the two leaves a reader unable to say
 whether a sentence is advice or a rule, so mechanism is confined to the field
 labelled for it.
 
@@ -1215,8 +1532,12 @@ That rules out showing a property drawer in an example -- which is no loss,
 since the properties are written by the commands rather than typed by hand.")
 
 (defun org-convect-guide (horizon field)
-  "The FIELD of HORIZON's entry in `org-convect-horizon-guide'."
-  (plist-get (alist-get horizon org-convect-horizon-guide) field))
+  "The FIELD of HORIZON's entry in `org-convect-horizon-guide'.
+
+Resolved into `org-convect-guide-language' on the way out, so every caller
+reads one language and none of them has to know that two are stored."
+  (org-convect--in-language
+   (plist-get (alist-get horizon org-convect-horizon-guide) field)))
 
 (defun org-convect--guide-field (horizon field)
   "HORIZON's FIELD as it appears in the guide drawer, or nil when it has none.
@@ -1231,19 +1552,24 @@ example into prose would be running prose into the example."
   (let ((text (org-convect-guide horizon field))
         (entry (assq field org-convect-guide-fields)))
     (when (and entry (org-string-nw-p text))
-      (let* ((gloss (nth 2 entry))
-             (lead (concat "*" (nth 1 entry) "*."
-                           (and gloss (concat "  " gloss)))))
+      (let* ((gloss (org-convect--in-language (nth 2 entry)))
+             ;; The stop and the gap after the label are punctuation, and
+             ;; punctuation belongs to the language.  Japanese neither ends a
+             ;; label with a full stop nor doubles the space after one.
+             (ja (eq org-convect-guide-language 'ja))
+             (lead (concat "*" (org-convect--in-language (nth 1 entry)) "*"
+                           (if ja "。" ".")
+                           (and gloss (concat (if ja "" "  ") gloss)))))
         (if (memq field org-convect-guide-verbatim-fields)
             (concat (org-convect--fill lead) "\n\n" (string-trim-right text))
-          (org-convect--fill (concat lead "  " text)))))))
+          (org-convect--fill (concat lead (if ja "" "  ") text)))))))
 
 (defun org-convect--one-line (horizon &optional field)
-  "The first sentence of HORIZON's FIELD (default `:heading').
+  "The first sentence of HORIZON's FIELD (default `:why').
 
 Short enough for a completion annotation or the echo area, which is where a
 command has to teach if it is going to teach at all."
-  (let ((what (or (org-convect-guide horizon (or field :heading)) "")))
+  (let ((what (or (org-convect-guide horizon (or field :why)) "")))
     (replace-regexp-in-string
      "\n" " " (if (string-match "\\`\\([^.]*\\.\\)" what) (match-string 1 what) what))))
 
@@ -1311,6 +1637,17 @@ in an agenda -- which is where most of this gets decided."
 
 ;;;; The file itself
 
+(defun org-convect--join-lines (paragraph)
+  "PARAGRAPH with its source line breaks closed up.
+
+A sentence end keeps its two spaces.  Every other break becomes one space,
+except between two characters that are not ASCII: Japanese runs without spaces,
+so a break joined with one would put a gap in the middle of a word."
+  (let* ((text (replace-regexp-in-string "\\([.?!]\\)\n[ \t]*" "\\1  " paragraph))
+         (text (replace-regexp-in-string
+                "\\([^\0-\177]\\)\n[ \t]*\\([^\0-\177]\\)" "\\1\\2" text)))
+    (replace-regexp-in-string "\n[ \t]*" " " text)))
+
 (defun org-convect--fill (text &optional columns)
   "TEXT wrapped to COLUMNS, or to a width that reads in a narrow window.
 
@@ -1328,11 +1665,7 @@ goes on looking like one instead of joining the prose around it."
                        (match-string 0 paragraph)
                      "")))
      (with-temp-buffer
-       (insert indent
-               (replace-regexp-in-string
-                "\n[ \t]*" " "
-                (replace-regexp-in-string "\\([.?!]\\)\n[ \t]*" "\\1  "
-                                          (string-trim paragraph))))
+       (insert indent (org-convect--join-lines (string-trim paragraph)))
        (let ((fill-column (or columns 72))
              (fill-prefix indent)
              ;; Off, because a paragraph here may open with a bold label and
@@ -1376,41 +1709,101 @@ has to be stored twice."
   :type '(repeat string)
   :group 'org-convect)
 
+(defconst org-convect-preamble-text
+  '(:en "\
+# H2 is the middle of this.  H2 lists the core areas of a life and a job.
+# The three rungs above it each act on those areas in a different way.
+#
+#   H5 purpose      settles what an area really is
+#   H4 vision       changes an area, seen from three to five years out
+#   H3 goal         settles an area by what you want to be living in
+#                   one to two years from now
+#                        |
+#   H2 area         the core areas of a life and a job
+#                        |    below this line the task system takes over
+#   H1 outcome      finished inside a year -> the next physical action
+#
+# The three above are joined to each other as well: H5 shapes H4, and H4
+# shapes H3.
+#
+#   H2 family
+#      H5 keep the time I spend with my family
+#      H4 three years out, we eat together on a weekday evening
+#      H3 by March 2027 I am home before seven on a weekday
+#      H1 set up a rota so three of us carry the nights
+#         next action  send the team a draft of the rota
+#
+# This file holds H5 down to H2.  H1 and the next action live in the task
+# system.  A decision is settled from the top down, but the writing goes
+# from the bottom up: while the day in front of you is still a mess,
+# thinking about the rungs above it leaves nothing behind.  Get the lower
+# rungs to where you trust them, then write the higher ones.
+#
+# Read one rung back at a time.  H2 monthly, H3 quarterly, H4 and H5
+# yearly.  GTD settles only the weekly review, so these intervals are a
+# working guess.
+#
+# M-x org-convect-add writes one.  Write or paste several under a section,
+# mark them, and M-x org-convect-declare takes them.  Open a :GUIDE: drawer
+# with TAB, and delete it once it is in the way; M-x
+# org-convect-refresh-guides puts the current wording back.
+#
+# M-x org-convect-doctor shows what is still blank.  A heading with an
+# empty body looks exactly like a heading, so the file cannot say.
+"
+    :ja "\
+# 中心にあるのは H2 です。H2 は、人生と営みの中核領域を並べます。上の三段は、
+# その領域に対してそれぞれ別の働きをします。
+#
+#   H5 目的・原則  その領域が本当は何なのかを決める
+#   H4 ビジョン    3〜5年先から見て、その領域を変える
+#   H3 ゴール      1〜2年後どうなっていたいかで、その領域を決める
+#                        ↓
+#   H2 領域        人生と営みの中核領域（役割・関心・説明責任）
+#                        ↓ ここから下はタスク側
+#   H1 成果        一年以内に終わらせる成果 → 今の一手
+#
+# 上の三段は、たがいにも繋がっています。H5 が H4 を形づくり、H4 が H3 を
+# 形づくります。
+#
+#   H2 家族
+#      H5 家族と過ごす時間を守る
+#      H4 3〜5年後、平日の夕食を毎日家族と一緒にとっている
+#      H3 2027年3月までに、平日の帰宅が19時より前になっている
+#      H1 夜間の対応を三人で回す体制を作る
+#         今の一手  当番の案をチームに送る
+#
+# このファイルが持つのは H5 から H2 までの4段です。H1 と今の一手はタスク側に
+# あります。意思決定では上の段ほど優先されますが、書く順番は下の段からです。
+# 目の前の仕事が片づいていないうちは、上の段を考えても頭に残りません。下の段を
+# 信頼できる状態にしてから、上を書きます。
+#
+# レビュー間隔は段ごとに違います。H2 は月ごと、H3 は四半期ごと、H4 と H5 は
+# 年ごとです。GTD が定めているのは週次レビューだけなので、この間隔は目安です。
+#
+# M-x org-convect-add で一つ書けます。セクションの下にいくつか書くか貼るかして
+# 印をつけ、M-x org-convect-declare を実行することもできます。:GUIDE: ドロワーは
+# TAB で開き、邪魔になったら消してかまいません。M-x org-convect-refresh-guides
+# が今の文面を書き戻します。
+#
+# M-x org-convect-doctor が、まだ空のところを見せます。本文のない見出しは
+# 見出しとまったく同じ見た目なので、ファイルからは分かりません。
+")
+  "The comment block at the head of a horizons file, in each language.
+
+Comment lines rather than prose: they are addressed to whoever opens the file
+and are not part of what the file records, and `#\\=' is how Org says so.
+
+What it carries is the one thing four separate drawers cannot.  Each drawer
+describes its own rung, and a reader who has read all four is still left to
+work out how they stand to one another -- which is the writer's work.  So the
+relation is stated here, where it is read without opening anything.")
+
 (defun org-convect--preamble ()
   "The Org comment block at the head of a horizons file.
 
-Comment lines rather than prose: they are addressed to whoever opens the file
-and are not part of what the file records, and `#\\=' is how Org says so."
-  (concat
-   "# Four rungs.  What each one answers, and what it is not:\n"
-   "#\n"
-   "#   purpose  what I refuse, even at a cost   not a routine, not a state\n"
-   "#   vision   what it looks like once it      not anything with a date\n"
-   "#            has worked\n"
-   "#   goal     what has to change, by when     not anything you cannot judge\n"
-   "#   area     what I am answerable for,       not a thing, and not a rule\n"
-   "#            and how it is kept up           for tonight\n"
-   "#\n"
-   "# Two questions settle nearly everything:\n"
-   "#\n"
-   "#   Once it is true, is it over?  Only a goal is -- and what it leaves\n"
-   "#   behind is a standard on an area.\n"
-   "#\n"
-   "#   Put it where two of your responsibilities pull against each other.\n"
-   "#   Does it answer?  Only a purpose does; the rest speak for one\n"
-   "#   accountability alone.\n"
-   "#\n"
-   "# Read down: purpose shapes the vision, the vision the goals, the goals\n"
-   "# the areas.  Write up: start from what you already carry.  A rung with\n"
-   "# nothing in it yet is normal, and the same subject belongs on several.\n"
-   "#\n"
-   "# Add one with M-x org-convect-add.  Write or paste several under a\n"
-   "# section and mark them with M-x org-convect-declare.  Open a :GUIDE:\n"
-   "# drawer with TAB, and delete it once it is in the way; M-x\n"
-   "# org-convect-refresh-guides puts the current wording back.\n"
-   "#\n"
-   "# M-x org-convect-doctor shows what is still blank.  A heading with\n"
-   "# an empty body looks exactly like a heading, so the file cannot.\n"))
+Written in `org-convect-guide-language'; see `org-convect-preamble-text'."
+  (org-convect--in-language org-convect-preamble-text))
 
 (defun org-convect--build-skeleton ()
   "The frame written into a fresh horizons file.
