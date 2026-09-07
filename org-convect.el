@@ -35,8 +35,10 @@
 ;;
 ;; Layout:
 ;;
-;;   org-convect-core.el  the ladder -- reading, resolving, what is due
-;;   org-convect-act.el   the ACT overlay, and the seam it can be removed at
+;;   org-convect-core.el    the ladder -- reading, resolving, what is due
+;;   org-convect-act.el     the ACT overlay, and the seam it can be removed at
+;;   org-convect-export.el  the review written out as a page to read away
+;;                          from the machine
 ;;
 ;; Requiring `org-convect' gets both.  Requiring only `org-convect-core' gets
 ;; a ladder with no overlay, which is a supported way to run it.
@@ -51,6 +53,7 @@
 
 (require 'org-convect-core)
 (require 'org-convect-act)
+(require 'org-convect-export)
 
 (provide 'org-convect)
 
