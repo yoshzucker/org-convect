@@ -120,6 +120,49 @@ rows are, and a theme that has thought about that face has already thought
 about this one."
   :group 'org-convect)
 
+(defface org-convect-guide-face
+  '((t :inherit font-lock-comment-face))
+  "Face for the guidance: what to ask of a rung, and how often.
+
+Guidance is not the subject.  It says how to read what is written under it,
+which is what a comment is, so it takes the step a theme keeps for comments
+and gets out of the way of the rungs.  Inherited rather than coloured here:
+a theme that has decided how quiet a comment is has already decided this."
+  :group 'org-convect)
+
+(defface org-convect-rung-face
+  '((t :inherit default :weight bold))
+  "Face for a rung's own name.
+
+The one thing on the page that is the subject.  Everything else on a row --
+what is due, what it serves, what has been clocked against it -- is said
+about the name, so the name is the only part that carries weight."
+  :group 'org-convect)
+
+(defface org-convect-section-face
+  '((t :inherit org-agenda-structure))
+  "Face for an altitude's heading on the board.
+
+The same job `org-agenda-structure\=' does in an agenda: it says which block
+is being read, and it is not the reading."
+  :group 'org-convect)
+
+(defface org-convect-status-face
+  '((t :inherit org-agenda-date))
+  "Face for when a rung is due, or what called it.
+
+The column somebody scans down, so it is separated from the name rather than
+faded out of the way."
+  :group 'org-convect)
+
+(defface org-convect-mesh-face
+  '((t :inherit shadow))
+  "Face for what a rung serves, what answers to it, and what it has cost.
+
+Read after a name has caught the eye rather than before, so it takes the
+step a theme keeps for supplementary detail."
+  :group 'org-convect)
+
 (defcustom org-convect-highlight-lineage t
   "Whether moving the cursor on a board lights up the linked rungs.
 
@@ -2840,6 +2883,64 @@ second road and simply returns."
 ;;;###autoload
 (add-hook 'org-mode-hook #'org-convect-eldoc-setup)
 
+;;;; Guidance in the file
+
+(defcustom org-convect-quiet-guides t
+  "Whether a `:GUIDE:' drawer reads as guidance rather than as content.
+
+Org gives a drawer's *body* no face of its own, so guidance written into one
+comes out in the same ink as the rung above it -- and at level two, brighter
+than the heading, since a theme dims the heading and cannot dim a drawer it
+knows nothing about.  The page then argues for the instructions.
+
+Set to nil to leave the drawers in the buffer's own face."
+  :type 'boolean
+  :group 'org-convect)
+
+(defun org-convect--in-guide-p (pos)
+  "Non-nil when POS is inside the body of a `:GUIDE:' drawer.
+
+Searching back for either opener or `:END:' answers with the nearer of the
+two, which is what being inside one means.  A `:PROPERTIES:' drawer between
+the guidance and here closes with its own `:END:', so it ends the search
+before the guidance can claim it."
+  (save-excursion
+    (goto-char pos)
+    (beginning-of-line)
+    (and (not (looking-at-p "^[ \t]*:\\(GUIDE\\|END\\):[ \t]*$"))
+         (re-search-backward "^[ \t]*:\\(GUIDE\\|END\\):[ \t]*$" nil t)
+         (string-equal (match-string 1) "GUIDE"))))
+
+(defun org-convect--match-guide (limit)
+  "Font-lock matcher: one line of a `:GUIDE:' drawer's body, before LIMIT.
+
+A line at a time rather than the drawer whole.  Font-lock hands out a region
+and a match that runs past it is a match font-lock was not asked for; the
+drawers are tens of lines long, so the region would be crossed often."
+  (let (found)
+    (while (and (not found) (< (point) limit) (not (eobp)))
+      (let ((bol (line-beginning-position))
+            (eol (line-end-position)))
+        (when (and (> eol bol) (org-convect--in-guide-p bol))
+          (set-match-data (list bol (min eol limit)))
+          (setq found t))
+        (goto-char (min limit (1+ eol)))))
+    found))
+
+(defconst org-convect--guide-keywords
+  '((org-convect--match-guide 0 'org-convect-guide-face append))
+  "Font-lock rule that puts the guidance behind everything else.
+
+Appended rather than laid over the top: whatever Org has already made of a
+line -- a link, a timestamp -- was fontified for a reason.")
+
+(defun org-convect-guide-font-lock-setup ()
+  "Fontify `:GUIDE:' drawer bodies in this buffer.  For `org-mode-hook'."
+  (when org-convect-quiet-guides
+    (font-lock-add-keywords nil org-convect--guide-keywords t)))
+
+(add-hook 'org-mode-hook #'org-convect-guide-font-lock-setup)
+
 ;;;; The review
 
 (defconst org-convect-review-buffer "*Horizons Review*"
@@ -3126,23 +3227,30 @@ lines with no property on it is five lines on which the thread goes dark."
          (pad (if threaded "" "  "))
          (indent (+ (string-width under) (string-width pad))))
     (insert (org-convect--review-line
-             (format "%s%s%s  %s\n" lead name
+             (format "%s%s%s  %s\n" lead
+                     (propertize name 'face 'org-convect-rung-face)
                      (make-string (max 0 (- column (string-width lead)
                                             (string-width name)))
                                   ?\s)
-                     (org-convect--review-status entry now called))
+                     (propertize (org-convect--review-status entry now called)
+                                 'face 'org-convect-status-face))
              (plist-get entry :marker) name))
     (dolist (line (org-convect--evidence-body entry indent))
       (insert (org-convect--review-line (format "%s%s%s\n" under pad line)
                                         (plist-get entry :marker) name)))
     (when also
       (insert (org-convect--review-line
-               (format "%s%s%s also serves %s\n" under pad
-                       org-convect-review-mark (string-join also ", "))
+               (format "%s%s%s\n" under pad
+                       (propertize (format "%s also serves %s"
+                                           org-convect-review-mark
+                                           (string-join also ", "))
+                                   'face 'org-convect-mesh-face))
                (plist-get entry :marker) name)))
     (when-let ((tally (org-convect--evidence-tally entry entries scan threaded)))
-      (insert (org-convect--review-line (format "%s%s%s\n" under pad tally)
-                                        (plist-get entry :marker) name)))))
+      (insert (org-convect--review-line
+               (format "%s%s%s\n" under pad
+                       (propertize tally 'face 'org-convect-mesh-face))
+               (plist-get entry :marker) name)))))
 
 ;;;###autoload
 (defun org-convect-review (&optional only-wanting now)
@@ -3216,13 +3324,17 @@ follows the links instead of the altitudes."
         (setq-local org-agenda-type 'agenda)
         ;; The date sits where the statuses do, so the head of the page is
         ;; ruled by the same column as everything under it.
-        (insert (format "Horizons Review%s%s\n"
-                        (make-string (max 2 (- (+ column 2) 15)) ?\s)
-                        (format-time-string "%Y-%m-%d" now)))
-        (insert (format "  %d due, %d called%s\n\n"
-                        (length due) (length called)
-                        (if org-convect-signal-functions ""
-                          " (nothing is watching the rungs with no calendar)")))
+        (insert (propertize
+                 (format "Horizons Review%s%s\n"
+                         (make-string (max 2 (- (+ column 2) 15)) ?\s)
+                         (format-time-string "%Y-%m-%d" now))
+                 'face 'org-convect-section-face))
+        (insert (propertize
+                 (format "  %d due, %d called%s\n\n"
+                         (length due) (length called)
+                         (if org-convect-signal-functions ""
+                           " (nothing is watching the rungs with no calendar)"))
+                 'face 'org-convect-status-face))
         (if threaded
             (progn
               ;; The questions have nowhere else to go here: a descent has no
@@ -3234,10 +3346,14 @@ follows the links instead of the altitudes."
                                 (org-convect--fill
                                  asks (- org-convect-review-columns 10))
                                 "\n" t)))
-                    (insert (format "  %-7s %s\n" (symbol-name horizon)
-                                    (car lines)))
+                    (insert (propertize
+                             (format "  %-7s %s\n" (symbol-name horizon)
+                                     (car lines))
+                             'face 'org-convect-guide-face))
                     (dolist (line (cdr lines))
-                      (insert (format "%s%s\n" (make-string 10 ?\s) line))))))
+                      (insert (propertize
+                               (format "%s%s\n" (make-string 10 ?\s) line)
+                               'face 'org-convect-guide-face))))))
               (insert "\n")
               (let ((rest rows))
                 (while rest
@@ -3255,20 +3371,24 @@ follows the links instead of the altitudes."
                                     (or (not only-wanting) (funcall wanted e)))
                                   (org-convect-entries entries horizon))))
               (when (or at (not only-wanting))
-                (insert (org-convect-horizon-name horizon) "\n")
+                (insert (propertize (org-convect-horizon-name horizon)
+                                    'face 'org-convect-section-face)
+                        "\n")
                 (when-let ((asks (org-convect-guide horizon :review)))
                   (dolist (line (split-string
                                  (org-convect--fill
                                   asks (- org-convect-review-columns 2))
                                  "\n" t))
-                    (insert (format "  %s\n" line))))
+                    (insert (propertize (format "  %s\n" line)
+                                        'face 'org-convect-guide-face))))
                 (if (null at)
-                    (insert "  nothing\n")
+                    (insert (propertize "  nothing\n" 'face 'org-convect-mesh-face))
                   (dolist (entry at)
                     (org-convect--review-insert entry "  " "" column now called
                                                 entries scan)))
                 (insert "\n")))))
-        (insert (org-convect--review-legend threaded only-wanting))
+        (insert (propertize (org-convect--review-legend threaded only-wanting)
+                            'face 'org-convect-guide-face))
         (use-local-map org-convect-review-mode-map)
         (setq org-convect--review-threaded threaded
               org-convect--review-args (list only-wanting now)
@@ -3333,8 +3453,12 @@ will have forgotten the keys to.  So it says them, and it says what else there
 is -- a command nobody can find is a command that is not there."
   (concat
    "\n"
-   (format "  RET  go to it     z  review it     %s     r  redraw\n"
-           (if threaded "t  by altitude" "t  follow the links"))
+   (format "  RET  go to it     z  review it     %s     r  redraw%s\n"
+           (if threaded "t  by altitude" "t  follow the links")
+           ;; Only when it is there: `org-convect-core' on its own is a
+           ;; supported way to run this, and a key named on the page that
+           ;; answers with a void function is worse than no key.
+           (if (fboundp 'org-convect-review-export) "     e  export" ""))
    (if only-wanting
        "  M-x org-convect-review  shows the whole ladder again\n"
      "  C-u M-x org-convect-review  shows only what wants looking at\n")

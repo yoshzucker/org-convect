@@ -3476,6 +3476,85 @@ the image.  That is the removability condition, run rather than asserted."
       (should-not (org-convect-unfinished entries))
       (should (eq (org-convect-next-rung entries) 'vision)))))
 
+;;;; What the page emphasises
+
+(defun org-convect-test--faces-on (buffer text)
+  "The faces on the line of BUFFER holding TEXT, as a list."
+  (with-current-buffer buffer
+    (goto-char (point-min))
+    (unless (search-forward text nil t)
+      (error "org-convect-test: no line saying %S" text))
+    (let ((faces nil)
+          (p (line-beginning-position))
+          (end (line-end-position)))
+      (while (< p end)
+        (let ((f (get-text-property p 'face)))
+          (when f (push f faces)))
+        (setq p (1+ p)))
+      (delete-dups (nreverse faces)))))
+
+(ert-deftest org-convect-test-the-rung-carries-the-weight ()
+  "The guidance says how to read the rungs; it is not one of them.  Drawn in
+the same ink -- or brighter, which is what happens when a theme dims a heading
+and cannot dim text it knows nothing about -- the page argues for its own
+instructions."
+  (org-convect-test--with-ladder org-convect-test--ladder
+    (org-convect-review)
+    (let ((guide (org-convect-test--faces-on org-convect-review-buffer
+                                             "Am I still behaving"))
+          (rung (org-convect-test--faces-on org-convect-review-buffer
+                                            "Honesty")))
+      (should (memq 'org-convect-guide-face guide))
+      (should (memq 'org-convect-rung-face rung))
+      (should-not (memq 'org-convect-guide-face rung)))))
+
+(ert-deftest org-convect-test-a-row-is-name-then-standing ()
+  "Two things are read down a board: which rung, and whether it wants
+looking at.  They are separate columns, so they are separate faces."
+  (org-convect-test--with-ladder org-convect-test--ladder
+    (org-convect-review)
+    (let ((row (org-convect-test--faces-on org-convect-review-buffer "Honesty")))
+      (should (memq 'org-convect-rung-face row))
+      (should (memq 'org-convect-status-face row)))
+    (should (memq 'org-convect-section-face
+                  (org-convect-test--faces-on org-convect-review-buffer
+                                              "Purpose and Principles")))
+    (should (memq 'org-convect-mesh-face
+                  (org-convect-test--faces-on org-convect-review-buffer
+                                              "1 below")))))
+
+(ert-deftest org-convect-test-a-guide-drawer-is-quiet-in-the-file ()
+  "The same thing in the file it is written into.  Org gives a drawer's body
+no face, so without this the guidance is the brightest text on the page."
+  (with-temp-buffer
+    (insert ":GUIDE:\nWrite the area, and the standard you keep it to.\n:END:\n"
+            "* engineering\n:PROPERTIES:\n:CONVECT_HORIZON: area\n:END:\n"
+            "reviews come back the same day\n")
+    (org-mode)
+    (font-lock-ensure)
+    (cl-flet ((face-on (text)
+                (goto-char (point-min))
+                (search-forward text)
+                (get-text-property (line-beginning-position) 'face)))
+      (should (equal '(org-convect-guide-face) (face-on "Write the area")))
+      ;; the drawer's own lines are Org's, and the rung's prose is nobody's
+      (should (eq 'org-drawer (face-on ":GUIDE:")))
+      (should-not (face-on "reviews come back")))))
+
+(ert-deftest org-convect-test-a-later-drawer-is-not-the-guide ()
+  "`:PROPERTIES:' closes with `:END:' too, so a search back for the opener
+alone would read every drawer after a guide as more guidance."
+  (with-temp-buffer
+    (insert ":GUIDE:\nguidance\n:END:\n"
+            "* engineering\n:PROPERTIES:\n:CONVECT_HORIZON: area\n:END:\n")
+    (org-mode)
+    (font-lock-ensure)
+    (goto-char (point-min))
+    (search-forward "CONVECT_HORIZON")
+    (should-not (memq 'org-convect-guide-face
+                      (ensure-list
+                       (get-text-property (line-beginning-position) 'face))))))
+
 (provide 'org-convect-core-test)
 
 ;;; org-convect-core-test.el ends here
