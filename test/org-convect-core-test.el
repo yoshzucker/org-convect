@@ -2296,6 +2296,33 @@ empty heading to the pile."
                    (goto-char (point-min))
                    (count-matches "^\\*\\* "))))))
 
+(ert-deftest org-convect-test-plan-lands-on-the-last-thought ()
+  "With a brainstorm already begun, point lands at the end of the last of it.
+
+No new heading is added -- a project being thought about does not want an
+empty one on the pile every time the command is called -- so where point is
+left is the whole of what the call does.  The end of the last thought is one
+`org-meta-return\=' from the next one, at the level the others are.
+
+`org-end-of-subtree\=' answers about the entry point is standing in, and after
+the fields are written point is standing in the first child.  Asked there, it
+gave the end of that child instead of the project, and left point on the
+child after it -- at column zero, where typing goes in front of the stars.
+Asked from a following sibling's own line, it left point in another entry
+altogether."
+  (org-convect-test--in-org "\
+* NEXT move the service
+** first thought
+** second thought
+* NEXT something else
+"
+    (re-search-forward "move the service")
+    (org-convect-plan)
+    (should (equal "** second thought"
+                   (buffer-substring-no-properties (line-beginning-position)
+                                                   (line-end-position))))
+    (should (eolp))))
+
 (ert-deftest org-convect-test-plan-stays-in-its-own-entry ()
   "Inserting the fields leaves point at the start of the line after them,
 which on an entry with no body is the *next heading*.  Going back to a heading
