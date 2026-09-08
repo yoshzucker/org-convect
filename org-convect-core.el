@@ -2821,7 +2821,11 @@ is where you usually are when you notice something needs breaking down."
         target)
     (org-with-point-at marker
       (org-back-to-heading t)
-      (let* ((level (org-current-level))
+      (let* (;; The project itself, held: what is written below moves every
+             ;; position after it, and the end of *its* subtree cannot be
+             ;; asked for from inside one of its children.
+             (top (point-marker))
+             (level (org-current-level))
              (body (org-convect--body))
              (missing (seq-remove
                        (lambda (field)
@@ -2860,7 +2864,16 @@ is where you usually are when you notice something needs breaking down."
         ;; a brainstorm that has begun does not want an empty line added to
         ;; the top of it.
         (if kids
-            (goto-char (save-excursion (org-end-of-subtree t t)))
+            ;; At the end of the last thing written, so the next thought is
+            ;; one `org-meta-return\=' away at the level the others are.
+            ;; `org-end-of-subtree\=' with TO-HEADING lands on the *start* of
+            ;; whatever follows the subtree -- which is column zero of
+            ;; somebody else\='s heading when anything does follow, and column
+            ;; zero of the last child\='s own when nothing does.  Neither is a
+            ;; place to start typing.
+            (progn (goto-char (org-with-point-at top
+                                (org-end-of-subtree t t)))
+                   (skip-chars-backward " \t\n"))
           ;; A line of its own.  Inserted around point rather than before it,
           ;; so what follows keeps its own line and is not run into.
           (save-excursion (insert (make-string (1+ level) ?*) " \n"))
