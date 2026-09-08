@@ -2772,13 +2772,20 @@ to sit, and would leave two of them empty forever."
   :group 'org-convect)
 
 (defcustom org-convect-plan-guide
-  '(:en "Why it is worth doing, and what is true when it is done.  Think below."
-    :ja "なぜやるのか、終わったとき何が本当か。発想は下の見出しで広げます。")
-  "One line above the fields, saying what the two of them are for.
+  '(:en "Brainstorm below, then organise.  A TODO is the last step, not the first."
+    :ja "まず下で広げ、それから並べ替えます。TODOは最初ではなく最後の一手です。")
+  "One line above the fields, saying what happens after they are filled in.
 
-Written as a comment.  It is not part of what the project says about itself --
-it is a question put to whoever is filling the blanks in -- and a comment is
-how Org already draws that distinction: out of the export, and in whatever
+Not about the fields themselves: `Purpose\=' and `Outcome\=' are labels, and a
+label that names what goes under it needs no second explanation.  What the
+page cannot say for itself is the order of the three steps that follow, and
+that is the order somebody skips.  Writing the next actions first is the
+commonest way to plan nothing at all -- the list comes out looking like a
+plan, and every item on it came from the same first thought.
+
+Written as a comment.  It is not part of what the project says about itself
+-- it is a question put to whoever is filling the blanks in -- and a comment
+is how Org already draws that distinction: out of the export, and in whatever
 face the theme keeps for things said about the text rather than in it.
 
 One line, and short enough to stay one on a narrow window.  Guidance that

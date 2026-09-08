@@ -712,7 +712,7 @@ the name of the thing it is: GTD's natural planning model.
     :PROPERTIES:
     :Effort:  2:00
     :END:
-    # Why it is worth doing, and what is true when it is done.  Think below.
+    # Brainstorm below, then organise.  A TODO is the last step, not the first.
     - Purpose ::
     - Outcome ::
   **                        ← point lands here
@@ -722,13 +722,20 @@ The fields go against the drawers, wherever in the entry the command was
 called from and whatever is written below — a blank line under the LOGBOOK is
 spacing for the prose, not a place to write into.
 
-The line above them is a comment, and deliberately: it is a question put to
-whoever is filling the blanks in rather than something the project says about
-itself, so it stays out of the export and takes whatever face the theme keeps
-for things said /about/ the text. It is written when the plan is opened and
-not when a half-written one is completed — a second copy of the question is
-not a second answer. ~org-convect-plan-guide~ is the wording, in both
-languages; nil leaves the line out.
+The line above them says nothing about the fields. =Purpose= and =Outcome=
+are labels, and a label that names what goes under it needs no second
+explanation. What the page cannot say for itself is the order of the three
+steps that follow — and that order is the one people skip. Writing the next
+actions first is the commonest way to plan nothing at all: the list comes out
+looking like a plan, and every item on it came from the same first thought.
+
+It is a comment, and deliberately: a question put to whoever is filling the
+blanks in rather than something the project says about itself, so it stays
+out of the export and takes whatever face the theme keeps for things said
+/about/ the text. It is written when the plan is opened and not when a
+half-written one is completed — a second copy of the question is not a second
+answer. ~org-convect-plan-guide~ is the wording, in both languages; nil
+leaves the line out.
 
 Then it gets out of the way.  =M-RET= for the next thought, =M-left= and
 =M-right= to organise them into a shape, =C-c C-t= on the ones you are
