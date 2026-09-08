@@ -2296,8 +2296,51 @@ empty heading to the pile."
                    (goto-char (point-min))
                    (count-matches "^\\*\\* "))))))
 
+(ert-deftest org-convect-test-plan-lands-on-the-first-blank ()
+  "A blank this call made wins the cursor, and the first of them.
+
+Purpose comes before everything in the model, and a person given a cursor
+and an empty field fills the field.  Left on the space to think instead,
+they are looking at the wrong end of their own plan -- with two empty
+questions above the cursor that the model wanted answered first."
+  (org-convect-test--in-org "* NEXT move the service\n"
+    (re-search-forward "move the service")
+    (org-convect-plan)
+    (should (equal "- Purpose :: "
+                   (buffer-substring-no-properties (line-beginning-position)
+                                                   (line-end-position))))
+    (should (eolp))))
+
+(ert-deftest org-convect-test-plan-lands-on-the-blank-it-made ()
+  "The first blank *this call* made, which is not always the first field.
+Completing a half-written plan leaves the cursor on what is still empty."
+  (org-convect-test--in-org "\
+* NEXT move the service
+- Purpose :: the old one is falling over
+"
+    (re-search-forward "move the service")
+    (org-convect-plan)
+    (should (equal "- Outcome :: "
+                   (buffer-substring-no-properties (line-beginning-position)
+                                                   (line-end-position))))
+    (should (eolp))))
+
+(ert-deftest org-convect-test-plan-lands-on-the-space-when-nothing-is-blank ()
+  "Nothing left to answer, so the cursor goes where the next act happens."
+  (org-convect-test--in-org "\
+* NEXT move the service
+- Purpose :: the old one is falling over
+- Outcome :: everything runs on the new one
+"
+    (re-search-forward "move the service")
+    (org-convect-plan)
+    (should (equal "** " (buffer-substring-no-properties
+                          (line-beginning-position) (line-end-position))))
+    (should (eolp))))
+
 (ert-deftest org-convect-test-plan-lands-on-the-last-thought ()
-  "With a brainstorm already begun, point lands at the end of the last of it.
+  "With the fields answered and a brainstorm already begun, point lands at the
+end of the last of it.
 
 No new heading is added -- a project being thought about does not want an
 empty one on the pile every time the command is called -- so where point is
@@ -2312,6 +2355,8 @@ Asked from a following sibling's own line, it left point in another entry
 altogether."
   (org-convect-test--in-org "\
 * NEXT move the service
+- Purpose :: the old one is falling over
+- Outcome :: everything runs on the new one
 ** first thought
 ** second thought
 * NEXT something else
