@@ -2805,6 +2805,9 @@ reads the absence as scaffolding, a place to put things -- so a brainstorm can
 be as long and as wrong as it needs to be without a single thought of it being
 counted as work anybody has taken on.  Only what you mark becomes work.
 
+Point lands on the first blank it made, which on a fresh plan is `Purpose\='.
+With nothing left to answer it lands where the next act happens instead.
+
 Everything it writes goes below whatever the entry already says, so the plan
 is one block and stays one wherever the command was called from.  A field
 somebody had already written above their own prose is left where they put it,
@@ -2846,7 +2849,8 @@ is where you usually are when you notice something needs breaking down."
              (kids (save-excursion
                      (goto-char foot)
                      (and (org-at-heading-p)
-                          (> (org-current-level) level)))))
+                          (> (org-current-level) level))))
+             blank)
         (goto-char foot)
         (unless (bolp) (insert "\n"))
         (when missing
@@ -2859,10 +2863,17 @@ is where you usually are when you notice something needs breaking down."
             (insert "# " (org-convect--in-language org-convect-plan-guide)
                     "\n"))
           (dolist (field missing)
-            (insert (format "- %s :: \n" (car field)))))
+            (insert "- " (car field) " :: ")
+            ;; The first blank this call made.  It is where writing starts:
+            ;; the model puts purpose before everything, and a person given a
+            ;; cursor and an empty field fills the field.
+            (unless blank (setq blank (point-marker)))
+            (insert "\n")))
         ;; Then somewhere to think, unless the entry already has children --
         ;; a brainstorm that has begun does not want an empty line added to
-        ;; the top of it.
+        ;; the top of it.  Made either way, and left below the fields: it is
+        ;; where the next act happens, and it is in sight when the blanks
+        ;; above it are done.
         (if kids
             ;; At the end of the last thing written, so the next thought is
             ;; one `org-meta-return\=' away at the level the others are.
@@ -2878,7 +2889,12 @@ is where you usually are when you notice something needs breaking down."
           ;; so what follows keeps its own line and is not run into.
           (save-excursion (insert (make-string (1+ level) ?*) " \n"))
           (end-of-line))
-        (setq target (point-marker))))
+        ;; A blank this call made wins the cursor.  Somewhere to think is
+        ;; only where writing starts when there is nothing left to answer:
+        ;; the fields come first in the model, and a person looking at an
+        ;; empty `- Purpose ::\=' two lines above the cursor has been given
+        ;; the wrong end of their own plan.
+        (setq target (or blank (point-marker)))))
     (when (derived-mode-p 'org-agenda-mode)
       (pop-to-buffer (marker-buffer target)))
     (goto-char target)

@@ -716,8 +716,14 @@ the name of the thing it is: GTD's natural planning model.
     # Brainstorm into child headings, organise them, and only then make TODOs.
     - Purpose ::
     - Outcome ::
-  **                        ← point lands here
+  **
 #+end_example
+
+Point lands on the first blank the call made — =- Purpose ::= on a fresh
+plan, =- Outcome ::= when only that one was missing. The model puts purpose
+before everything, and somebody handed a cursor and an empty field fills the
+field; left on the space to think instead, they are looking at the wrong end
+of their own plan, with two unanswered questions above the cursor.
 
 The whole of it goes below whatever the entry already says, wherever in the
 entry the command was called from. It is one block and it stays one: written
@@ -725,11 +731,12 @@ against the drawers instead, a paragraph that was already there ended up
 *through the middle of it* — the questions above the paragraph, the space to
 think below it, and the paragraph belonging to neither.
 
-A brainstorm already begun is where the thinking goes, so an entry with
-children gets the fields directly above the first of them and no new heading
-— called again on a project already being thought about, the command must
-not add an empty one to the pile. Point lands at the end of the last thought
-instead, one =M-RET= from the next at the level the others are.
+With nothing left to answer the cursor goes where the next act happens
+instead: the empty child, or — on an entry whose brainstorm has already begun
+— the end of the last thought, one =M-RET= from the next at the level the
+others are. Such an entry gets the fields directly above its first child and
+no new heading: called again on a project already being thought about, the
+command must not add an empty one to the pile.
 
 The line above them says nothing about the fields. =Purpose= and =Outcome=
 are labels, and a label that names what goes under it needs no second
