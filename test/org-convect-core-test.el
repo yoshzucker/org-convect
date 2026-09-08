@@ -2339,6 +2339,70 @@ CLOCK: [2026-06-16 Tue 20:33]--[2026-06-16 Tue 20:35] =>  0:02
       (should (< (string-match ":LOGBOOK:" text)
                  (string-match "- Purpose ::" text))))))
 
+(ert-deftest org-convect-test-plan-lands-against-the-drawers ()
+  "A blank line after the last drawer is not a place to write into.
+
+The walk stepped over blank lines while looking for the next drawer and then
+answered with where it had got to, so an entry written with air under its
+LOGBOOK had the plan put a line below the run -- attached to whatever prose
+was there rather than to the heading."
+  (org-convect-test--in-org "\
+* NEXT move the service
+:PROPERTIES:
+:Effort: 0:10
+:END:
+:LOGBOOK:
+CLOCK: [2026-06-16 Tue 20:33]--[2026-06-16 Tue 20:35] =>  0:02
+:END:
+
+the old one keeps falling over
+"
+    (re-search-forward "move the service")
+    (org-convect-plan)
+    (let ((text (buffer-string)))
+      ;; the fields sit against the drawer, and the blank line stays with
+      ;; the prose it was spacing
+      (should (string-match-p ":END:\n#[^\n]*\n- Purpose ::" text))
+      (should (string-match-p "\n\nthe old one keeps falling over" text)))))
+
+(ert-deftest org-convect-test-plan-asks-before-it-blanks ()
+  "A line above the fields saying what the two of them are for.
+
+A comment, because it is a question put to whoever is filling the blanks in
+rather than something the project says about itself -- and one line, short
+enough to stay one on a narrow window."
+  (org-convect-test--in-org "* NEXT move the service\n"
+    (re-search-forward "move the service")
+    (org-convect-plan)
+    (let ((line (car (seq-filter (lambda (l) (string-prefix-p "# " l))
+                                 (split-string (buffer-string) "\n")))))
+      (should line)
+      (should (< (string-width line) 80))
+      ;; above the fields, and only one of it
+      (should (< (string-match "^# " (buffer-string))
+                 (string-match "^- Purpose ::" (buffer-string))))
+      (should (= 1 (cl-count-if (lambda (l) (string-prefix-p "# " l))
+                                (split-string (buffer-string) "\n")))))))
+
+(ert-deftest org-convect-test-plan-asks-once ()
+  "Completing a half-written plan is not opening one, so the question that
+opens it is not asked a second time."
+  (org-convect-test--in-org "\
+* NEXT move the service
+- Purpose :: the old one is falling over
+"
+    (re-search-forward "move the service")
+    (org-convect-plan)
+    (should (string-match-p "^- Outcome ::" (buffer-string)))
+    (should (= 0 (cl-count-if (lambda (l) (string-prefix-p "# " l))
+                              (split-string (buffer-string) "\n"))))))
+
+(ert-deftest org-convect-test-the-model-answers-to-its-own-name ()
+  "GTD calls it the natural planning model, and somebody who has read that is
+looking for that word rather than for ours."
+  (should (eq (symbol-function 'org-convect-npm) 'org-convect-plan))
+  (should (commandp 'org-convect-npm)))
+
 (ert-deftest org-convect-test-plan-does-not-eat-the-next-heading ()
   "`org-end-of-subtree' with TO-HEADING lands on the *start* of whatever
 follows, so a heading inserted there without a line of its own runs into that
