@@ -704,14 +704,31 @@ Name a directory to keep them, or a synced one to have the phone fetch it.
 
 =M-x org-convect-plan= opens a space under the project at point — or behind
 the agenda line at point, which is usually where you are when you notice
-something needs breaking down.
+something needs breaking down. =M-x org-convect-npm= is the same command under
+the name of the thing it is: GTD's natural planning model.
 
 #+begin_example
   * NEXT move the service off the old host
+    :PROPERTIES:
+    :Effort:  2:00
+    :END:
+    # Why it is worth doing, and what is true when it is done.  Think below.
     - Purpose ::
     - Outcome ::
   **                        ← point lands here
 #+end_example
+
+The fields go against the drawers, wherever in the entry the command was
+called from and whatever is written below — a blank line under the LOGBOOK is
+spacing for the prose, not a place to write into.
+
+The line above them is a comment, and deliberately: it is a question put to
+whoever is filling the blanks in rather than something the project says about
+itself, so it stays out of the export and takes whatever face the theme keeps
+for things said /about/ the text. It is written when the plan is opened and
+not when a half-written one is completed — a second copy of the question is
+not a second answer. ~org-convect-plan-guide~ is the wording, in both
+languages; nil leaves the line out.
 
 Then it gets out of the way.  =M-RET= for the next thought, =M-left= and
 =M-right= to organise them into a shape, =C-c C-t= on the ones you are

@@ -368,17 +368,25 @@ puts text between PROPERTIES and LOGBOOK, which splits a run that Org expects
 to be unbroken -- and it is easy to do, because `org-end-of-meta-data\\=' lands
 before the drawers and the property drawer is the one everybody remembers.
 
+Lands on the line after the last drawer, and not past the blank line that
+often follows one.  Blank lines are stepped over while looking for the *next*
+drawer -- a run may be written with air in it -- but the answer is the line
+the run ended on: text written a blank line further down has left the
+heading's own block and joined whatever prose was already there.
+
 BOUND is where the entry ends.  On a heading with nothing written the walk
 lands exactly there -- on the next heading's own line -- which is the right
 place to write and the wrong place to read, so the two callers clamp for their
 own reasons rather than this one deciding for them."
   (org-end-of-meta-data)
-  (while (and (< (point) bound) (looking-at org-drawer-regexp))
-    (if (re-search-forward "^[ \t]*:END:[ \t]*$" bound t)
-        (forward-line 1)
-      (goto-char bound))
-    (skip-chars-forward " \t\n"))
-  (goto-char (min (point) bound)))
+  (let ((after (point)))
+    (while (and (< (point) bound) (looking-at org-drawer-regexp))
+      (if (re-search-forward "^[ \t]*:END:[ \t]*$" bound t)
+          (forward-line 1)
+        (goto-char bound))
+      (setq after (point))
+      (skip-chars-forward " \t\n"))
+    (goto-char (min after bound))))
 
 (defun org-convect--entry-at-point (file)
   "Return the horizon entry at point as a plist, or nil if there is none.
@@ -2763,6 +2771,23 @@ to sit, and would leave two of them empty forever."
   :type '(alist :key-type string :value-type string)
   :group 'org-convect)
 
+(defcustom org-convect-plan-guide
+  '(:en "Why it is worth doing, and what is true when it is done.  Think below."
+    :ja "なぜやるのか、終わったとき何が本当か。発想は下の見出しで広げます。")
+  "One line above the fields, saying what the two of them are for.
+
+Written as a comment.  It is not part of what the project says about itself --
+it is a question put to whoever is filling the blanks in -- and a comment is
+how Org already draws that distinction: out of the export, and in whatever
+face the theme keeps for things said about the text rather than in it.
+
+One line, and short enough to stay one on a narrow window.  Guidance that
+wraps to three lines is guidance somebody scrolls past.
+
+Set to nil for no line at all."
+  :type '(choice (const :tag "None" nil) (plist :value-type string))
+  :group 'org-convect)
+
 ;;;###autoload
 (defun org-convect-plan ()
   "Open a planning space under the project at point.
@@ -2806,6 +2831,14 @@ is where you usually are when you notice something needs breaking down."
           (org-convect--after-meta
            (save-excursion (outline-next-heading) (point)))
           (unless (bolp) (insert "\n"))
+          ;; The line of guidance, and only when the plan is being opened
+          ;; rather than completed.  A heading that already carries one of
+          ;; the fields has been through here, and a second copy of the
+          ;; question is not a second answer.
+          (when (and org-convect-plan-guide
+                     (= (length missing) (length org-convect-plan-fields)))
+            (insert "# " (org-convect--in-language org-convect-plan-guide)
+                    "\n"))
           (dolist (field missing)
             (insert (format "- %s :: \n" (car field)))))
         ;; then somewhere to think
@@ -2831,6 +2864,20 @@ is where you usually are when you notice something needs breaking down."
              (substitute-command-keys "\\[org-meta-return]")
              (substitute-command-keys "\\[org-metaright]")
              (substitute-command-keys "\\[org-todo]"))))
+
+;;;###autoload
+(defalias 'org-convect-npm #'org-convect-plan
+  "Open a planning space under the project at point.
+
+The same command as `org-convect-plan\=', under the name of the thing it is:
+GTD\='s natural planning model.  Five steps, of which purpose and outcome are
+the two that leave a field behind, and brainstorming, organising and next
+actions are acts performed on the outline itself.
+
+Two names because the two questions are different.  Somebody who has just
+noticed that a project needs breaking down is looking for a plan; somebody
+who has read the model is looking for the model.  Neither should have to know
+the other\='s word for it.")
 
 ;;;; What the thing under the cursor is asking for
 
