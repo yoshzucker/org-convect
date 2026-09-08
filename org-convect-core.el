@@ -368,25 +368,17 @@ puts text between PROPERTIES and LOGBOOK, which splits a run that Org expects
 to be unbroken -- and it is easy to do, because `org-end-of-meta-data\\=' lands
 before the drawers and the property drawer is the one everybody remembers.
 
-Lands on the line after the last drawer, and not past the blank line that
-often follows one.  Blank lines are stepped over while looking for the *next*
-drawer -- a run may be written with air in it -- but the answer is the line
-the run ended on: text written a blank line further down has left the
-heading's own block and joined whatever prose was already there.
-
 BOUND is where the entry ends.  On a heading with nothing written the walk
 lands exactly there -- on the next heading's own line -- which is the right
 place to write and the wrong place to read, so the two callers clamp for their
 own reasons rather than this one deciding for them."
   (org-end-of-meta-data)
-  (let ((after (point)))
-    (while (and (< (point) bound) (looking-at org-drawer-regexp))
-      (if (re-search-forward "^[ \t]*:END:[ \t]*$" bound t)
-          (forward-line 1)
-        (goto-char bound))
-      (setq after (point))
-      (skip-chars-forward " \t\n"))
-    (goto-char (min after bound))))
+  (while (and (< (point) bound) (looking-at org-drawer-regexp))
+    (if (re-search-forward "^[ \t]*:END:[ \t]*$" bound t)
+        (forward-line 1)
+      (goto-char bound))
+    (skip-chars-forward " \t\n"))
+  (goto-char (min (point) bound)))
 
 (defun org-convect--entry-at-point (file)
   "Return the horizon entry at point as a plist, or nil if there is none.
@@ -2813,6 +2805,12 @@ reads the absence as scaffolding, a place to put things -- so a brainstorm can
 be as long and as wrong as it needs to be without a single thought of it being
 counted as work anybody has taken on.  Only what you mark becomes work.
 
+Everything it writes goes below whatever the entry already says, so the plan
+is one block and stays one wherever the command was called from.  A field
+somebody had already written above their own prose is left where they put it,
+and only what is missing arrives at the foot -- moving somebody\='s words to
+tidy up the shape of them is not this command\='s business.
+
 Works on the heading at point, or on the entry behind an agenda line -- which
 is where you usually are when you notice something needs breaking down."
   (interactive)
@@ -2823,24 +2821,31 @@ is where you usually are when you notice something needs breaking down."
         target)
     (org-with-point-at marker
       (org-back-to-heading t)
-      ;; Held, because inserting the fields leaves point at the beginning of
-      ;; the line after them -- which is the *next* heading when the entry had
-      ;; no body.  Going "back to heading" from there arrives at the wrong
-      ;; entry, and the space to think then opens under somebody else's work.
-      (let* ((here (point-marker))
-             (level (org-current-level))
+      (let* ((level (org-current-level))
              (body (org-convect--body))
              (missing (seq-remove
                        (lambda (field)
                          (string-match-p (concat "^- " (regexp-quote (car field))
                                                  " ::")
                                          body))
-                       org-convect-plan-fields)))
-        ;; the fields first, in order, above whatever is already there
+                       org-convect-plan-fields))
+             ;; Where the entry's own prose ends: the first heading under it,
+             ;; or the end of the subtree when it has none.  Everything below
+             ;; goes here, in one place, because a plan is one block -- fields
+             ;; written against the drawers and a space to think written after
+             ;; the prose put whatever was already written *through the middle
+             ;; of it*, and the two halves then belonged to nothing.
+             (foot (save-excursion (outline-next-heading) (point)))
+             ;; Answered before anything is written: once text is inserted at
+             ;; FOOT the heading that was there has moved, and the question
+             ;; would be put to the new text instead.
+             (kids (save-excursion
+                     (goto-char foot)
+                     (and (org-at-heading-p)
+                          (> (org-current-level) level)))))
+        (goto-char foot)
+        (unless (bolp) (insert "\n"))
         (when missing
-          (org-convect--after-meta
-           (save-excursion (outline-next-heading) (point)))
-          (unless (bolp) (insert "\n"))
           ;; The line of guidance, and only when the plan is being opened
           ;; rather than completed.  A heading that already carries one of
           ;; the fields has been through here, and a second copy of the
@@ -2851,19 +2856,15 @@ is where you usually are when you notice something needs breaking down."
                     "\n"))
           (dolist (field missing)
             (insert (format "- %s :: \n" (car field)))))
-        ;; then somewhere to think
-        (goto-char here)
-        (let ((end (save-excursion (org-end-of-subtree t t))))
-          (if (save-excursion (outline-next-heading)
-                              (and (< (point) end) (> (org-current-level) level)))
-              (goto-char end)
-            (goto-char end)
-            (unless (bolp) (insert "\n"))
-            ;; A line of its own.  `org-end-of-subtree' with TO-HEADING lands
-            ;; on the *start* of whatever follows, so a heading inserted here
-            ;; without a newline runs into that one and eats it.
-            (save-excursion (insert (make-string (1+ level) ?*) " \n"))
-            (end-of-line)))
+        ;; Then somewhere to think, unless the entry already has children --
+        ;; a brainstorm that has begun does not want an empty line added to
+        ;; the top of it.
+        (if kids
+            (goto-char (save-excursion (org-end-of-subtree t t)))
+          ;; A line of its own.  Inserted around point rather than before it,
+          ;; so what follows keeps its own line and is not run into.
+          (save-excursion (insert (make-string (1+ level) ?*) " \n"))
+          (end-of-line))
         (setq target (point-marker))))
     (when (derived-mode-p 'org-agenda-mode)
       (pop-to-buffer (marker-buffer target)))

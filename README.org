@@ -712,15 +712,22 @@ the name of the thing it is: GTD's natural planning model.
     :PROPERTIES:
     :Effort:  2:00
     :END:
+    the old one keeps falling over
     # Brainstorm into child headings, organise them, and only then make TODOs.
     - Purpose ::
     - Outcome ::
   **                        ← point lands here
 #+end_example
 
-The fields go against the drawers, wherever in the entry the command was
-called from and whatever is written below — a blank line under the LOGBOOK is
-spacing for the prose, not a place to write into.
+The whole of it goes below whatever the entry already says, wherever in the
+entry the command was called from. It is one block and it stays one: written
+against the drawers instead, a paragraph that was already there ended up
+*through the middle of it* — the questions above the paragraph, the space to
+think below it, and the paragraph belonging to neither.
+
+A brainstorm already begun is where the thinking goes, so an entry with
+children gets the fields directly above the first of them and no new heading,
+and point lands at the end of the subtree.
 
 The line above them says nothing about the fields. =Purpose= and =Outcome=
 are labels, and a label that names what goes under it needs no second
