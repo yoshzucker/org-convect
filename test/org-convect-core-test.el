@@ -2344,13 +2344,13 @@ CLOCK: [2026-06-16 Tue 20:33]--[2026-06-16 Tue 20:35] =>  0:02
       (should (< (string-match ":LOGBOOK:" text)
                  (string-match "- Purpose ::" text))))))
 
-(ert-deftest org-convect-test-plan-lands-against-the-drawers ()
-  "A blank line after the last drawer is not a place to write into.
+(ert-deftest org-convect-test-plan-is-one-block ()
+  "The plan goes below whatever is already written, whole.
 
-The walk stepped over blank lines while looking for the next drawer and then
-answered with where it had got to, so an entry written with air under its
-LOGBOOK had the plan put a line below the run -- attached to whatever prose
-was there rather than to the heading."
+Written against the drawers instead, it put the prose that was already there
+*through the middle of itself*: the questions above the paragraph and the
+space to think below it, with the paragraph between them belonging to
+neither."
   (org-convect-test--in-org "\
 * NEXT move the service
 :PROPERTIES:
@@ -2364,11 +2364,29 @@ the old one keeps falling over
 "
     (re-search-forward "move the service")
     (org-convect-plan)
-    (let ((text (buffer-string)))
-      ;; the fields sit against the drawer, and the blank line stays with
-      ;; the prose it was spacing
-      (should (string-match-p ":END:\n#[^\n]*\n- Purpose ::" text))
-      (should (string-match-p "\n\nthe old one keeps falling over" text)))))
+    (should (string-match-p
+             (concat "the old one keeps falling over\n"
+                     "#[^\n]*\n"
+                     "- Purpose :: \n- Outcome :: \n"
+                     "\\*\\* ")
+             (buffer-string)))))
+
+(ert-deftest org-convect-test-plan-sits-above-a-brainstorm-already-begun ()
+  "Children are where the thinking goes, so the fields go above them -- and
+still against the prose, so nothing of the entry\='s own is left between."
+  (org-convect-test--in-org "\
+* NEXT move the service
+the old one keeps falling over
+** the first thought
+"
+    (re-search-forward "move the service")
+    (org-convect-plan)
+    (should (string-match-p
+             (concat "the old one keeps falling over\n"
+                     "#[^\n]*\n"
+                     "- Purpose :: \n- Outcome :: \n"
+                     "\\*\\* the first thought")
+             (buffer-string)))))
 
 (ert-deftest org-convect-test-plan-asks-before-it-blanks ()
   "A line above the fields saying what the two of them are for.
