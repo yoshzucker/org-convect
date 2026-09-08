@@ -2237,15 +2237,20 @@ what it rules out
 
 (ert-deftest org-convect-test-plan-lays-down-only-what-persists ()
   "Five steps and two of them leave anything behind.  A form with five blanks
-would be asking for three things that have nowhere to sit."
+would be asking for three things that have nowhere to sit.
+
+Fields, not words: the guidance line names the three acts, because naming
+what happens next is exactly what a line of guidance is for.  What must not
+appear is a blank with one of their names on it."
   (org-convect-test--in-org "* NEXT move the service\n"
     (re-search-forward "move")
     (org-convect-plan)
     (let ((text (buffer-string)))
       (should (string-match-p "^- Purpose ::" text))
       (should (string-match-p "^- Outcome ::" text))
-      (should-not (string-match-p "Brainstorm" text))
-      (should-not (string-match-p "Organi" text)))))
+      (should-not (string-match-p "^- Brainstorm ::" text))
+      (should-not (string-match-p "^- Organis\\|^- Organiz" text))
+      (should-not (string-match-p "^- Next action" text)))))
 
 (ert-deftest org-convect-test-plan-opens-a-space-with-no-keyword ()
   "The child carries no TODO keyword, and that is the point: org-foresight
@@ -2383,6 +2388,22 @@ enough to stay one on a narrow window."
                  (string-match "^- Purpose ::" (buffer-string))))
       (should (= 1 (cl-count-if (lambda (l) (string-prefix-p "# " l))
                                 (split-string (buffer-string) "\n")))))))
+
+(ert-deftest org-convect-test-plan-names-what-comes-next ()
+  "The line is about the acts, not the fields.
+
+`Purpose\=' and `Outcome\=' are labels, and a label that names what goes under
+it needs no second explanation.  What the page cannot say for itself is the
+order of the three steps after them -- and writing the next actions first is
+the commonest way to plan nothing at all."
+  (org-convect-test--in-org "* NEXT move the service\n"
+    (re-search-forward "move the service")
+    (org-convect-plan)
+    (let ((line (car (seq-filter (lambda (l) (string-prefix-p "# " l))
+                                 (split-string (buffer-string) "\n")))))
+      (should (string-match-p "Brainstorm\\|widen\\|広げ" line))
+      (should (string-match-p "organise\\|organize\\|並べ替え" line))
+      (should (string-match-p "TODO" line)))))
 
 (ert-deftest org-convect-test-plan-asks-once ()
   "Completing a half-written plan is not opening one, so the question that
