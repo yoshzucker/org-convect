@@ -712,7 +712,7 @@ the name of the thing it is: GTD's natural planning model.
     :PROPERTIES:
     :Effort:  2:00
     :END:
-    # Brainstorm below, then organise.  A TODO is the last step, not the first.
+    # Brainstorm into child headings, organise them, and only then make TODOs.
     - Purpose ::
     - Outcome ::
   **                        ← point lands here
@@ -724,10 +724,14 @@ spacing for the prose, not a place to write into.
 
 The line above them says nothing about the fields. =Purpose= and =Outcome=
 are labels, and a label that names what goes under it needs no second
-explanation. What the page cannot say for itself is the order of the three
-steps that follow — and that order is the one people skip. Writing the next
-actions first is the commonest way to plan nothing at all: the list comes out
-looking like a plan, and every item on it came from the same first thought.
+explanation. What the page cannot say for itself is what the three steps
+after them are and where they go — ideas into headings of their own, then
+order, then keywords.
+
+That order is the one people skip. Writing the next actions straight out is
+the commonest way to plan nothing at all: the list comes out looking like a
+plan, and every item on it came from the same first thought, because there
+was never a second one.
 
 It is a comment, and deliberately: a question put to whoever is filling the
 blanks in rather than something the project says about itself, so it stays

@@ -2772,16 +2772,19 @@ to sit, and would leave two of them empty forever."
   :group 'org-convect)
 
 (defcustom org-convect-plan-guide
-  '(:en "Brainstorm below, then organise.  A TODO is the last step, not the first."
-    :ja "まず下で広げ、それから並べ替えます。TODOは最初ではなく最後の一手です。")
+  '(:en "Brainstorm into child headings, organise them, and only then make TODOs."
+    :ja "アイデアはブレインストーミングで子見出しに出し、整理してからTODOにします。")
   "One line above the fields, saying what happens after they are filled in.
 
 Not about the fields themselves: `Purpose\=' and `Outcome\=' are labels, and a
 label that names what goes under it needs no second explanation.  What the
-page cannot say for itself is the order of the three steps that follow, and
-that is the order somebody skips.  Writing the next actions first is the
-commonest way to plan nothing at all -- the list comes out looking like a
-plan, and every item on it came from the same first thought.
+page cannot say for itself is what the three steps after them are and where
+they go -- ideas into headings of their own, then order, then keywords.
+
+That order is the one people skip.  Writing the next actions straight out is
+the commonest way to plan nothing at all: the list comes out looking like a
+plan, and every item on it came from the same first thought, because there
+was never a second one.
 
 Written as a comment.  It is not part of what the project says about itself
 -- it is a question put to whoever is filling the blanks in -- and a comment

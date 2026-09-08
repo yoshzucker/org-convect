@@ -2401,8 +2401,8 @@ the commonest way to plan nothing at all."
     (org-convect-plan)
     (let ((line (car (seq-filter (lambda (l) (string-prefix-p "# " l))
                                  (split-string (buffer-string) "\n")))))
-      (should (string-match-p "Brainstorm\\|widen\\|広げ" line))
-      (should (string-match-p "organise\\|organize\\|並べ替え" line))
+      (should (string-match-p "Brainstorm\\|ブレインストーミング" line))
+      (should (string-match-p "organise\\|organize\\|整理" line))
       (should (string-match-p "TODO" line)))))
 
 (ert-deftest org-convect-test-plan-asks-once ()
