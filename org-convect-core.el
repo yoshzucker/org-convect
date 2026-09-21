@@ -50,7 +50,14 @@
 ;;; Code:
 
 (require 'org)
-(require 'org-agenda)
+;; Not at the top: the boards below become agenda buffers and fetch it
+;; themselves when they do.  Requiring it here would make the agenda -- and
+;; whatever a configuration has hung off the agenda -- the price of every
+;; command in this package, including the ones that only write a heading.
+(eval-when-compile (require 'org-agenda))
+;; Said out loud because the `require\=' that fetches it sits inside the
+;; condition that needs it, which the compiler will not follow.
+(declare-function org-agenda-mode "org-agenda" ())
 (require 'eldoc)
 (require 'seq)
 (require 'cl-lib)
@@ -2582,9 +2589,19 @@ history to find it."
 (defconst org-convect-doctor-buffer "*Horizons*"
   "Where `org-convect-doctor' writes.")
 
+(defun org-convect--under-agenda-map (map)
+  "Give MAP the agenda's own keymap as its parent, and return it.
+
+Here rather than where MAP is defined, because `org-agenda-mode-map\=' is
+only bound once the agenda is loaded and these maps are defined at the top
+of this file.  Every caller has just made its buffer an agenda, so by the
+time this runs the parent exists; doing it there instead would have made
+the agenda the price of loading this package at all."
+  (set-keymap-parent map org-agenda-mode-map)
+  map)
+
 (defvar org-convect-doctor-mode-map
   (let ((map (make-sparse-keymap)))
-    (set-keymap-parent map org-agenda-mode-map)
     (define-key map (kbd "r") #'org-convect-doctor)
     map)
   "The one key the doctor adds to the agenda's own.
@@ -2686,7 +2703,7 @@ left to be looked up."
         ;; an agenda buffer, for the same reason the review board is one: the
         ;; rows carry markers, and Org's own keys then act on the rung behind
         ;; the row without this package binding anything.
-        (unless (derived-mode-p 'org-agenda-mode) (org-agenda-mode))
+        (unless (derived-mode-p 'org-agenda-mode) (require 'org-agenda) (org-agenda-mode))
         (setq-local org-agenda-type 'agenda)
         (erase-buffer)
         (insert "Horizons\n\n")
@@ -2738,7 +2755,7 @@ left to be looked up."
                 (insert (format "      %s\n" line))))))
         (unless findings (insert "\nNothing missing.\n"))
         (insert "\n  RET  go to it   r  redraw   v f  follow   q  quit\n")
-        (use-local-map org-convect-doctor-mode-map)
+        (use-local-map (org-convect--under-agenda-map org-convect-doctor-mode-map))
         (goto-char (point-min))
         (when was
           (let ((found (text-property-search-forward
@@ -3234,7 +3251,6 @@ them without redrawing from the files."
 
 (defvar org-convect-review-mode-map
   (let ((map (make-sparse-keymap)))
-    (set-keymap-parent map org-agenda-mode-map)
     (define-key map (kbd "t") #'org-convect-review-thread)
     (define-key map (kbd "r") #'org-convect-review-redraw)
     (define-key map (kbd "z") #'org-convect-reviewed)
@@ -3407,7 +3423,7 @@ follows the links instead of the altitudes."
     (with-current-buffer buffer
       (let ((inhibit-read-only t))
         (erase-buffer)
-        (unless (derived-mode-p 'org-agenda-mode) (org-agenda-mode))
+        (unless (derived-mode-p 'org-agenda-mode) (require 'org-agenda) (org-agenda-mode))
         (setq-local org-agenda-type 'agenda)
         ;; The date sits where the statuses do, so the head of the page is
         ;; ruled by the same column as everything under it.
@@ -3476,7 +3492,7 @@ follows the links instead of the altitudes."
                 (insert "\n")))))
         (insert (propertize (org-convect--review-legend threaded only-wanting)
                             'face 'org-convect-guide-face))
-        (use-local-map org-convect-review-mode-map)
+        (use-local-map (org-convect--under-agenda-map org-convect-review-mode-map))
         (setq org-convect--review-threaded threaded
               org-convect--review-args (list only-wanting now)
               org-convect--lineages (org-convect--remember-lineages entries)
@@ -3639,7 +3655,7 @@ only, so what serves a rung is never written near it."
     (with-current-buffer buffer
       (let ((inhibit-read-only t))
         (erase-buffer)
-        (unless (derived-mode-p 'org-agenda-mode) (org-agenda-mode))
+        (unless (derived-mode-p 'org-agenda-mode) (require 'org-agenda) (org-agenda-mode))
         (setq-local org-agenda-type 'agenda)
         (insert (format "Thread through %s\n\n" (plist-get entry :name)))
         (dolist (horizon (reverse (mapcar #'car org-convect-horizons)))
@@ -3681,7 +3697,7 @@ only, so what serves a rung is never written near it."
     (with-current-buffer buffer
       (let ((inhibit-read-only t))
         (erase-buffer)
-        (unless (derived-mode-p 'org-agenda-mode) (org-agenda-mode))
+        (unless (derived-mode-p 'org-agenda-mode) (require 'org-agenda) (org-agenda-mode))
         (setq-local org-agenda-type 'agenda)
         (insert (org-convect--review-line
                  (format "%s\n" (plist-get entry :name))
