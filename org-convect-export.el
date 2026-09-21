@@ -29,7 +29,6 @@
 ;;; Code:
 
 (require 'org)
-(require 'ox-html)
 (require 'org-convect-core)
 (require 'seq)
 
@@ -220,6 +219,11 @@ ladder in its usual order.  With a prefix argument, FILE is asked for."
     (make-directory (file-name-directory target) t)
     (with-temp-buffer
       (insert doc)
+      ;; Here rather than at the top of the file.  `ox-html' pulls in `ox',
+      ;; and `ox' is the moment every other backend waits for, so requiring it
+      ;; to have a command available costs the whole export tree at load time
+      ;; for a command reached by one key on one board.
+      (require 'ox-html)
       (let ((org-export-use-babel nil)
             (default-directory (file-name-directory target)))
         (org-mode)
