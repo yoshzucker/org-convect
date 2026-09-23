@@ -2980,12 +2980,30 @@ second road and simply returns."
                               (org-convect--one-line (intern horizon) :body)))))))))
       said)))
 
-(defun org-convect-eldoc-setup ()
-  "Let Eldoc ask this package about the line at point, in this buffer."
-  (add-hook 'eldoc-documentation-functions #'org-convect-eldoc-function nil t))
-
 ;;;###autoload
-(add-hook 'org-mode-hook #'org-convect-eldoc-setup)
+(progn
+  (defun org-convect-eldoc-setup ()
+    "Let Eldoc ask this package about the line at point, in this buffer.
+
+Registers nothing until this package is loaded.  Both this and the hook
+below are copied into the generated autoloads, so they run in every Org
+buffer from the start of a session -- and there
+`org-convect-eldoc-function\=' is a name and not yet a function, which is
+an error on every command in every Org buffer.  What it would have to say
+is about rungs and plan fields, so a buffer opened before the package
+arrived has nothing to hear anyway; the ones already open are caught up
+below when it does arrive."
+    (when (fboundp 'org-convect-eldoc-function)
+      (add-hook 'eldoc-documentation-functions #'org-convect-eldoc-function nil t)))
+
+  (add-hook 'org-mode-hook #'org-convect-eldoc-setup))
+
+;; The Org buffers that were already open: the hook above ran in them while
+;; there was nothing to register.
+(dolist (buf (buffer-list))
+  (with-current-buffer buf
+    (when (derived-mode-p 'org-mode)
+      (org-convect-eldoc-setup))))
 
 ;;;; Guidance in the file
 
