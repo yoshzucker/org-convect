@@ -1630,7 +1630,6 @@ command has to teach if it is going to teach at all."
   (mapcar (lambda (e) (plist-get e :name))
           (org-convect-entries (or entries (org-convect-scan)) 'area)))
 
-;;;###autoload
 (defun org-convect-read-area (&optional prompt)
   "Read one declared area by name and return it.
 
@@ -1643,7 +1642,6 @@ nothing is picked, which a template renders as no area at all."
         ""
       (completing-read (or prompt "Area: ") names nil nil))))
 
-;;;###autoload
 (defun org-convect-set-area ()
   "Put a declared area's name in the `CONVECT_AREA\\=' of the entry at point.
 
@@ -1897,7 +1895,6 @@ at them would get in the way of that inventory."
   (when (= (point-min) (point-max))
     (insert (or org-convect-skeleton (org-convect--build-skeleton)))))
 
-;;;###autoload
 (defun org-convect-open ()
   "Open the horizons file, writing its frame the first time."
   (interactive)
@@ -1924,7 +1921,6 @@ at them would get in the way of that inventory."
     (unless (bolp) (insert "\n"))
     (insert (org-convect--guide-drawer horizon))))
 
-;;;###autoload
 (defun org-convect-refresh-guides ()
   "Rewrite the guidance in the ladder file and leave everything else alone.
 
@@ -1976,7 +1972,6 @@ only worked in the file would be one you had to leave the board to run."
            (org-with-point-at marker
              (org-convect--entry-at-point (buffer-file-name))))))))
 
-;;;###autoload
 (defun org-convect-set-date (&optional date)
   "Set `CONVECT_BY\\=' on the rung at point, or clear it with an empty answer.
 
@@ -1996,7 +1991,6 @@ you intend to stop being answerable for it."
             (org-entry-put nil "CONVECT_BY" (format "[%s]" date))
           (org-entry-delete nil "CONVECT_BY"))))))
 
-;;;###autoload
 (defun org-convect-link (&optional downward)
   "Record what the rung at point is in service of.
 
@@ -2058,7 +2052,6 @@ is the end where you know the answer."
         (message "%s now serves %d rung%s" name (length chosen)
                  (if (= 1 (length chosen)) "" "s"))))))
 
-;;;###autoload
 (defun org-convect-relink ()
   "Repoint or drop one of the links written on the rung at point.
 
@@ -2201,7 +2194,6 @@ again with the feature that registered it.
 Only the interactive path consults these, so calling `org-convect-add' from
 Lisp still asks nothing and writes exactly what it was given.")
 
-;;;###autoload
 (defun org-convect-add (horizon name &optional serves properties)
   "Write a rung called NAME at HORIZON, in service of SERVES.
 
@@ -2286,7 +2278,6 @@ Every heading in the region when there is one, otherwise the one at point."
         (nreverse markers))
     (save-excursion (org-back-to-heading t) (list (point-marker)))))
 
-;;;###autoload
 (defun org-convect-declare (&optional horizon)
   "Make the heading at point, or every heading in the region, a rung.
 
@@ -2468,7 +2459,6 @@ Above the others, because the newest is the one worth reading first, which is
                   (format-time-string (org-time-stamp-format t t))
                   text)))
 
-;;;###autoload
 (defun org-convect-reviewed (&optional conclusion)
   "Write CONCLUSION onto the rung at point and call it reviewed.
 
@@ -2491,7 +2481,6 @@ one read by name."
       (save-buffer))
     (message "Reviewed %s" (plist-get rung :name))))
 
-;;;###autoload
 (defun org-convect-note (&optional text)
   "Write TEXT as an ordinary note on a rung read by name.
 
@@ -2545,7 +2534,6 @@ Returns how many rungs were changed."
           (cl-incf changed))))
     changed))
 
-;;;###autoload
 (defun org-convect-reword (&optional new reason)
   "Rename the rung at point to NEW, saying REASON, and follow the references.
 
@@ -2671,7 +2659,6 @@ nothing and the top rung serves nothing by definition.")
   "What answers finding KIND, as one line."
   (nth 2 (assq kind org-convect--finding-labels)))
 
-;;;###autoload
 (defun org-convect-doctor ()
   "Show what the ladder has and what it is missing.  Writes nothing.
 
@@ -2807,7 +2794,6 @@ Set to nil for no line at all."
   :type '(choice (const :tag "None" nil) (plist :value-type string))
   :group 'org-convect)
 
-;;;###autoload
 (defun org-convect-plan ()
   "Open a planning space under the project at point.
 
@@ -3373,7 +3359,6 @@ lines with no property on it is five lines on which the thread goes dark."
                        (propertize tally 'face 'org-convect-mesh-face))
                (plist-get entry :marker) name)))))
 
-;;;###autoload
 (defun org-convect-review (&optional only-wanting now)
   "Show the ladder, with what wants looking at marked.
 
@@ -3654,7 +3639,6 @@ which of a rung's siblings is the last one changes when the others go."
                             entries)))
       (org-convect-read-entry prompt entries)))
 
-;;;###autoload
 (defun org-convect-lineage-show ()
   "Show one thread of the ladder: the rung at point and everything linked to it.
 
@@ -3704,7 +3688,6 @@ only, so what serves a rung is never written near it."
         (goto-char (point-min))))
     (pop-to-buffer buffer)))
 
-;;;###autoload
 (defun org-convect-history-show ()
   "Show what has happened to the rung at point, newest first."
   (interactive)

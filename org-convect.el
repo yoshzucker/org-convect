@@ -55,6 +55,30 @@
 (require 'org-convect-act)
 (require 'org-convect-export)
 
+;; Every command loads this file first, whichever library defines it, so that
+;; a configuration waiting on `org-convect' is in place before the first one
+;; runs.  Requiring `org-convect-core' alone still gives the ladder without
+;; ACT or the export, as before.
+;;;###autoload (autoload 'org-convect-read-area "org-convect" "Read one declared area by name and return it." nil)
+;;;###autoload (autoload 'org-convect-set-area "org-convect" "Put a declared area's name in the `CONVECT_AREA\\=' of the entry at point." t)
+;;;###autoload (autoload 'org-convect-open "org-convect" "Open the horizons file, writing its frame the first time." t)
+;;;###autoload (autoload 'org-convect-refresh-guides "org-convect" "Rewrite the guidance in the ladder file and leave everything else alone." t)
+;;;###autoload (autoload 'org-convect-set-date "org-convect" "Set `CONVECT_BY\\=' on the rung at point, or clear it with an empty answer." t)
+;;;###autoload (autoload 'org-convect-link "org-convect" "Record what the rung at point is in service of." t)
+;;;###autoload (autoload 'org-convect-relink "org-convect" "Repoint or drop one of the links written on the rung at point." t)
+;;;###autoload (autoload 'org-convect-add "org-convect" "Write a rung called NAME at HORIZON, in service of SERVES." t)
+;;;###autoload (autoload 'org-convect-declare "org-convect" "Make the heading at point, or every heading in the region, a rung." t)
+;;;###autoload (autoload 'org-convect-reviewed "org-convect" "Write CONCLUSION onto the rung at point and call it reviewed." t)
+;;;###autoload (autoload 'org-convect-note "org-convect" "Write TEXT as an ordinary note on a rung read by name." t)
+;;;###autoload (autoload 'org-convect-reword "org-convect" "Rename the rung at point to NEW, saying REASON, and follow the references." t)
+;;;###autoload (autoload 'org-convect-doctor "org-convect" "Show what the ladder has and what it is missing.  Writes nothing." t)
+;;;###autoload (autoload 'org-convect-plan "org-convect" "Open a planning space under the project at point." t)
+;;;###autoload (autoload 'org-convect-review "org-convect" "Show the ladder, with what wants looking at marked." t)
+;;;###autoload (autoload 'org-convect-lineage-show "org-convect" "Show one thread of the ladder: the rung at point and everything linked to it." t)
+;;;###autoload (autoload 'org-convect-history-show "org-convect" "Show what has happened to the rung at point, newest first." t)
+;;;###autoload (autoload 'org-convect-act-target "org-convect" "Capture target: the horizon entry a choice point is about." nil)
+;;;###autoload (autoload 'org-convect-review-export "org-convect" "Write the review as a page to read away from Emacs." t)
+
 (provide 'org-convect)
 
 ;;; org-convect.el ends here

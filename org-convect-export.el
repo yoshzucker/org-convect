@@ -190,7 +190,6 @@ the board does with the same argument."
   (expand-file-name (format-time-string "horizons-review-%Y-%m-%d.html" now)
                     (or org-convect-export-directory temporary-file-directory)))
 
-;;;###autoload
 (defun org-convect-review-export (&optional file)
   "Write the review as a page to read away from Emacs.
 

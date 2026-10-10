@@ -255,7 +255,6 @@ value -- and refusing to file it anywhere is how a practice stops being kept."
   :type '(repeat symbol)
   :group 'org-convect)
 
-;;;###autoload
 (defun org-convect-act-target ()
   "Capture target: the horizon entry a choice point is about.
 
